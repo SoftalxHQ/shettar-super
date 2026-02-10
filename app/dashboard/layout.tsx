@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +10,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
@@ -45,8 +47,8 @@ export default function DashboardLayout({
               key={item.id}
               href={item.href}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive(item.href)
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                  : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
                 }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,19 +80,9 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-h-screen">
         {/* Top Header */}
         <header className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-border">
-          <div className="flex items-center justify-between px-8 py-4">
-            <div className="flex items-center gap-4 flex-1 max-w-2xl">
-              <div className="relative flex-1">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search businesses, users, transactions..."
-                  className="w-full bg-slate-50 dark:bg-zinc-800 border-0 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-            </div>
+          <div className="flex items-center justify-between px-8 py-2">
+            {/* Empty space where search was */}
+            <div className="flex-1"></div>
 
             <div className="flex items-center gap-4">
               <button className="relative p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
@@ -100,14 +92,84 @@ export default function DashboardLayout({
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
-              <div className="flex items-center gap-3 pl-4 border-l border-border">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold">Alex Johnson</p>
-                  <p className="text-xs text-muted-foreground">Platform Admin</p>
-                </div>
-                <div className="w-10 h-10 bg-indigo-500 rounded-full overflow-hidden border-2 border-primary/20 flex items-center justify-center text-white font-black text-sm shadow-md">
-                  AJ
-                </div>
+              <div className="relative pl-4 border-l border-border">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-xl p-2 pr-3 transition-colors"
+                >
+                  <div className="text-right hidden sm:block">
+                    <p className="text-sm font-bold">Alex Johnson</p>
+                    <p className="text-xs text-muted-foreground">Platform Admin</p>
+                  </div>
+                  <div className="w-10 h-10 bg-indigo-500 rounded-full overflow-hidden border-2 border-primary/20 flex items-center justify-center text-white font-black text-sm shadow-md">
+                    AJ
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <>
+                    {/* Overlay to close dropdown when clicking outside */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setIsDropdownOpen(false)}
+                    ></div>
+
+                    <div className="absolute right-0 mt-2 w-56 glass rounded-2xl shadow-xl border border-border overflow-hidden z-20">
+                      <div className="p-3 border-b border-border bg-slate-50 dark:bg-zinc-800/50">
+                        <p className="text-sm font-bold">Alex Johnson</p>
+                        <p className="text-xs text-muted-foreground">alex@abrisuper.com</p>
+                      </div>
+
+                      <div className="py-2">
+                        <Link
+                          href="/dashboard/profile"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="font-medium">Profile</span>
+                        </Link>
+
+                        <Link
+                          href="/dashboard/settings"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                        >
+                          <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          <span className="font-medium">Settings</span>
+                        </Link>
+                      </div>
+
+                      <div className="border-t border-border p-2">
+                        <button
+                          onClick={() => {
+                            setIsDropdownOpen(false);
+                            // Add logout logic here
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span className="font-medium">Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

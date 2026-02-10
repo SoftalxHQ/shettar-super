@@ -222,20 +222,20 @@ export default function UserAccountsPage() {
                 </td>
                 <td className="py-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${user.status === "active" ? "bg-green-100 text-green-600" :
-                      user.status === "pending" ? "bg-orange-100 text-orange-600" :
-                        "bg-red-100 text-red-600"
+                    user.status === "pending" ? "bg-orange-100 text-orange-600" :
+                      "bg-red-100 text-red-600"
                     }`}>
                     {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
                   </span>
                 </td>
                 <td className="py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                    <Link href={`/dashboard/accounts/${user.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
-                    </button>
+                    </Link>
                     <button className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
                       <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
