@@ -119,6 +119,28 @@
   }
 }
 
+/* Add cursor pointer to all interactive elements - outside @layer to ensure it works */
+button,
+a,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+select,
+label[for],
+input[type="checkbox"],
+input[type="radio"],
+summary,
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+button:disabled,
+a:disabled,
+[disabled] {
+  cursor: not-allowed !important;
+}
+
 @layer components {
   /* Glassmorphism Utilities */
   .glass {
