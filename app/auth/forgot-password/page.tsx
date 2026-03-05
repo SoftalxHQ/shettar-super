@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
                 <label className="label">Email Address</label>
                 <input
                   type="email"
-                  placeholder="admin@abri.com"
+                  placeholder="admin@shettar.com"
                   className="input"
                   required
                 />

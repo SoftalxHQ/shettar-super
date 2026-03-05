@@ -30,13 +30,13 @@ export default function LoginPage() {
           <div className="flex justify-center mb-6">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <img src="/logo.svg" alt="Abri Logo" className="w-8 h-8 invert" />
+                <img src="/logo.svg" alt="Shettar Logo" className="w-8 h-8 invert" />
               </div>
-              <span className="text-2xl font-black tracking-tighter">ABRI<span className="text-primary">SUPER</span></span>
+              <span className="text-2xl font-black tracking-tighter">SHE<span className="text-primary">TTAR</span></span>
             </Link>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Welcome Back</h1>
-          <p className="text-muted-foreground">Abri Super Admin Dashboard</p>
+          <p className="text-muted-foreground">Shettar Super Admin Dashboard</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -44,7 +44,7 @@ export default function LoginPage() {
             <label className="label">Email Address</label>
             <input
               type="email"
-              placeholder="admin@abri.com"
+              placeholder="admin@shettar.com"
               className="input"
               required
             />

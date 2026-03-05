@@ -126,7 +126,7 @@ export default function DashboardLayout({
                     <div className="absolute right-0 mt-2 w-56 glass rounded-2xl shadow-xl border border-border overflow-hidden z-20">
                       <div className="p-3 border-b border-border bg-slate-50 dark:bg-zinc-800/50">
                         <p className="text-sm font-bold">Alex Johnson</p>
-                        <p className="text-xs text-muted-foreground">alex@abrisuper.com</p>
+                        <p className="text-xs text-muted-foreground">alex@shettar.com</p>
                       </div>
 
                       <div className="py-2">
