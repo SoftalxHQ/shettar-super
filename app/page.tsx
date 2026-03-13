@@ -23,12 +23,7 @@ export default function LoginPage() {
       const response = await api.login(email, password);
       
       const adminData = response.data;
-      login(response.token, {
-        id: adminData.id,
-        email: adminData.email,
-        name: adminData.name || "Alex",
-        role: "Super Admin"
-      });
+      login(response.token, response.data);
       
       toast.success("Welcome back!", {
         description: "Authenticated with Shettar Cloud Protocol.",

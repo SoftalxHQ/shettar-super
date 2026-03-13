@@ -10,12 +10,23 @@ interface Admin {
   id: number
   email: string
   name?: string
+  first_name?: string
+  last_name?: string
+  other_name?: string
+  phone_number?: string
+  address?: string
+  zip_code?: string
+  gender?: string
+  date_of_birth?: string
+  admin_unique_id?: string
   role?: string
+  avatar_url?: string
 }
 
 interface AuthContextType {
   admin: Admin | null
   login: (token: string, adminData: Admin) => void
+  updateAdmin: (adminData: Admin) => void
   logout: () => void
   isLoading: boolean
   isAuthenticated: boolean
@@ -61,6 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAdmin(adminData)
     router.push("/dashboard")
   }, [router])
+  
+  const updateAdmin = useCallback((adminData: Admin) => {
+    setAdminData(adminData)
+    setAdmin(adminData)
+  }, [])
 
   const logout = useCallback(async () => {
     try {
@@ -80,10 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo(() => ({
     admin,
     login,
+    updateAdmin,
     logout,
     isLoading,
     isAuthenticated: !!admin
-  }), [admin, login, logout, isLoading])
+  }), [admin, login, updateAdmin, logout, isLoading])
 
   return (
     <AuthContext.Provider value={contextValue}>
