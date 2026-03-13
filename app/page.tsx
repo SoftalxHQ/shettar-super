@@ -22,7 +22,7 @@ export default function LoginPage() {
     try {
       const response = await api.login(email, password);
       
-      const adminData = response.status.data;
+      const adminData = response.data;
       login(response.token, {
         id: adminData.id,
         email: adminData.email,
