@@ -296,10 +296,43 @@ a:disabled,
     .h2 { font-size: 2.25rem; }
   }
   
-  .h4 {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
+  /* Premium Toast Customization */
+  .shettar-toast {
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    color: var(--foreground);
+  }
+
+  /* Success: Theme Blue (#3b82f6) */
+  .shettar-toast[data-type="success"],
+  .shettar-toast[data-type="success"] [data-title],
+  .shettar-toast[data-type="success"] [data-icon] {
+    color: #3b82f6 !important;
+  }
+  .shettar-toast[data-type="success"] [data-description] {
+    color: #3b82f6 !important;
+    opacity: 0.9;
+  }
+
+  /* Alert: Theme Red (#ef4444) */
+  .shettar-toast[data-type="error"],
+  .shettar-toast[data-type="error"] [data-title],
+  .shettar-toast[data-type="error"] [data-icon] {
+    color: #ef4444 !important;
+  }
+  .shettar-toast[data-type="error"] [data-description] {
+    color: #ef4444 !important;
+    opacity: 0.9;
+  }
+
+  .dark .shettar-toast {
+    --glass-bg: rgba(24, 24, 27, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    background: var(--glass-bg) !important;
+    border-color: var(--glass-border) !important;
+  }
+
+  .dark .shettar-toast:not([data-type="success"]):not([data-type="error"]) {
+    color: #ffffff !important;
   }
 }

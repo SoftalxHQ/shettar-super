@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { admin, logout, isLoading } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/dashboard") {
@@ -19,6 +21,17 @@ export default function DashboardLayout({
     return pathname.startsWith(path);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm font-bold text-muted-foreground animate-pulse">Initializing Portal...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-zinc-950">
       {/* Sidebar */}
@@ -26,10 +39,10 @@ export default function DashboardLayout({
         <div className="p-6">
           <Link href="/dashboard" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-              <img src="/logo.svg" alt="Abri Logo" className="w-6 h-6 invert" />
+              <img src="/logo.svg" alt="Shettar Logo" className="w-6 h-6 invert" />
             </div>
             <span className="text-xl font-black tracking-tighter uppercase italic">
-              Abri<span className="text-primary">Super</span>
+              Shettar<span className="text-primary">Super</span>
             </span>
           </Link>
         </div>
@@ -41,7 +54,7 @@ export default function DashboardLayout({
             { id: "accounts", label: "User Accounts", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z", href: "/dashboard/accounts" },
             { id: "payouts", label: "Payouts", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z", href: "/dashboard/payouts" },
             { id: "support", label: "Support", icon: "M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z", href: "/dashboard/support" },
-            { id: "settings", label: "Settings", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z", href: "/dashboard/settings" },
+            { id: "configurations", label: "Configuration", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z", href: "/dashboard/configurations" },
           ].map((item) => (
             <Link
               key={item.id}
@@ -67,7 +80,10 @@ export default function DashboardLayout({
             </div>
             <p className="text-xs text-muted-foreground">6.5 GB of 10 GB used</p>
           </div>
-          <button className="w-full flex items-center gap-3 px-4 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl mt-4 transition-colors">
+          <button 
+            onClick={logout}
+            className="w-full flex items-center gap-3 px-4 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl mt-4 transition-colors"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
@@ -98,11 +114,11 @@ export default function DashboardLayout({
                   className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-xl p-2 pr-3 transition-colors"
                 >
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold">Alex Johnson</p>
-                    <p className="text-xs text-muted-foreground">Platform Admin</p>
+                    <p className="text-sm font-bold">{admin?.name || "Platform Admin"}</p>
+                    <p className="text-xs text-muted-foreground">{admin?.role || "Global Administrator"}</p>
                   </div>
                   <div className="w-10 h-10 bg-indigo-500 rounded-full overflow-hidden border-2 border-primary/20 flex items-center justify-center text-white font-black text-sm shadow-md">
-                    AJ
+                    {admin?.name?.[0] || admin?.email?.[0]?.toUpperCase() || "A"}
                   </div>
                   <svg
                     className={`w-4 h-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -125,8 +141,8 @@ export default function DashboardLayout({
 
                     <div className="absolute right-0 mt-2 w-56 glass rounded-2xl shadow-xl border border-border overflow-hidden z-20">
                       <div className="p-3 border-b border-border bg-slate-50 dark:bg-zinc-800/50">
-                        <p className="text-sm font-bold">Alex Johnson</p>
-                        <p className="text-xs text-muted-foreground">alex@shettar.com</p>
+                        <p className="text-sm font-bold">{admin?.name || "Platform Admin"}</p>
+                        <p className="text-xs text-muted-foreground">{admin?.email}</p>
                       </div>
 
                       <div className="py-2">
@@ -142,14 +158,14 @@ export default function DashboardLayout({
                         </Link>
 
                         <Link
-                          href="/dashboard/settings"
+                          href="/dashboard/configurations"
                           onClick={() => setIsDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                           <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          <span className="font-medium">Settings</span>
+                          <span className="font-medium">Configuration</span>
                         </Link>
                       </div>
 
@@ -157,7 +173,7 @@ export default function DashboardLayout({
                         <button
                           onClick={() => {
                             setIsDropdownOpen(false);
-                            // Add logout logic here
+                            logout();
                           }}
                           className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
                         >
@@ -183,3 +199,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+
