@@ -60,9 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isPublicPath = pathname === "/" || pathname === "/auth/forgot-password"
 
     if (!token && !isPublicPath) {
-      router.push("/")
+      router.replace("/")
     } else if (token && isPublicPath) {
-      router.push("/dashboard")
+      router.replace("/dashboard")
     }
   }, [isLoading, pathname, router, admin])
 
@@ -80,16 +80,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await api.logout();
-    } catch (error) {
-      console.error("Backend logout failed:", error);
-    } finally {
+      // Background logout (don't block the UI transition)
+      api.logout().catch(err => console.error("Backend logout failed:", err));
+      
+      // Perform local cleanup immediately
       storageLogout();
       setAdmin(null);
+      
       toast.success("Disconnected", {
         description: "You have been securely signed out of Shettar Super.",
       });
-      router.push("/");
+      
+      // The redirect will now be handled by the useEffect since token/admin are null
+      // but we use a replace just in case.
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout process error:", error);
+      // Fallback
+      window.location.href = "/";
     }
   }, [router]);
 

@@ -21,7 +21,7 @@ export default function DashboardLayout({
     return pathname.startsWith(path);
   };
 
-  if (isLoading) {
+  if (isLoading || !admin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
