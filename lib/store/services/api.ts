@@ -108,10 +108,168 @@ export interface AccountTransaction {
   created_at: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface PaginatedResponse<T> {
   meta: AccountsMeta;
   reservations?: T[];
   transactions?: T[];
+}
+
+// ── Business types ────────────────────────────────────────────────────────────
+
+export interface Business {
+  id: number;
+  business_unique_id: string;
+  name: string;
+  category: string | null;
+  city: string;
+  state: string;
+  suspended: boolean;
+  verification_status: "pending" | "approved" | "rejected";
+  withdrawable_balance: number;
+  pending_balance: number;
+  rooms_count: number;
+  reservations_count: number;
+  created_at: string;
+  owner_name: string | null;
+  owner_email: string | null;
+}
+
+export interface BankAccount {
+  id: number;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  bank_code: string | null;
+  currency: string;
+  is_active: boolean;
+  recipient_code: string | null;
+}
+
+export interface BusinessOwner {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string | null;
+  is_primary: boolean;
+}
+
+export interface RoomType {
+  id: number;
+  name: string;
+  price: number;
+  rooms_count: number;
+  rooms: { id: number; number: number; status: string }[];
+}
+
+export interface BusinessDetail extends Business {
+  description: string | null;
+  address: string;
+  zip_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  check_in: string;
+  check_out: string;
+  star_rating: number | null;
+  slug: string;
+  verification_notes: string | null;
+  verified_at: string | null;
+  verified_by_admin_id: number | null;
+  verified_by_admin_name: string | null;
+  total_revenue: number;
+  refund_balance: number;
+  cash_balance: number;
+  pos_balance: number;
+  onsite_payment_balance: number;
+  amenities: Record<string, boolean>;
+  room_types: RoomType[];
+  owners: BusinessOwner[];
+  bank_accounts: BankAccount[];
+}
+
+export interface BusinessReservation {
+  id: number;
+  booking_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  room_type: string | null;
+  room_number: number | null;
+  start_date: string;
+  end_date: string;
+  guests: number;
+  total_amount: number;
+  payment_method: string;
+  cancelled: boolean;
+  occupied: boolean;
+  processed: boolean;
+  created_at: string;
+}
+
+export interface BusinessTransaction {
+  id: number;
+  amount: number;
+  transaction_type: string;
+  status: string;
+  description: string | null;
+  payment_method: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface GetBusinessesParams {
+  page?: number;
+  search?: string;
+  status?: string;
+  verification?: string;
+  category_id?: number;
+}
+
+interface GetBusinessesResponse {
+  businesses: Business[];
+  meta: AccountsMeta;
+}
+
+interface GetBusinessResponse {
+  business: BusinessDetail;
+}
+
+interface BusinessActionResponse {
+  message: string;
+  business: BusinessDetail;
+}
+
+interface VerifyBusinessParams {
+  id: number | string;
+  status: "approved" | "rejected";
+  notes?: string;
+}
+
+interface VerifyBankAccountParams {
+  businessId: number | string;
+  id: number | string;
+}
+
+interface VerifyBankAccountResponse {
+  message: string;
+  bank_account: BankAccount;
+}
+
+export interface BusinessAnalyticsMonth {
+  month: string;
+  revenue: number;
+  bookings: number;
+  cancelled: number;
+}
+
+export interface BusinessAnalytics {
+  monthly_data: BusinessAnalyticsMonth[];
+  payment_breakdown: { name: string; value: number }[];
+  room_availability: { name: string; available: number; occupied: number }[];
+  total_revenue: number;
+  total_bookings: number;
+  cancelled_bookings: number;
+  avg_booking_value: number;
 }
 
 // Custom base query with auth header injection and 401 handling
@@ -132,7 +290,11 @@ const baseQueryWithAuth = fetchBaseQuery({
 });
 
 // Wrapper to handle 401 responses
-const baseQueryWith401Handler = async (args: any, api: any, extraOptions: any) => {
+const baseQueryWith401Handler = async (
+  args: Parameters<typeof baseQueryWithAuth>[0],
+  api: Parameters<typeof baseQueryWithAuth>[1],
+  extraOptions: Parameters<typeof baseQueryWithAuth>[2]
+) => {
   const result = await baseQueryWithAuth(args, api, extraOptions);
 
   // Handle 401 Unauthorized
@@ -152,7 +314,7 @@ const baseQueryWith401Handler = async (args: any, api: any, extraOptions: any) =
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account"],
+  tagTypes: ["Account", "Business"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -160,7 +322,7 @@ export const apiService = createApi({
         method: "POST",
         body: credentials,
       }),
-      transformResponse: (response: any, meta) => {
+      transformResponse: (response: LoginResponse, meta?: { response?: Response }) => {
         const authHeader = meta?.response?.headers.get("Authorization");
         const token = authHeader?.replace("Bearer ", "") || "";
         return { ...response, token };
@@ -213,6 +375,63 @@ export const apiService = createApi({
         return `/api/v1/admin/accounts/${id}/transactions?${params.toString()}`;
       },
     }),
+
+    // ── Business endpoints ──────────────────────────────────────────────────
+    getBusinesses: builder.query<GetBusinessesResponse, GetBusinessesParams>({
+      query: ({ page = 1, search, status, verification, category_id } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        if (status && status !== "all") params.set("status", status);
+        if (verification && verification !== "all") params.set("verification", verification);
+        if (category_id) params.set("category_id", String(category_id));
+        return `/api/v1/admin/businesses?${params.toString()}`;
+      },
+      providesTags: ["Business"],
+    }),
+    getBusiness: builder.query<GetBusinessResponse, number | string>({
+      query: (id) => `/api/v1/admin/businesses/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "Business", id }],
+    }),
+    suspendBusiness: builder.mutation<BusinessActionResponse, number | string>({
+      query: (id) => ({ url: `/api/v1/admin/businesses/${id}/suspend`, method: "PATCH" }),
+      invalidatesTags: (_result, _err, id) => ["Business", { type: "Business", id }],
+    }),
+    activateBusiness: builder.mutation<BusinessActionResponse, number | string>({
+      query: (id) => ({ url: `/api/v1/admin/businesses/${id}/activate`, method: "PATCH" }),
+      invalidatesTags: (_result, _err, id) => ["Business", { type: "Business", id }],
+    }),
+    verifyBusiness: builder.mutation<BusinessActionResponse, VerifyBusinessParams>({
+      query: ({ id, status, notes }) => ({
+        url: `/api/v1/admin/businesses/${id}/verify`,
+        method: "PATCH",
+        body: { status, notes },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
+    verifyBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams>({
+      query: ({ businessId, id }) => ({
+        url: `/api/v1/admin/businesses/${businessId}/bank_accounts/${id}/verify`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _err, { businessId }) => ["Business", { type: "Business", id: businessId }],
+    }),
+    getBusinessReservations: builder.query<{ reservations: BusinessReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
+      query: ({ id, page = 1, status }) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (status && status !== "all") params.set("status", status);
+        return `/api/v1/admin/businesses/${id}/reservations?${params.toString()}`;
+      },
+    }),
+    getBusinessTransactions: builder.query<{ transactions: BusinessTransaction[]; meta: AccountsMeta }, { id: number | string; page?: number; transaction_type?: string }>({
+      query: ({ id, page = 1, transaction_type }) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (transaction_type && transaction_type !== "all") params.set("transaction_type", transaction_type);
+        return `/api/v1/admin/businesses/${id}/transactions?${params.toString()}`;
+      },
+    }),
+    getBusinessAnalytics: builder.query<BusinessAnalytics, number | string>({
+      query: (id) => `/api/v1/admin/businesses/${id}/analytics`,
+    }),
   }),
 });
 
@@ -225,4 +444,13 @@ export const {
   useActivateAccountMutation,
   useGetAccountReservationsQuery,
   useGetAccountTransactionsQuery,
+  useGetBusinessesQuery,
+  useGetBusinessQuery,
+  useSuspendBusinessMutation,
+  useActivateBusinessMutation,
+  useVerifyBusinessMutation,
+  useVerifyBankAccountMutation,
+  useGetBusinessReservationsQuery,
+  useGetBusinessTransactionsQuery,
+  useGetBusinessAnalyticsQuery,
 } = apiService;
