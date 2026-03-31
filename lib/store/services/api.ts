@@ -320,6 +320,15 @@ export interface GetSupportTicketsParams {
   status?: string;
   priority?: string;
   business_id?: number | string;
+  search?: string;
+}
+
+export interface SupportTicketStats {
+  open: number;
+  in_progress: number;
+  resolved: number;
+  closed: number;
+  high_priority: number;
 }
 
 interface GetSupportTicketsResponse {
@@ -495,13 +504,18 @@ export const apiService = createApi({
 
     // ── Support Tickets endpoints ───────────────────────────────────────────
     getSupportTickets: builder.query<GetSupportTicketsResponse, GetSupportTicketsParams>({
-      query: ({ page = 1, status, priority, business_id } = {}) => {
+      query: ({ page = 1, status, priority, business_id, search } = {}) => {
         const params = new URLSearchParams({ page: String(page) });
         if (status && status !== "all") params.set("status", status);
         if (priority && priority !== "all") params.set("priority", priority);
         if (business_id) params.set("business_id", String(business_id));
+        if (search) params.set("search", search);
         return `/api/v1/admin/support_tickets?${params.toString()}`;
       },
+      providesTags: ["SupportTicket"],
+    }),
+    getSupportTicketStats: builder.query<SupportTicketStats, void>({
+      query: () => '/api/v1/admin/support_tickets/stats',
       providesTags: ["SupportTicket"],
     }),
     getSupportTicket: builder.query<GetSupportTicketResponse, number | string>({
@@ -554,6 +568,7 @@ export const {
   useGetBusinessTransactionsQuery,
   useGetBusinessAnalyticsQuery,
   useGetSupportTicketsQuery,
+  useGetSupportTicketStatsQuery,
   useGetSupportTicketQuery,
   useAssignSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
