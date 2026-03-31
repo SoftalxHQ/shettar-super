@@ -272,6 +272,66 @@ export interface BusinessAnalytics {
   avg_booking_value: number;
 }
 
+// ── Support Ticket Types ────────────────────────────────────────────────────────
+
+export interface SupportTicket {
+  id: number;
+  ticket_id: string;
+  subject: string;
+  description: string;
+  priority: string;
+  status: string;
+  created_at: string;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  business?: {
+    id: number;
+    name: string;
+  };
+  assigned_to?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+}
+
+export interface SupportMessage {
+  id: number;
+  body: string;
+  created_at: string;
+  sender_type: string;
+  sender_id: number;
+  sender?: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    name?: string;
+    email?: string;
+  };
+}
+
+export interface GetSupportTicketsParams {
+  page?: number;
+  status?: string;
+  priority?: string;
+  business_id?: number | string;
+}
+
+interface GetSupportTicketsResponse {
+  tickets: SupportTicket[];
+  meta: AccountsMeta;
+}
+
+interface GetSupportTicketResponse {
+  ticket: SupportTicket;
+  messages: SupportMessage[];
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -314,7 +374,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business"],
+  tagTypes: ["Account", "Business", "SupportTicket"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -432,6 +492,46 @@ export const apiService = createApi({
     getBusinessAnalytics: builder.query<BusinessAnalytics, number | string>({
       query: (id) => `/api/v1/admin/businesses/${id}/analytics`,
     }),
+
+    // ── Support Tickets endpoints ───────────────────────────────────────────
+    getSupportTickets: builder.query<GetSupportTicketsResponse, GetSupportTicketsParams>({
+      query: ({ page = 1, status, priority, business_id } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (status && status !== "all") params.set("status", status);
+        if (priority && priority !== "all") params.set("priority", priority);
+        if (business_id) params.set("business_id", String(business_id));
+        return `/api/v1/admin/support_tickets?${params.toString()}`;
+      },
+      providesTags: ["SupportTicket"],
+    }),
+    getSupportTicket: builder.query<GetSupportTicketResponse, number | string>({
+      query: (id) => `/api/v1/admin/support_tickets/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "SupportTicket", id }],
+    }),
+    assignSupportTicket: builder.mutation<{ message: string; ticket: SupportTicket }, { id: number | string; admin_id: number | string }>({
+      query: ({ id, admin_id }) => ({
+        url: `/api/v1/admin/support_tickets/${id}/assign`,
+        method: "PATCH",
+        body: { admin_id },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", { type: "SupportTicket", id }],
+    }),
+    updateSupportTicketStatus: builder.mutation<{ message: string; ticket: SupportTicket }, { id: number | string; status: string }>({
+      query: ({ id, status }) => ({
+        url: `/api/v1/admin/support_tickets/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", { type: "SupportTicket", id }],
+    }),
+    replyToSupportTicket: builder.mutation<{ message: string; support_message: SupportMessage }, { id: number | string; body: string }>({
+      query: ({ id, body }) => ({
+        url: `/api/v1/admin/support_tickets/${id}/messages`,
+        method: "POST",
+        body: { body },
+      }),
+      invalidatesTags: (_result, _err, { id }) => [{ type: "SupportTicket", id }],
+    }),
   }),
 });
 
@@ -453,4 +553,9 @@ export const {
   useGetBusinessReservationsQuery,
   useGetBusinessTransactionsQuery,
   useGetBusinessAnalyticsQuery,
+  useGetSupportTicketsQuery,
+  useGetSupportTicketQuery,
+  useAssignSupportTicketMutation,
+  useUpdateSupportTicketStatusMutation,
+  useReplyToSupportTicketMutation,
 } = apiService;
