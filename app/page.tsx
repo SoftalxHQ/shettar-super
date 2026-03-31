@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -13,24 +11,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      const response = await api.login(email, password);
-      
-      const adminData = response.data;
-      login(response.token, response.data);
-      
+      await login(email, password);
+
       toast.success("Welcome back!", {
         description: "Authenticated with Shettar Cloud Protocol.",
       });
     } catch (error: any) {
       toast.error("Access Denied", {
-        description: error.message || "Invalid credentials provided.",
+        description: error?.data?.status?.message || error?.data?.message || error.message || "Invalid credentials provided.",
       });
     } finally {
       setIsLoading(false);

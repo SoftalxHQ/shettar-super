@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/lib/auth-context";
+import { ReduxProvider } from "@/lib/store/provider";
 import { Toaster } from "sonner";
 
 export default function RootLayout({
@@ -27,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark:bg-zinc-950">
       <body className={`${inter.variable} font-sans antialiased text-slate-800 dark:text-zinc-200 bg-slate-50 dark:bg-zinc-950`}>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ReduxProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ReduxProvider>
         <Toaster 
           position="top-center" 
           expand={false}
