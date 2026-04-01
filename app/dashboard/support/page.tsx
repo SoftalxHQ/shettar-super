@@ -180,15 +180,15 @@ export default function SupportPage() {
       </div>
 
       {/* Tickets List */}
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 xl:gap-6">
         {isError && (
-          <div className="text-center py-12 text-red-500 glass p-6 rounded-3xl">
+          <div className="xl:col-span-2 text-center py-12 text-red-500 glass p-6 rounded-3xl">
             Failed to load tickets. Please try again.
           </div>
         )}
 
         {(isLoading || isFetching) && !isError && (
-          <div className="text-center py-12 glass p-6 rounded-3xl">
+          <div className="xl:col-span-2 text-center py-12 glass p-6 rounded-3xl">
             <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
             <p className="text-sm text-muted-foreground mt-4">Loading tickets...</p>
           </div>
@@ -290,7 +290,7 @@ export default function SupportPage() {
         })}
 
         {!isLoading && !isFetching && !isError && tickets.length === 0 && (
-          <div className="glass p-12 rounded-3xl text-center">
+          <div className="xl:col-span-2 glass p-12 rounded-3xl text-center">
             <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
