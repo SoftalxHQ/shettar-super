@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import Flatpickr from "react-flatpickr";
+import "flatpickr/dist/themes/light.css";
 import { useGetAdminActivitiesQuery } from "@/lib/store/services/api";
 import type { AdminActivityItem } from "@/lib/store/services/api";
 import { useAppSelector } from "@/lib/store/hooks";
@@ -78,10 +80,25 @@ function ActivityRow({ activity }: { activity: AdminActivityItem }) {
 export default function ActivityPage() {
   const [page, setPage] = useState(1);
   const [actionType, setActionType] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateRange, setDateRange] = useState<Date[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const token = useAppSelector(selectToken);
+
+  const formatLocalDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const dateFrom = dateRange.length === 2 ? formatLocalDate(dateRange[0]) : "";
+  const dateTo = dateRange.length === 2 ? formatLocalDate(dateRange[1]) : "";
+
+  const flatpickrOptions = useMemo(() => ({
+    mode: "range" as const,
+    dateFormat: "d M Y",
+    maxDate: "today",
+  }), []);
 
   const { data, isLoading, isError, isFetching, refetch } = useGetAdminActivitiesQuery({
     page,
@@ -96,8 +113,6 @@ export default function ActivityPage() {
   const handleFilterChange = useCallback((key: string, value: string) => {
     setPage(1);
     if (key === "action_type") setActionType(value);
-    if (key === "date_from") setDateFrom(value);
-    if (key === "date_to") setDateTo(value);
   }, []);
 
   const handleExport = async () => {
@@ -168,6 +183,45 @@ export default function ActivityPage() {
 
   return (
     <div className="p-8 space-y-6 max-w-5xl mx-auto">
+      <style>{`
+        .flatpickr-day.selected,
+        .flatpickr-day.startRange,
+        .flatpickr-day.endRange,
+        .flatpickr-day.selected.inRange,
+        .flatpickr-day.startRange.inRange,
+        .flatpickr-day.endRange.inRange,
+        .flatpickr-day.selected:hover,
+        .flatpickr-day.startRange:hover,
+        .flatpickr-day.endRange:hover {
+          background: #4f46e5 !important;
+          border-color: #4f46e5 !important;
+          color: #fff !important;
+        }
+        .flatpickr-day.inRange {
+          background: #e0e7ff !important;
+          border-color: #e0e7ff !important;
+          color: #3730a3 !important;
+        }
+        .flatpickr-day.today {
+          border-color: #4f46e5 !important;
+        }
+        .flatpickr-day.today:hover {
+          background: #e0e7ff !important;
+          color: #3730a3 !important;
+        }
+        .flatpickr-months .flatpickr-month,
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+          background: #4f46e5 !important;
+          color: #fff !important;
+        }
+        .flatpickr-weekdays, .flatpickr-weekday {
+          background: #4f46e5 !important;
+          color: #fff !important;
+        }
+        .flatpickr-prev-month svg, .flatpickr-next-month svg {
+          fill: #fff !important;
+        }
+      `}</style>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -200,7 +254,7 @@ export default function ActivityPage() {
 
       {/* Filters */}
       <div className="glass p-6 rounded-3xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="label">Activity Type</label>
             <select className="input" value={actionType} onChange={(e) => handleFilterChange("action_type", e.target.value)}>
@@ -210,17 +264,30 @@ export default function ActivityPage() {
             </select>
           </div>
           <div>
-            <label className="label">From Date</label>
-            <input type="date" className="input" value={dateFrom} onChange={(e) => handleFilterChange("date_from", e.target.value)} />
-          </div>
-          <div>
-            <label className="label">To Date</label>
-            <input type="date" className="input" value={dateTo} onChange={(e) => handleFilterChange("date_to", e.target.value)} />
+            <label className="label">Date Range</label>
+            <Flatpickr
+              options={flatpickrOptions}
+              onChange={(dates) => {
+                if (dates.length === 2) {
+                  setDateRange(dates);
+                  setPage(1);
+                }
+              }}
+              onClose={(dates) => {
+                // If user closes picker with only one date selected, clear it
+                if (dates.length < 2) {
+                  setDateRange([]);
+                  setPage(1);
+                }
+              }}
+              placeholder="Select date range..."
+              className="input"
+            />
           </div>
         </div>
-        {(actionType || dateFrom || dateTo) && (
+        {(actionType || dateRange.length > 0) && (
           <button
-            onClick={() => { setActionType(""); setDateFrom(""); setDateTo(""); setPage(1); }}
+            onClick={() => { setActionType(""); setDateRange([]); setPage(1); }}
             className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             Clear filters
