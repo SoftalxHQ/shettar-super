@@ -52,7 +52,7 @@ export default function BusinessDetailPage() {
   const [rejectNotes, setRejectNotes] = useState("");
 
   // RTK Query hooks
-  const { data, isLoading, isError } = useGetBusinessQuery(id);
+  const { data, isLoading, isError } = useGetBusinessQuery(id, { refetchOnMountOrArgChange: true });
   const [suspendBusiness, { isLoading: isSuspending }] = useSuspendBusinessMutation();
   const [activateBusiness, { isLoading: isActivating }] = useActivateBusinessMutation();
   const [verifyBusiness, { isLoading: isVerifying }] = useVerifyBusinessMutation();

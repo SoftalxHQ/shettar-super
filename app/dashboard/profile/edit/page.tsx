@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api-client";
+import { useUpdateAdminProfileMutation } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import Link from "next/link";
 
 export default function EditProfilePage() {
   const { admin, updateAdmin } = useAuth();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [updateAdminProfile, { isLoading }] = useUpdateAdminProfileMutation();
   const [formData, setFormData] = useState({
     first_name: admin?.first_name || "",
     last_name: admin?.last_name || "",
@@ -24,29 +24,19 @@ export default function EditProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     try {
-      const response: any = await api.patch("/admin_details", {
-        admin: formData
-      }, { requiresAuth: true });
-
-      if (response.status?.code === 200) {
-        toast.success("Profile Updated", {
-          description: "Your administrative profile has been successfully updated."
-        });
-        
-        // Update context with new data without changing the session token or redirecting to /dashboard
-        updateAdmin(response.data);
-        
-        router.push("/dashboard/profile");
-      }
-    } catch (error: any) {
-      toast.error("Update Failed", {
-        description: error.message || "An error occurred while updating your profile."
+      const response = await updateAdminProfile(formData).unwrap();
+      toast.success("Profile Updated", {
+        description: "Your administrative profile has been successfully updated."
       });
-    } finally {
-      setIsLoading(false);
+      updateAdmin(response.data);
+      router.push("/dashboard/profile");
+    } catch (error: unknown) {
+      const e = error as { data?: { status?: { message?: string } } };
+      toast.error("Update Failed", {
+        description: e?.data?.status?.message || "An error occurred while updating your profile."
+      });
     }
   };
 

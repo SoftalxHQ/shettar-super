@@ -622,6 +622,20 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, id) => ["AdminStaff", { type: "AdminStaff", id }],
     }),
+    reactivateAdminStaff: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/staff/${id}/reactivate`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _err, id) => ["AdminStaff", { type: "AdminStaff", id }],
+    }),
+    removeAdminStaff: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/staff/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["AdminStaff"],
+    }),
 
     // ── Password change ─────────────────────────────────────────────────────
     changePassword: builder.mutation<{ status: { code: number; message: string } }, { current_password: string; password: string; password_confirmation: string }>({
@@ -629,6 +643,19 @@ export const apiService = createApi({
         url: "/admin_details/change_password",
         method: "PUT",
         body: { admin: passwords },
+      }),
+    }),
+
+    // ── Profile update ──────────────────────────────────────────────────────
+    updateAdminProfile: builder.mutation<{ status: { code: number; message: string }; data: import("../slices/authSlice").Admin }, {
+      first_name?: string; last_name?: string; other_name?: string;
+      phone_number?: string; address?: string; zip_code?: string;
+      gender?: string; date_of_birth?: string;
+    }>({
+      query: (profileData) => ({
+        url: "/admin_details",
+        method: "PATCH",
+        body: { admin: profileData },
       }),
     }),
   }),
@@ -663,5 +690,8 @@ export const {
   useInviteAdminStaffMutation,
   useUpdateAdminStaffMutation,
   useDeactivateAdminStaffMutation,
+  useReactivateAdminStaffMutation,
+  useRemoveAdminStaffMutation,
   useChangePasswordMutation,
+  useUpdateAdminProfileMutation,
 } = apiService;
