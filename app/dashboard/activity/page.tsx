@@ -7,9 +7,9 @@ import { useGetAdminActivitiesQuery } from "@/lib/store/services/api";
 import type { AdminActivityItem } from "@/lib/store/services/api";
 import { useAppSelector } from "@/lib/store/hooks";
 import { selectToken } from "@/lib/store/slices/authSlice";
-import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
-
+import { formatDate } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
 const ACTION_LABELS: Record<string, string> = {
   "": "All Activity",
   account_suspended: "Account Suspended",
@@ -341,15 +341,12 @@ export default function ActivityPage() {
 
       {/* Pagination */}
       {pagination && pagination.last > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {pagination.page} of {pagination.last} ({pagination.count} total)
-          </p>
-          <div className="flex gap-2">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-            <button onClick={() => setPage((p) => Math.min(pagination.last, p + 1))} disabled={page >= pagination.last} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
-          </div>
-        </div>
+        <Pagination
+          currentPage={page}
+          totalPages={pagination.last}
+          totalCount={pagination.count}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );
