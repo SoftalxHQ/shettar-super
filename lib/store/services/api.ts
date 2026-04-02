@@ -379,6 +379,37 @@ interface UpdateAdminStaffRequest {
   };
 }
 
+export interface AdminActivityItem {
+  id: number;
+  action_type: string;
+  description: string;
+  metadata: Record<string, any>;
+  occurred_at: string;
+  actor: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+  subject: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+  color: string;
+}
+
+interface GetAdminActivitiesResponse {
+  activities: AdminActivityItem[];
+  pagination: { count: number; last: number; page: number };
+}
+
+interface GetAdminActivitiesParams {
+  page?: number;
+  action_type?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -658,6 +689,17 @@ export const apiService = createApi({
         body: { admin: profileData },
       }),
     }),
+    getAdminActivities: builder.query<GetAdminActivitiesResponse, GetAdminActivitiesParams>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.set("page", String(params.page));
+        if (params.action_type) queryParams.set("action_type", params.action_type);
+        if (params.date_from) queryParams.set("date_from", params.date_from);
+        if (params.date_to) queryParams.set("date_to", params.date_to);
+        return `/api/v1/admin/activities?${queryParams.toString()}`;
+      },
+      providesTags: ["AdminStaff"],
+    }),
   }),
 });
 
@@ -694,4 +736,5 @@ export const {
   useRemoveAdminStaffMutation,
   useChangePasswordMutation,
   useUpdateAdminProfileMutation,
+  useGetAdminActivitiesQuery,
 } = apiService;

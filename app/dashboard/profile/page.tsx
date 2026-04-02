@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { ADMIN_PERMISSION_LABELS } from "@/lib/admin-staff-types";
-import { useChangePasswordMutation } from "@/lib/store/services/api";
+import { useChangePasswordMutation, useGetAdminActivitiesQuery } from "@/lib/store/services/api";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export default function ProfilePage() {
     password_confirmation: "",
   });
   const [changePassword, { isLoading: isSaving }] = useChangePasswordMutation();
+  const { data: activitiesData, isLoading: isLoadingActivities } = useGetAdminActivitiesQuery({ page: 1 });
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -331,21 +332,65 @@ export default function ProfilePage() {
 
       {/* Account Activity Section */}
       <div className="glass p-8 rounded-[2.5rem] space-y-6">
-        <h3 className="text-xl font-bold px-2">Administrative Logs</h3>
+        <div className="flex items-center justify-between px-2">
+          <h3 className="text-xl font-bold">Administrative Logs</h3>
+          <Link href="/dashboard/activities" className="text-sm font-bold text-primary hover:underline">View All</Link>
+        </div>
+
         <div className="divide-y divide-border/50">
-          {[
-            { action: "Platform Configuration Update", date: "Oct 24, 2024 - 09:24 AM", result: "Success" },
-            { action: "Bulk Business Verification", date: "Oct 22, 2024 - 14:12 PM", result: "Success" },
-            { action: "Admin Portal Sign-in", date: "Oct 20, 2024 - 11:45 AM", result: "IP: 192.168.1.1" },
-          ].map((log, i) => (
-            <div key={i} className="flex items-center justify-between py-4 px-2 hover:bg-slate-50 dark:hover:bg-zinc-800/30 rounded-2xl transition-colors">
-              <div>
-                <p className="font-bold text-sm">{log.action}</p>
-                <p className="text-xs text-muted-foreground">{log.date}</p>
-              </div>
-              <span className="text-xs font-mono font-bold text-muted-foreground">{log.result}</span>
+          {isLoadingActivities ? (
+            <div className="py-12 flex flex-col items-center justify-center space-y-4">
+              <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-sm font-bold text-muted-foreground animate-pulse uppercase tracking-widest">Retrieving logs...</p>
             </div>
-          ))}
+          ) : activitiesData?.activities && activitiesData.activities.length > 0 ? (
+            activitiesData.activities.slice(0, 5).map((log) => (
+              <div key={log.id} className="flex items-center justify-between py-5 px-3 hover:bg-slate-50 dark:hover:bg-zinc-800/30 rounded-2xl transition-all group">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-2 h-10 rounded-full shrink-0" 
+                    style={{ backgroundColor: log.color || "#6b7280" }}
+                  />
+                  <div>
+                    <p className="font-bold text-sm group-hover:text-primary transition-colors">{log.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                        {new Date(log.occurred_at).toLocaleString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                      {log.actor && (
+                        <>
+                          <span className="w-1 h-1 bg-border rounded-full" />
+                          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-tighter">
+                            By {log.actor.name}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="px-3 py-1 bg-slate-100 dark:bg-zinc-800 rounded-full text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    {log.action_type.replace(/_/g, ' ')}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-20 text-center space-y-3">
+              <div className="w-16 h-16 bg-slate-50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto opacity-50">
+                <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">No activity recorded yet</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

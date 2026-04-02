@@ -25,6 +25,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       finance: { view: true, manage_payouts: true },
       configurations: { view: true, edit: true },
       staff: { view: true, invite: true, edit: true, deactivate: true },
+      activities: { view: true },
     } as AdminPermissions,
   },
   support_agent: {
@@ -63,6 +64,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       finance: { view: true },
       configurations: { view: true },
       staff: { view: true },
+      activities: { view: true },
     } as AdminPermissions,
   },
   custom: {
@@ -120,6 +122,12 @@ export const ADMIN_PERMISSION_LABELS = {
       invite: "Invite Staff",
       edit: "Edit Staff",
       deactivate: "Deactivate Staff",
+    },
+  },
+  activities: {
+    title: "Activities",
+    actions: {
+      view: "View Activity Logs",
     },
   },
 } as const;

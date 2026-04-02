@@ -8,6 +8,7 @@ export interface AdminPermissions {
   finance?: { view?: boolean; manage_payouts?: boolean };
   configurations?: { view?: boolean; edit?: boolean };
   staff?: { view?: boolean; invite?: boolean; edit?: boolean; deactivate?: boolean };
+  activities?: { view?: boolean };
 }
 
 export interface Admin {
