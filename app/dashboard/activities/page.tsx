@@ -111,11 +111,13 @@ export default function ActivitiesPage() {
                       <p className="text-xs text-muted-foreground font-medium max-w-md">{log.description}</p>
                       {log.metadata && Object.keys(log.metadata).length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {Object.entries(log.metadata).map(([k, v]) => (
-                            <span key={k} className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-[9px] font-bold rounded uppercase tracking-tighter text-muted-foreground border border-border/50">
-                              {k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}
-                            </span>
-                          ))}
+                          {Object.entries(log.metadata)
+                            .filter(([k]) => !k.endsWith('_id'))
+                            .map(([k, v]) => (
+                              <span key={k} className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 text-[9px] font-bold rounded uppercase tracking-tighter text-muted-foreground border border-border/50">
+                                {k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                              </span>
+                            ))}
                         </div>
                       )}
                     </td>

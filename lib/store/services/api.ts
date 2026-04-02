@@ -109,12 +109,7 @@ export interface AccountTransaction {
   created_at: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface PaginatedResponse<T> {
-  meta: AccountsMeta;
-  reservations?: T[];
-  transactions?: T[];
-}
+// (PaginatedResponse removed — unused)
 
 // ── Business types ────────────────────────────────────────────────────────────
 
@@ -244,6 +239,7 @@ interface VerifyBusinessParams {
   id: number | string;
   status: "approved" | "rejected";
   notes?: string;
+  reason?: string;
 }
 
 interface VerifyBankAccountParams {
@@ -383,7 +379,7 @@ export interface AdminActivityItem {
   id: number;
   action_type: string;
   description: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   occurred_at: string;
   actor: {
     id: number;
@@ -452,7 +448,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -485,19 +481,21 @@ export const apiService = createApi({
       query: (id) => `/api/v1/admin/accounts/${id}`,
       providesTags: (_result, _err, id) => [{ type: "Account", id }],
     }),
-    suspendAccount: builder.mutation<AccountActionResponse, number | string>({
-      query: (id) => ({
+    suspendAccount: builder.mutation<AccountActionResponse, { id: number | string; reason?: string }>({
+      query: ({ id, reason }) => ({
         url: `/api/v1/admin/accounts/${id}/suspend`,
         method: "PATCH",
+        body: { reason },
       }),
-      invalidatesTags: (_result, _err, id) => ["Account", { type: "Account", id }],
+      invalidatesTags: (_result, _err, { id }) => ["Account", { type: "Account", id }],
     }),
-    activateAccount: builder.mutation<AccountActionResponse, number | string>({
-      query: (id) => ({
+    activateAccount: builder.mutation<AccountActionResponse, { id: number | string; reason?: string }>({
+      query: ({ id, reason }) => ({
         url: `/api/v1/admin/accounts/${id}/activate`,
         method: "PATCH",
+        body: { reason },
       }),
-      invalidatesTags: (_result, _err, id) => ["Account", { type: "Account", id }],
+      invalidatesTags: (_result, _err, { id }) => ["Account", { type: "Account", id }],
     }),
     getAccountReservations: builder.query<{ reservations: AccountReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
       query: ({ id, page = 1, status }) => {
@@ -530,19 +528,27 @@ export const apiService = createApi({
       query: (id) => `/api/v1/admin/businesses/${id}`,
       providesTags: (_result, _err, id) => [{ type: "Business", id }],
     }),
-    suspendBusiness: builder.mutation<BusinessActionResponse, number | string>({
-      query: (id) => ({ url: `/api/v1/admin/businesses/${id}/suspend`, method: "PATCH" }),
-      invalidatesTags: (_result, _err, id) => ["Business", { type: "Business", id }],
+    suspendBusiness: builder.mutation<BusinessActionResponse, { id: number | string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/v1/admin/businesses/${id}/suspend`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
-    activateBusiness: builder.mutation<BusinessActionResponse, number | string>({
-      query: (id) => ({ url: `/api/v1/admin/businesses/${id}/activate`, method: "PATCH" }),
-      invalidatesTags: (_result, _err, id) => ["Business", { type: "Business", id }],
+    activateBusiness: builder.mutation<BusinessActionResponse, { id: number | string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/api/v1/admin/businesses/${id}/activate`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
     verifyBusiness: builder.mutation<BusinessActionResponse, VerifyBusinessParams>({
-      query: ({ id, status, notes }) => ({
+      query: ({ id, status, notes, reason }) => ({
         url: `/api/v1/admin/businesses/${id}/verify`,
         method: "PATCH",
-        body: { status, notes },
+        body: { status, notes, reason },
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
@@ -698,7 +704,7 @@ export const apiService = createApi({
         if (params.date_to) queryParams.set("date_to", params.date_to);
         return `/api/v1/admin/activities?${queryParams.toString()}`;
       },
-      providesTags: ["AdminStaff"],
+      providesTags: ["AdminActivity"],
     }),
   }),
 });

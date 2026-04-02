@@ -47,9 +47,7 @@ export default function BusinessDetailPage() {
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [reservationPage, setReservationPage] = useState(1);
 
-  // Reject flow state
-  const [showRejectInput, setShowRejectInput] = useState(false);
-  const [rejectNotes, setRejectNotes] = useState("");
+  // Reject flow state — removed (now handled by status modal)
 
   // RTK Query hooks
   const { data, isLoading, isError } = useGetBusinessQuery(id, { refetchOnMountOrArgChange: true });
@@ -57,6 +55,16 @@ export default function BusinessDetailPage() {
   const [activateBusiness, { isLoading: isActivating }] = useActivateBusinessMutation();
   const [verifyBusiness, { isLoading: isVerifying }] = useVerifyBusinessMutation();
   const [verifyBankAccount, { isLoading: isVerifyingBank }] = useVerifyBankAccountMutation();
+
+  // Status reason modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusAction, setStatusAction] = useState<{
+    type: "activate" | "suspend" | "verify" | "reject";
+    title: string;
+    confirmText: string;
+    variant: "green" | "red" | "orange";
+  } | null>(null);
+  const [statusReason, setStatusReason] = useState("");
 
   const { data: transactionsData, isLoading: transactionsLoading } = useGetBusinessTransactionsQuery(
     { id, page: transactionPage, transaction_type: transactionTypeFilter },
@@ -79,45 +87,28 @@ export default function BusinessDetailPage() {
   const reservationsMeta = reservationsData?.meta;
 
   // Mutation handlers
-  const handleSuspend = async () => {
-    try {
-      await suspendBusiness(id).unwrap();
-      toast.success("Business suspended successfully");
-    } catch (err: unknown) {
-      const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to suspend business");
-    }
-  };
+  const handleStatusAction = async () => {
+    if (!statusAction) return;
 
-  const handleActivate = async () => {
     try {
-      await activateBusiness(id).unwrap();
-      toast.success("Business activated successfully");
+      if (statusAction.type === "suspend") {
+        await suspendBusiness({ id, reason: statusReason }).unwrap();
+        toast.success("Business suspended successfully");
+      } else if (statusAction.type === "activate") {
+        await activateBusiness({ id, reason: statusReason }).unwrap();
+        toast.success("Business activated successfully");
+      } else if (statusAction.type === "verify") {
+        await verifyBusiness({ id, status: "approved", reason: statusReason }).unwrap();
+        toast.success("Business verified successfully");
+      } else if (statusAction.type === "reject") {
+        await verifyBusiness({ id, status: "rejected", reason: statusReason }).unwrap();
+        toast.success("Business rejected");
+      }
+      setShowStatusModal(false);
+      setStatusReason("");
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to activate business");
-    }
-  };
-
-  const handleVerify = async () => {
-    try {
-      await verifyBusiness({ id, status: "approved" }).unwrap();
-      toast.success("Business verified successfully");
-    } catch (err: unknown) {
-      const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to verify business");
-    }
-  };
-
-  const handleReject = async () => {
-    try {
-      await verifyBusiness({ id, status: "rejected", notes: rejectNotes }).unwrap();
-      toast.success("Business rejected");
-      setShowRejectInput(false);
-      setRejectNotes("");
-    } catch (err: unknown) {
-      const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to reject business");
+      toast.error(e?.data?.error || `Failed to ${statusAction.type} business`);
     }
   };
 
@@ -217,20 +208,26 @@ export default function BusinessDetailPage() {
             {/* Verify button — only when pending */}
             {business.verification_status === "pending" && (
               <button
-                onClick={handleVerify}
+                onClick={() => {
+                  setStatusAction({ type: "verify", title: "Verify Business", confirmText: "Verify", variant: "green" });
+                  setShowStatusModal(true);
+                }}
                 disabled={isMutationLoading}
                 className="px-4 py-2 bg-green-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {isVerifying ? "Verifying..." : "Verify Business"}
+                Verify Business
               </button>
             )}
             {/* Reject button — only when pending */}
             {business.verification_status === "pending" && (
               <button
-                onClick={() => setShowRejectInput(!showRejectInput)}
+                onClick={() => {
+                  setStatusAction({ type: "reject", title: "Reject Business", confirmText: "Reject", variant: "orange" });
+                  setShowStatusModal(true);
+                }}
                 disabled={isMutationLoading}
                 className="px-4 py-2 bg-orange-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
               >
@@ -240,47 +237,28 @@ export default function BusinessDetailPage() {
             {/* Suspend / Activate */}
             {business.suspended ? (
               <button
-                onClick={handleActivate}
+                onClick={() => {
+                  setStatusAction({ type: "activate", title: "Activate Business", confirmText: "Activate", variant: "green" });
+                  setShowStatusModal(true);
+                }}
                 disabled={isMutationLoading}
                 className="px-4 py-2 bg-green-600 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
               >
-                {isActivating ? "Activating..." : "Activate"}
+                Activate
               </button>
             ) : (
               <button
-                onClick={handleSuspend}
+                onClick={() => {
+                  setStatusAction({ type: "suspend", title: "Suspend Business", confirmText: "Suspend", variant: "red" });
+                  setShowStatusModal(true);
+                }}
                 disabled={isMutationLoading}
                 className="px-4 py-2 bg-red-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
               >
-                {isSuspending ? "Suspending..." : "Suspend"}
+                Suspend
               </button>
             )}
           </div>
-          {/* Inline reject notes input */}
-          {showRejectInput && (
-            <div className="flex items-center gap-2 mt-1">
-              <input
-                type="text"
-                placeholder="Rejection notes..."
-                value={rejectNotes}
-                onChange={(e) => setRejectNotes(e.target.value)}
-                className="input text-sm w-64"
-              />
-              <button
-                onClick={handleReject}
-                disabled={isVerifying}
-                className="px-3 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50"
-              >
-                {isVerifying ? "Rejecting..." : "Confirm Reject"}
-              </button>
-              <button
-                onClick={() => { setShowRejectInput(false); setRejectNotes(""); }}
-                className="px-3 py-2 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -298,11 +276,10 @@ export default function BusinessDetailPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap ${
-              activeTab === tab.id
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === tab.id
                 ? "bg-primary text-primary-foreground shadow-lg"
                 : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
-            }`}
+              }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
@@ -548,12 +525,11 @@ export default function BusinessDetailPage() {
                           <td className="py-4 font-mono text-sm font-semibold">#{txn.id}</td>
                           <td className="py-4">
                             <div className="flex items-center gap-2">
-                              <div className={`p-1.5 rounded-lg ${
-                                txn.transaction_type === "income" ? "bg-green-100 text-green-600" :
-                                txn.transaction_type === "withdrawal" ? "bg-blue-100 text-blue-600" :
-                                txn.transaction_type === "refund" ? "bg-orange-100 text-orange-600" :
-                                "bg-purple-100 text-purple-600"
-                              }`}>
+                              <div className={`p-1.5 rounded-lg ${txn.transaction_type === "income" ? "bg-green-100 text-green-600" :
+                                  txn.transaction_type === "withdrawal" ? "bg-blue-100 text-blue-600" :
+                                    txn.transaction_type === "refund" ? "bg-orange-100 text-orange-600" :
+                                      "bg-purple-100 text-purple-600"
+                                }`}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getTransactionIcon(txn.transaction_type)} />
                                 </svg>
@@ -574,11 +550,10 @@ export default function BusinessDetailPage() {
                           </td>
                           <td className="py-4 text-sm text-muted-foreground">{formatDate(txn.created_at)}</td>
                           <td className="py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                              txn.status === "completed" ? "bg-green-100 text-green-600" :
-                              txn.status === "pending" ? "bg-orange-100 text-orange-600" :
-                              "bg-red-100 text-red-600"
-                            }`}>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${txn.status === "completed" ? "bg-green-100 text-green-600" :
+                                txn.status === "pending" ? "bg-orange-100 text-orange-600" :
+                                  "bg-red-100 text-red-600"
+                              }`}>
                               {txn.status}
                             </span>
                           </td>
@@ -753,11 +728,10 @@ export default function BusinessDetailPage() {
                     {rt.rooms.map((room) => (
                       <div
                         key={room.id}
-                        className={`p-3 rounded-xl text-center text-xs font-semibold border ${
-                          room.status === "available"
+                        className={`p-3 rounded-xl text-center text-xs font-semibold border ${room.status === "available"
                             ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
                             : "bg-slate-50 border-slate-200 text-slate-500 dark:bg-zinc-800/50 dark:border-zinc-700"
-                        }`}
+                          }`}
                       >
                         <p className="text-base font-bold">#{room.number}</p>
                         <p className="capitalize mt-0.5">{room.status}</p>
@@ -830,12 +804,11 @@ export default function BusinessDetailPage() {
                           <td className="py-4 text-sm">{r.guests}</td>
                           <td className="py-4 font-bold text-sm">{formatCurrency(r.total_amount)}</td>
                           <td className="py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                              status === "upcoming" ? "bg-blue-100 text-blue-600" :
-                              status === "active"   ? "bg-green-100 text-green-600" :
-                              status === "past"     ? "bg-slate-100 text-slate-600" :
-                              "bg-red-100 text-red-600"
-                            }`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${status === "upcoming" ? "bg-blue-100 text-blue-600" :
+                                status === "active" ? "bg-green-100 text-green-600" :
+                                  status === "past" ? "bg-slate-100 text-slate-600" :
+                                    "bg-red-100 text-red-600"
+                              }`}>
                               {status}
                             </span>
                           </td>
@@ -873,11 +846,10 @@ export default function BusinessDetailPage() {
                   <p className="font-semibold">Verification Status</p>
                   <p className="text-xs text-muted-foreground">Current verification state</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                  business.verification_status === "approved" ? "bg-green-100 text-green-600" :
-                  business.verification_status === "rejected" ? "bg-red-100 text-red-600" :
-                  "bg-orange-100 text-orange-600"
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${business.verification_status === "approved" ? "bg-green-100 text-green-600" :
+                    business.verification_status === "rejected" ? "bg-red-100 text-red-600" :
+                      "bg-orange-100 text-orange-600"
+                  }`}>
                   {business.verification_status}
                 </span>
               </div>
@@ -888,9 +860,8 @@ export default function BusinessDetailPage() {
                   <p className="font-semibold">Suspension Status</p>
                   <p className="text-xs text-muted-foreground">Whether the business is suspended</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  business.suspended ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                }`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${business.suspended ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                  }`}>
                   {business.suspended ? "Suspended" : "Active"}
                 </span>
               </div>
@@ -917,45 +888,25 @@ export default function BusinessDetailPage() {
               {business.verification_status === "pending" && (
                 <div className="flex gap-3 pt-2">
                   <button
-                    onClick={handleVerify}
+                    onClick={() => {
+                      setStatusAction({ type: "verify", title: "Verify Business", confirmText: "Verify", variant: "green" });
+                      setShowStatusModal(true);
+                    }}
                     disabled={isMutationLoading}
                     className="flex-1 px-4 py-3 bg-green-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
                   >
                     {isVerifying ? "Verifying..." : "Verify Now"}
                   </button>
                   <button
-                    onClick={() => setShowRejectInput(!showRejectInput)}
+                    onClick={() => {
+                      setStatusAction({ type: "reject", title: "Reject Business", confirmText: "Reject", variant: "orange" });
+                      setShowStatusModal(true);
+                    }}
                     disabled={isMutationLoading}
                     className="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
                   >
                     Reject
                   </button>
-                </div>
-              )}
-              {showRejectInput && (
-                <div className="space-y-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Rejection notes..."
-                    value={rejectNotes}
-                    onChange={(e) => setRejectNotes(e.target.value)}
-                    className="input w-full text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleReject}
-                      disabled={isVerifying}
-                      className="flex-1 px-3 py-2 bg-red-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50"
-                    >
-                      {isVerifying ? "Rejecting..." : "Confirm Reject"}
-                    </button>
-                    <button
-                      onClick={() => { setShowRejectInput(false); setRejectNotes(""); }}
-                      className="px-3 py-2 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90"
-                    >
-                      Cancel
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
@@ -1070,6 +1021,59 @@ export default function BusinessDetailPage() {
                   </a>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Status Reason Modal */}
+      {showStatusModal && statusAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowStatusModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-bold">{statusAction.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {statusAction.type === "suspend" && "You are about to suspend this business. It will no longer be visible to customers."}
+                {statusAction.type === "activate" && "You are about to reactivate this business."}
+                {statusAction.type === "verify" && "Confirm verification of this business."}
+                {statusAction.type === "reject" && "Provide the reason for rejecting this business."}
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                  Reason / Notes {statusAction.type === "suspend" || statusAction.type === "reject" ? "(Required)" : "(Optional)"}
+                </label>
+                <textarea
+                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-32 text-sm"
+                  placeholder="Enter reason for this action..."
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+              <button
+                onClick={() => setShowStatusModal(false)}
+                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusAction}
+                disabled={isMutationLoading || ((statusAction.type === "suspend" || statusAction.type === "reject") && !statusReason.trim())}
+                className={`flex-1 px-4 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 ${statusAction.variant === "red" ? "bg-red-500" :
+                    statusAction.variant === "orange" ? "bg-orange-500" :
+                      "bg-green-600"
+                  }`}
+              >
+                {isMutationLoading ? "Processing..." : statusAction.confirmText}
+              </button>
             </div>
           </div>
         </div>

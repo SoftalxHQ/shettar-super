@@ -26,6 +26,16 @@ export default function AccountDetailPage() {
   const [suspendAccount, { isLoading: isSuspending }] = useSuspendAccountMutation();
   const [activateAccount, { isLoading: isActivating }] = useActivateAccountMutation();
 
+  // Status reason modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusAction, setStatusAction] = useState<{
+    type: "activate" | "suspend";
+    title: string;
+    confirmText: string;
+    variant: "green" | "red";
+  } | null>(null);
+  const [statusReason, setStatusReason] = useState("");
+
   const { data: reservationsData, isLoading: reservationsLoading } = useGetAccountReservationsQuery(
     { id, page: reservationPage, status: bookingStatusFilter },
     { skip: activeTab !== "bookings" }
@@ -42,23 +52,22 @@ export default function AccountDetailPage() {
   const transactions = transactionsData?.transactions ?? [];
   const transactionsMeta = transactionsData?.meta;
 
-  const handleSuspend = async () => {
-    try {
-      await suspendAccount(id).unwrap();
-      toast.success("Account suspended successfully");
-    } catch (err: unknown) {
-      const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to suspend account");
-    }
-  };
+  const handleStatusAction = async () => {
+    if (!statusAction) return;
 
-  const handleActivate = async () => {
     try {
-      await activateAccount(id).unwrap();
-      toast.success("Account activated successfully");
+      if (statusAction.type === "suspend") {
+        await suspendAccount({ id, reason: statusReason }).unwrap();
+        toast.success("Account suspended successfully");
+      } else if (statusAction.type === "activate") {
+        await activateAccount({ id, reason: statusReason }).unwrap();
+        toast.success("Account activated successfully");
+      }
+      setShowStatusModal(false);
+      setStatusReason("");
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
-      toast.error(e?.data?.error || "Failed to activate account");
+      toast.error(e?.data?.error || `Failed to ${statusAction.type} account`);
     }
   };
 
@@ -122,19 +131,25 @@ export default function AccountDetailPage() {
           )}
           {account.status === "suspended" ? (
             <button
-              onClick={handleActivate}
+              onClick={() => {
+                setStatusAction({ type: "activate", title: "Activate Account", confirmText: "Activate", variant: "green" });
+                setShowStatusModal(true);
+              }}
               disabled={isActivating}
               className="px-4 py-2 rounded-full text-sm font-bold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
             >
-              {isActivating ? "Activating..." : "Activate"}
+              Activate
             </button>
           ) : (
             <button
-              onClick={handleSuspend}
+              onClick={() => {
+                setStatusAction({ type: "suspend", title: "Suspend Account", confirmText: "Suspend", variant: "red" });
+                setShowStatusModal(true);
+              }}
               disabled={isSuspending}
               className="px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
             >
-              {isSuspending ? "Suspending..." : "Suspend"}
+              Suspend
             </button>
           )}
         </div>
@@ -456,6 +471,56 @@ export default function AccountDetailPage() {
               )}
             </>
           )}
+        </div>
+      )}
+      {/* Status Reason Modal */}
+      {showStatusModal && statusAction && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowStatusModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-bold">{statusAction.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {statusAction.type === "suspend" && "You are about to suspend this customer account. They will no longer be able to sign in or make bookings."}
+                {statusAction.type === "activate" && "You are about to reactivate this customer account."}
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                  Reason / Notes {statusAction.type === "suspend" ? "(Required)" : "(Optional)"}
+                </label>
+                <textarea
+                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-32 text-sm"
+                  placeholder="Enter reason for this action..."
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+              <button
+                onClick={() => setShowStatusModal(false)}
+                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleStatusAction}
+                disabled={(isSuspending || isActivating) || (statusAction.type === "suspend" && !statusReason.trim())}
+                className={`flex-1 px-4 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 ${
+                  statusAction.variant === "red" ? "bg-red-500" : "bg-green-600"
+                }`}
+              >
+                {(isSuspending || isActivating) ? "Processing..." : statusAction.confirmText}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
