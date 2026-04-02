@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../store";
 import { logout as logoutAction } from "../slices/authSlice";
 import type { Admin } from "../slices/authSlice";
+import type { AdminStaff } from "../../admin-staff-types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -341,6 +342,43 @@ interface GetSupportTicketResponse {
   messages: SupportMessage[];
 }
 
+// ── Admin Staff Types ───────────────────────────────────────────────────────
+
+export interface GetAdminStaffParams {
+  page?: number;
+  search?: string;
+  role?: string;
+}
+
+interface GetAdminStaffResponse {
+  staff: AdminStaff[];
+  meta: AccountsMeta;
+}
+
+interface GetAdminStaffMemberResponse {
+  staff: AdminStaff;
+}
+
+interface InviteAdminStaffRequest {
+  admin: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    admin_role: "super_admin" | "admin_staff";
+    title?: string;
+    permissions?: Record<string, Record<string, boolean>>;
+  };
+}
+
+interface UpdateAdminStaffRequest {
+  id: number | string;
+  admin: {
+    admin_role?: "super_admin" | "admin_staff";
+    title?: string | null;
+    permissions?: Record<string, Record<string, boolean>>;
+  };
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -383,7 +421,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -546,6 +584,53 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { id }) => [{ type: "SupportTicket", id }],
     }),
+
+    // ── Admin Staff endpoints ───────────────────────────────────────────────
+    getAdminStaff: builder.query<GetAdminStaffResponse, GetAdminStaffParams>({
+      query: ({ page = 1, search, role } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        if (role && role !== "all") params.set("role", role);
+        return `/api/v1/admin/staff?${params.toString()}`;
+      },
+      providesTags: ["AdminStaff"],
+    }),
+    getAdminStaffMember: builder.query<GetAdminStaffMemberResponse, number | string>({
+      query: (id) => `/api/v1/admin/staff/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "AdminStaff", id }],
+    }),
+    inviteAdminStaff: builder.mutation<{ staff: AdminStaff }, InviteAdminStaffRequest>({
+      query: (body) => ({
+        url: "/api/v1/admin/staff",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminStaff"],
+    }),
+    updateAdminStaff: builder.mutation<{ staff: AdminStaff }, UpdateAdminStaffRequest>({
+      query: ({ id, admin }) => ({
+        url: `/api/v1/admin/staff/${id}`,
+        method: "PATCH",
+        body: { admin },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["AdminStaff", { type: "AdminStaff", id }],
+    }),
+    deactivateAdminStaff: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/staff/${id}/deactivate`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _err, id) => ["AdminStaff", { type: "AdminStaff", id }],
+    }),
+
+    // ── Password change ─────────────────────────────────────────────────────
+    changePassword: builder.mutation<{ status: { code: number; message: string } }, { current_password: string; password: string; password_confirmation: string }>({
+      query: (passwords) => ({
+        url: "/admin_details/change_password",
+        method: "PUT",
+        body: { admin: passwords },
+      }),
+    }),
   }),
 });
 
@@ -573,4 +658,10 @@ export const {
   useAssignSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
   useReplyToSupportTicketMutation,
+  useGetAdminStaffQuery,
+  useGetAdminStaffMemberQuery,
+  useInviteAdminStaffMutation,
+  useUpdateAdminStaffMutation,
+  useDeactivateAdminStaffMutation,
+  useChangePasswordMutation,
 } = apiService;

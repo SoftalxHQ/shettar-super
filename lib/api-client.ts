@@ -1,4 +1,4 @@
-import { getAuthToken } from "./storage"
+import { getAuthToken, logout as storageLogout } from "./storage"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -45,6 +45,15 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      
+      // Auto-logout on 401 Unauthorized (Expired/Invalid Token)
+      if (response.status === 401) {
+        storageLogout()
+        if (typeof window !== "undefined") {
+          window.location.href = "/"
+        }
+      }
+
       throw new ApiError(
         response.status, 
         errorData.status?.message || errorData.message || response.statusText, 
@@ -121,6 +130,14 @@ class ApiClient {
     return this.request<T>(endpoint, {
       ...options,
       method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async put<T>(endpoint: string, data: any, options: RequestOptions = {}): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: "PUT",
       body: JSON.stringify(data),
     })
   }

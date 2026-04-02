@@ -1,6 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
 
+export interface AdminPermissions {
+  accounts?: { view?: boolean; suspend?: boolean; activate?: boolean };
+  businesses?: { view?: boolean; verify?: boolean; suspend?: boolean; activate?: boolean };
+  support_tickets?: { view?: boolean; reply?: boolean; assign?: boolean; update_status?: boolean };
+  finance?: { view?: boolean; manage_payouts?: boolean };
+  configurations?: { view?: boolean; edit?: boolean };
+  staff?: { view?: boolean; invite?: boolean; edit?: boolean; deactivate?: boolean };
+}
+
 export interface Admin {
   id: number;
   email: string;
@@ -16,6 +25,9 @@ export interface Admin {
   admin_unique_id?: string;
   role?: string;
   avatar_url?: string;
+  admin_role?: "super_admin" | "admin_staff";
+  title?: string | null;
+  permissions?: AdminPermissions;
 }
 
 interface AuthState {
