@@ -11,6 +11,8 @@ import {
 } from "@/lib/store/services/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 const STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
 
@@ -22,6 +24,11 @@ export default function SupportTicketDetailPage({
   const resolvedParams = use(params);
   const ticketId = resolvedParams.id;
   const adminId = useSelector((state: RootState) => state.auth.admin?.id);
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
 
   const { data, isLoading, isError, refetch } = useGetSupportTicketQuery(ticketId);
   const [replyMessage, setReplyMessage] = useState("");
@@ -126,6 +133,7 @@ export default function SupportTicketDetailPage({
 
         <div className="flex flex-col gap-3 min-w-[180px]">
           {/* Status dropdown */}
+          {can("support_tickets", "update_status") && (
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Status</label>
             <select
@@ -141,9 +149,10 @@ export default function SupportTicketDetailPage({
               ))}
             </select>
           </div>
+          )}
 
           {/* Assign to me */}
-          {!ticket.assigned_to && (
+          {!ticket.assigned_to && can("support_tickets", "assign") && (
             <button
               onClick={handleAssignToMe}
               disabled={isAssigning}
@@ -184,6 +193,7 @@ export default function SupportTicketDetailPage({
             )}
 
             {/* Reply block */}
+            {can("support_tickets", "reply") && (
             <form onSubmit={handleReplySubmit} className="mt-6 border-t border-border pt-6">
               <textarea
                 value={replyMessage}
@@ -208,6 +218,7 @@ export default function SupportTicketDetailPage({
                 </div>
               )}
             </form>
+            )}
           </div>
         </div>
 

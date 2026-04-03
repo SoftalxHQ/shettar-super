@@ -12,9 +12,16 @@ import {
 } from "@/lib/store/services/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function SupportPage() {
   const adminId = useSelector((state: RootState) => state.auth.admin?.id);
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -250,7 +257,7 @@ export default function SupportPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
-                  {ticket.status !== "resolved" && ticket.status !== "closed" && !ticket.assigned_to && (
+                  {ticket.status !== "resolved" && ticket.status !== "closed" && !ticket.assigned_to && can("support_tickets", "assign") && (
                     <button
                       onClick={() => handleAssignTicket(ticket.id)}
                       disabled={isInFlight}
@@ -259,7 +266,7 @@ export default function SupportPage() {
                       Assign to me
                     </button>
                   )}
-                  {ticket.status !== "resolved" && ticket.status !== "closed" && (
+                  {ticket.status !== "resolved" && ticket.status !== "closed" && can("support_tickets", "update_status") && (
                     <button
                       onClick={() => handleResolveTicket(ticket.id)}
                       disabled={isInFlight}
@@ -268,7 +275,7 @@ export default function SupportPage() {
                       Resolve
                     </button>
                   )}
-                  {ticket.status !== "closed" && (
+                  {ticket.status !== "closed" && can("support_tickets", "update_status") && (
                     <button
                       onClick={() => handleCloseTicket(ticket.id)}
                       disabled={isInFlight}

@@ -1,8 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function ConfigurationPage() {
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
   const [config, setConfig] = useState({
     withdrawal_commission_rate: 0,
     cancellation_fee_percentage: 10,
@@ -45,6 +53,22 @@ export default function ConfigurationPage() {
       </div>
     );
   }
+
+  if (!can("configurations", "view") && !can("configurations", "edit")) {
+    return (
+      <div className="p-8">
+        <div className="glass p-12 rounded-3xl text-center">
+          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
+          <p className="text-muted-foreground mt-2">You don&apos;t have permission to access this section.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const canEdit = can("configurations", "edit");
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -92,8 +116,9 @@ export default function ConfigurationPage() {
                         type="number"
                         step="0.01"
                         value={config.withdrawal_commission_rate}
-                        onChange={(e) => setConfig({ ...config, withdrawal_commission_rate: parseFloat(e.target.value) })}
-                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800"
+                        onChange={(e) => canEdit && setConfig({ ...config, withdrawal_commission_rate: parseFloat(e.target.value) })}
+                        readOnly={!canEdit}
+                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800 read-only:cursor-default read-only:opacity-70"
                         placeholder="0.00"
                       />
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-muted-foreground/30">%</div>
@@ -125,8 +150,9 @@ export default function ConfigurationPage() {
                         type="number"
                         step="0.01"
                         value={config.cancellation_fee_percentage}
-                        onChange={(e) => setConfig({ ...config, cancellation_fee_percentage: parseFloat(e.target.value) })}
-                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800"
+                        onChange={(e) => canEdit && setConfig({ ...config, cancellation_fee_percentage: parseFloat(e.target.value) })}
+                        readOnly={!canEdit}
+                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800 read-only:cursor-default read-only:opacity-70"
                         placeholder="10.00"
                       />
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-muted-foreground/30">%</div>
@@ -151,6 +177,7 @@ export default function ConfigurationPage() {
                     </div>
                   )}
                 </div>
+                {canEdit && (
                 <button
                   type="submit"
                   disabled={saving}
@@ -163,6 +190,7 @@ export default function ConfigurationPage() {
                     </div>
                   ) : "Update Configuration"}
                 </button>
+                )}
               </div>
             </form>
           </div>

@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function PayoutsPage() {
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -223,7 +231,7 @@ export default function PayoutsPage() {
                   </span>
                 </td>
                 <td className="py-4 text-right">
-                  {payout.status === "pending" && (
+                  {payout.status === "pending" && can("finance", "manage_payouts") && (
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleApprovePayout(payout.id)}

@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
-import {
-  useGetBusinessQuery,
+import { useGetBusinessQuery,
   useGetBusinessTransactionsQuery,
   useGetBusinessReservationsQuery,
   useGetBusinessAnalyticsQuery,
@@ -19,6 +18,8 @@ import {
   useSetBusinessCommissionMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -38,6 +39,12 @@ import {
 export default function BusinessDetailPage() {
   const params = useParams();
   const id = params.id as string;
+
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
 
   const [activeTab, setActiveTab] = useState("overview");
   const [showMapModal, setShowMapModal] = useState(false);
@@ -289,7 +296,7 @@ export default function BusinessDetailPage() {
         <div className="flex flex-col items-end gap-3">
           <div className="flex items-center gap-3">
             {/* Verify button — only when pending */}
-            {business.verification_status === "pending" && (
+            {business.verification_status === "pending" && can("businesses", "verify") && (
               <button
                 onClick={() => {
                   setStatusAction({ type: "verify", title: "Verify Business", confirmText: "Verify", variant: "green" });
@@ -305,7 +312,7 @@ export default function BusinessDetailPage() {
               </button>
             )}
             {/* Reject button — only when pending */}
-            {business.verification_status === "pending" && (
+            {business.verification_status === "pending" && can("businesses", "verify") && (
               <button
                 onClick={() => {
                   setStatusAction({ type: "reject", title: "Reject Business", confirmText: "Reject", variant: "orange" });
@@ -319,6 +326,7 @@ export default function BusinessDetailPage() {
             )}
             {/* Suspend / Activate */}
             {business.suspended ? (
+              can("businesses", "activate") && (
               <button
                 onClick={() => {
                   setStatusAction({ type: "activate", title: "Activate Business", confirmText: "Activate", variant: "green" });
@@ -329,7 +337,9 @@ export default function BusinessDetailPage() {
               >
                 Activate
               </button>
+              )
             ) : (
+              can("businesses", "suspend") && (
               <button
                 onClick={() => {
                   setStatusAction({ type: "suspend", title: "Suspend Business", confirmText: "Suspend", variant: "red" });
@@ -340,6 +350,7 @@ export default function BusinessDetailPage() {
               >
                 Suspend
               </button>
+              )
             )}
           </div>
         </div>
@@ -535,6 +546,7 @@ export default function BusinessDetailPage() {
                         </svg>
                         Verified
                       </span>
+                      {can("businesses", "verify") && (
                       <button
                         onClick={() => { setBanningBankId(bank.id); setBanReason(""); }}
                         disabled={isBanningBank || isMutationLoading}
@@ -542,10 +554,12 @@ export default function BusinessDetailPage() {
                       >
                         Ban
                       </button>
+                      )}
                     </div>
                   ) : bank.status === "banned" ? (
                     <div className="flex flex-col items-end gap-1">
                       <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-bold">Banned</span>
+                      {can("businesses", "verify") && (
                       <button
                         onClick={() => { setUnbanningBankId(bank.id); setUnbanReason(""); }}
                         disabled={isUnbanningBank || isMutationLoading}
@@ -553,10 +567,12 @@ export default function BusinessDetailPage() {
                       >
                         Unban
                       </button>
+                      )}
                     </div>
                   ) : (
                     <div className="flex flex-col items-end gap-1">
                       <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">Pending</span>
+                      {can("businesses", "verify") && (
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleVerifyBank(bank.id)}
@@ -573,6 +589,7 @@ export default function BusinessDetailPage() {
                           Reject
                         </button>
                       </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -592,7 +609,7 @@ export default function BusinessDetailPage() {
                   Override the global commission rate for this business. Leave blank to use the platform default.
                 </p>
               </div>
-              {!showCommissionForm && (
+              {!showCommissionForm && can("businesses", "set_commission") && (
                 <button
                   onClick={() => {
                     setCommissionInput(business.commission_rate != null ? String(business.commission_rate) : "");
@@ -617,7 +634,7 @@ export default function BusinessDetailPage() {
               )}
             </div>
 
-            {showCommissionForm && (
+            {showCommissionForm && can("businesses", "set_commission") && (
               <form onSubmit={handleSetCommission} className="space-y-3">
                 <div>
                   <label className="label">Commission Rate (%)</label>

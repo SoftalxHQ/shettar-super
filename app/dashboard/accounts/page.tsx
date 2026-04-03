@@ -5,8 +5,16 @@ import Link from "next/link";
 import { useGetAccountsQuery } from "@/lib/store/services/api";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function UserAccountsPage() {
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -16,7 +24,7 @@ export default function UserAccountsPage() {
     page,
     search: debouncedSearch || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
-  });
+  }, { skip: !can("accounts", "view") });
 
   const accounts = data?.accounts ?? [];
   const meta = data?.meta;
@@ -33,6 +41,20 @@ export default function UserAccountsPage() {
     setStatusFilter(value);
     setPage(1);
   };
+
+  if (!can("accounts", "view")) {
+    return (
+      <div className="p-8">
+        <div className="glass p-12 rounded-3xl text-center">
+          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
+          <p className="text-muted-foreground mt-2">You don&apos;t have permission to access this section.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6">

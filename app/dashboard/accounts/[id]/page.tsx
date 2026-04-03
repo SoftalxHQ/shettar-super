@@ -12,10 +12,17 @@ import {
   useActivateAccountMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function AccountDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
   const [activeTab, setActiveTab] = useState("overview");
   const [transactionFilter, setTransactionFilter] = useState("all");
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
@@ -130,6 +137,7 @@ export default function AccountDetailPage() {
             </span>
           )}
           {account.status === "suspended" ? (
+            can("accounts", "activate") && (
             <button
               onClick={() => {
                 setStatusAction({ type: "activate", title: "Activate Account", confirmText: "Activate", variant: "green" });
@@ -140,7 +148,9 @@ export default function AccountDetailPage() {
             >
               Activate
             </button>
+            )
           ) : (
+            can("accounts", "suspend") && (
             <button
               onClick={() => {
                 setStatusAction({ type: "suspend", title: "Suspend Account", confirmText: "Suspend", variant: "red" });
@@ -151,6 +161,7 @@ export default function AccountDetailPage() {
             >
               Suspend
             </button>
+            )
           )}
         </div>
       </div>
@@ -512,7 +523,7 @@ export default function AccountDetailPage() {
               </button>
               <button
                 onClick={handleStatusAction}
-                disabled={(isSuspending || isActivating) || (statusAction.type === "suspend" && !statusReason.trim())}
+                disabled={(isSuspending || isActivating) || (statusAction.type === "suspend" && !statusReason.trim()) || (statusAction.type === "suspend" ? !can("accounts", "suspend") : !can("accounts", "activate"))}
                 className={`flex-1 px-4 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 ${
                   statusAction.variant === "red" ? "bg-red-500" : "bg-green-600"
                 }`}

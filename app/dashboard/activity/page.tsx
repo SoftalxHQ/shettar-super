@@ -10,6 +10,8 @@ import { selectToken } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 const ACTION_LABELS: Record<string, string> = {
   "": "All Activity",
   account_suspended: "Account Suspended",
@@ -83,6 +85,11 @@ export default function ActivityPage() {
   const [dateRange, setDateRange] = useState<Date[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const token = useAppSelector(selectToken);
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
 
   const formatLocalDate = (d: Date) => {
     const y = d.getFullYear();
@@ -105,7 +112,7 @@ export default function ActivityPage() {
     action_type: actionType || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
-  }, { refetchOnMountOrArgChange: true });
+  }, { refetchOnMountOrArgChange: true, skip: !can("activities", "view") });
 
   const activities = data?.activities ?? [];
   const pagination = data?.pagination;
@@ -114,6 +121,20 @@ export default function ActivityPage() {
     setPage(1);
     if (key === "action_type") setActionType(value);
   }, []);
+
+  if (!can("activities", "view")) {
+    return (
+      <div className="p-8">
+        <div className="glass p-12 rounded-3xl text-center">
+          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
+          <p className="text-muted-foreground mt-2">You don&apos;t have permission to access this section.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleExport = async () => {
     try {
