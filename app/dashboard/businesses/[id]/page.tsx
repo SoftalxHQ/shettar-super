@@ -16,6 +16,7 @@ import {
   useRejectBankAccountMutation,
   useBanBankAccountMutation,
   useUnbanBankAccountMutation,
+  useSetBusinessCommissionMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import {
@@ -61,6 +62,11 @@ export default function BusinessDetailPage() {
   const [rejectBankAccount, { isLoading: isRejectingBank }] = useRejectBankAccountMutation();
   const [banBankAccount, { isLoading: isBanningBank }] = useBanBankAccountMutation();
   const [unbanBankAccount, { isLoading: isUnbanningBank }] = useUnbanBankAccountMutation();
+  const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
+
+  // Commission state
+  const [showCommissionForm, setShowCommissionForm] = useState(false);
+  const [commissionInput, setCommissionInput] = useState("");
 
   // Bank account reject modal state
   const [rejectingBankId, setRejectingBankId] = useState<number | null>(null);
@@ -181,6 +187,21 @@ export default function BusinessDetailPage() {
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || "Failed to unban bank account");
+    }
+  };
+
+  const handleSetCommission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const rate = commissionInput.trim() === "" ? null : parseFloat(commissionInput);
+      await setBusinessCommission({ id, commission_rate: rate }).unwrap();
+      toast.success(rate === null ? "Commission rate cleared" : `Commission rate set to ${rate}%`);
+      setShowCommissionForm(false);
+      setCommissionInput("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to update commission rate");
     }
   };
 
@@ -560,6 +581,76 @@ export default function BusinessDetailPage() {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Commission Rate */}
+          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold">Withdrawal Commission Rate</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Override the global commission rate for this business. Leave blank to use the platform default.
+                </p>
+              </div>
+              {!showCommissionForm && (
+                <button
+                  onClick={() => {
+                    setCommissionInput(business.commission_rate != null ? String(business.commission_rate) : "");
+                    setShowCommissionForm(true);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  {business.commission_rate != null ? "Edit Rate" : "Set Custom Rate"}
+                </button>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-between">
+              <span className="text-sm font-medium">Current Rate</span>
+              {business.commission_rate != null ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-indigo-600">{business.commission_rate}%</span>
+                  <span className="text-xs text-muted-foreground">(custom)</span>
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">Using platform default</span>
+              )}
+            </div>
+
+            {showCommissionForm && (
+              <form onSubmit={handleSetCommission} className="space-y-3">
+                <div>
+                  <label className="label">Commission Rate (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="input"
+                    placeholder="e.g. 2.5 — leave blank to use platform default"
+                    value={commissionInput}
+                    onChange={(e) => setCommissionInput(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Enter a value between 0–100, or leave blank to clear the custom rate.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setShowCommissionForm(false); setCommissionInput(""); }}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSettingCommission}
+                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {isSettingCommission ? "Saving..." : "Save Rate"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

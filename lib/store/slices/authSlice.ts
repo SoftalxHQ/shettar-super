@@ -3,7 +3,7 @@ import type { RootState } from "../store";
 
 export interface AdminPermissions {
   accounts?: { view?: boolean; suspend?: boolean; activate?: boolean };
-  businesses?: { view?: boolean; verify?: boolean; suspend?: boolean; activate?: boolean };
+  businesses?: { view?: boolean; verify?: boolean; suspend?: boolean; activate?: boolean; set_commission?: boolean };
   support_tickets?: { view?: boolean; reply?: boolean; assign?: boolean; update_status?: boolean };
   finance?: { view?: boolean; manage_payouts?: boolean };
   configurations?: { view?: boolean; edit?: boolean };

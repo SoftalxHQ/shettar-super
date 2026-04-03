@@ -223,6 +223,7 @@ export interface BusinessDetail extends Business {
   room_types: RoomType[];
   owners: BusinessOwner[];
   bank_accounts: BankAccount[];
+  commission_rate: number | null;
 }
 
 export interface BusinessReservation {
@@ -596,6 +597,14 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
+    setBusinessCommission: builder.mutation<{ message: string; commission_rate: number | null }, { id: number | string; commission_rate: number | null }>({
+      query: ({ id, commission_rate }) => ({
+        url: `/api/v1/admin/businesses/${id}/set_commission`,
+        method: "PATCH",
+        body: { commission_rate },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
     verifyBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams>({
       query: ({ businessId, id }) => ({
         url: `/api/v1/admin/businesses/${businessId}/bank_accounts/${id}/verify`,
@@ -792,6 +801,7 @@ export const {
   useSuspendBusinessMutation,
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
+  useSetBusinessCommissionMutation,
   useVerifyBankAccountMutation,
   useRejectBankAccountMutation,
   useBanBankAccountMutation,
