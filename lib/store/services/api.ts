@@ -174,7 +174,13 @@ export interface BankAccount {
   bank_code: string | null;
   currency: string;
   is_active: boolean;
+  rejected: boolean;
   recipient_code: string | null;
+  rejection_reason: string | null;
+  rejected_at: string | null;
+  status: string;
+  ban_reason: string | null;
+  banned_at: string | null;
 }
 
 export interface BusinessOwner {
@@ -597,6 +603,30 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { businessId }) => ["Business", { type: "Business", id: businessId }],
     }),
+    rejectBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams & { reason: string }>({
+      query: ({ businessId, id, reason }) => ({
+        url: `/api/v1/admin/businesses/${businessId}/bank_accounts/${id}/reject`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { businessId }) => ["Business", { type: "Business", id: businessId }],
+    }),
+    banBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams & { reason: string }>({
+      query: ({ businessId, id, reason }) => ({
+        url: `/api/v1/admin/businesses/${businessId}/bank_accounts/${id}/ban`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { businessId }) => ["Business", { type: "Business", id: businessId }],
+    }),
+    unbanBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams & { reason: string }>({
+      query: ({ businessId, id, reason }) => ({
+        url: `/api/v1/admin/businesses/${businessId}/bank_accounts/${id}/unban`,
+        method: "PATCH",
+        body: { reason },
+      }),
+      invalidatesTags: (_result, _err, { businessId }) => ["Business", { type: "Business", id: businessId }],
+    }),
     getBusinessReservations: builder.query<{ reservations: BusinessReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
       query: ({ id, page = 1, status }) => {
         const params = new URLSearchParams({ page: String(page) });
@@ -763,6 +793,9 @@ export const {
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
   useVerifyBankAccountMutation,
+  useRejectBankAccountMutation,
+  useBanBankAccountMutation,
+  useUnbanBankAccountMutation,
   useGetBusinessReservationsQuery,
   useGetBusinessTransactionsQuery,
   useGetBusinessAnalyticsQuery,

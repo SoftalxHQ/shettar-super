@@ -87,7 +87,7 @@ export const ADMIN_PERMISSION_LABELS = {
     title: "Businesses",
     actions: {
       view: "View Businesses",
-      verify: "Verify Businesses",
+      verify: "Verify / Reject / Ban / Unban Bank Accounts",
       suspend: "Suspend Businesses",
       activate: "Activate Businesses",
     },

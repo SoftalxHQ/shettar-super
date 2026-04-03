@@ -13,6 +13,9 @@ import {
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
   useVerifyBankAccountMutation,
+  useRejectBankAccountMutation,
+  useBanBankAccountMutation,
+  useUnbanBankAccountMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import {
@@ -50,11 +53,26 @@ export default function BusinessDetailPage() {
   // Reject flow state — removed (now handled by status modal)
 
   // RTK Query hooks
-  const { data, isLoading, isError } = useGetBusinessQuery(id, { refetchOnMountOrArgChange: true });
+  const { data, isLoading, isError, refetch } = useGetBusinessQuery(id, { refetchOnMountOrArgChange: true });
   const [suspendBusiness, { isLoading: isSuspending }] = useSuspendBusinessMutation();
   const [activateBusiness, { isLoading: isActivating }] = useActivateBusinessMutation();
   const [verifyBusiness, { isLoading: isVerifying }] = useVerifyBusinessMutation();
   const [verifyBankAccount, { isLoading: isVerifyingBank }] = useVerifyBankAccountMutation();
+  const [rejectBankAccount, { isLoading: isRejectingBank }] = useRejectBankAccountMutation();
+  const [banBankAccount, { isLoading: isBanningBank }] = useBanBankAccountMutation();
+  const [unbanBankAccount, { isLoading: isUnbanningBank }] = useUnbanBankAccountMutation();
+
+  // Bank account reject modal state
+  const [rejectingBankId, setRejectingBankId] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+
+  // Bank account ban modal state
+  const [banningBankId, setBanningBankId] = useState<number | null>(null);
+  const [banReason, setBanReason] = useState("");
+
+  // Bank account unban modal state
+  const [unbanningBankId, setUnbanningBankId] = useState<number | null>(null);
+  const [unbanReason, setUnbanReason] = useState("");
 
   // Status reason modal state
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -106,6 +124,7 @@ export default function BusinessDetailPage() {
       }
       setShowStatusModal(false);
       setStatusReason("");
+      refetch();
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || `Failed to ${statusAction.type} business`);
@@ -116,9 +135,52 @@ export default function BusinessDetailPage() {
     try {
       await verifyBankAccount({ businessId: id, id: bankAccountId }).unwrap();
       toast.success("Bank account verified successfully");
+      refetch();
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || "Failed to verify bank account");
+    }
+  };
+
+  const handleRejectBank = async () => {
+    if (!rejectingBankId || !rejectReason.trim()) return;
+    try {
+      await rejectBankAccount({ businessId: id, id: rejectingBankId, reason: rejectReason.trim() }).unwrap();
+      toast.success("Bank account rejected");
+      setRejectingBankId(null);
+      setRejectReason("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to reject bank account");
+    }
+  };
+
+  const handleBanBank = async () => {
+    if (!banningBankId || !banReason.trim()) return;
+    try {
+      await banBankAccount({ businessId: id, id: banningBankId, reason: banReason.trim() }).unwrap();
+      toast.success("Bank account banned");
+      setBanningBankId(null);
+      setBanReason("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to ban bank account");
+    }
+  };
+
+  const handleUnbanBank = async () => {
+    if (!unbanningBankId || !unbanReason.trim()) return;
+    try {
+      await unbanBankAccount({ businessId: id, id: unbanningBankId, reason: unbanReason.trim() }).unwrap();
+      toast.success("Bank account unbanned");
+      setUnbanningBankId(null);
+      setUnbanReason("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to unban bank account");
     }
   };
 
@@ -444,25 +506,126 @@ export default function BusinessDetailPage() {
                     <p className="text-sm text-muted-foreground">{bank.account_number}</p>
                     <p className="text-xs text-muted-foreground">{bank.account_name}</p>
                   </div>
-                  {bank.is_active ? (
-                    <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Verified
-                    </span>
+                  {bank.status === "verified" ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Verified
+                      </span>
+                      <button
+                        onClick={() => { setBanningBankId(bank.id); setBanReason(""); }}
+                        disabled={isBanningBank || isMutationLoading}
+                        className="px-3 py-1 bg-slate-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                      >
+                        Ban
+                      </button>
+                    </div>
+                  ) : bank.status === "banned" ? (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-bold">Banned</span>
+                      <button
+                        onClick={() => { setUnbanningBankId(bank.id); setUnbanReason(""); }}
+                        disabled={isUnbanningBank || isMutationLoading}
+                        className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                      >
+                        Unban
+                      </button>
+                    </div>
                   ) : (
-                    <button
-                      onClick={() => handleVerifyBank(bank.id)}
-                      disabled={isVerifyingBank || isMutationLoading}
-                      className="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                    >
-                      {isVerifyingBank ? "Verifying..." : "Verify"}
-                    </button>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">Pending</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleVerifyBank(bank.id)}
+                          disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
+                          className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                        >
+                          {isVerifyingBank ? "..." : "Verify"}
+                        </button>
+                        <button
+                          onClick={() => { setRejectingBankId(bank.id); setRejectReason(""); }}
+                          disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
+                          className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
+                {bank.status === "banned" && bank.ban_reason && (
+                  <p className="text-xs text-slate-500 mt-1">Ban reason: {bank.ban_reason}</p>
+                )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Bank Account Reject Modal ── */}
+      {rejectingBankId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-2">Reject Bank Account</h2>
+            <p className="text-muted-foreground text-sm mb-4">Provide a reason for rejection. This will be emailed to the business owner.</p>
+            <textarea
+              className="input w-full h-24 resize-none"
+              placeholder="e.g. Account number does not match the provided account name..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setRejectingBankId(null); setRejectReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
+              <button onClick={handleRejectBank} disabled={!rejectReason.trim() || isRejectingBank} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+                {isRejectingBank ? "Rejecting..." : "Confirm Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bank Account Ban Modal ── */}
+      {banningBankId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-2">Ban Bank Account</h2>
+            <p className="text-muted-foreground text-sm mb-4">This will deactivate the bank account. Provide a reason.</p>
+            <textarea
+              className="input w-full h-24 resize-none"
+              placeholder="e.g. Suspicious activity detected..."
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setBanningBankId(null); setBanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
+              <button onClick={handleBanBank} disabled={!banReason.trim() || isBanningBank} className="flex-1 px-4 py-2.5 bg-slate-700 text-white rounded-xl text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors">
+                {isBanningBank ? "Banning..." : "Confirm Ban"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bank Account Unban Modal ── */}
+      {unbanningBankId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-2">Unban Bank Account</h2>
+            <p className="text-muted-foreground text-sm mb-4">This will reactivate the bank account. Provide a reason.</p>
+            <textarea
+              className="input w-full h-24 resize-none"
+              placeholder="e.g. Issue resolved, account cleared..."
+              value={unbanReason}
+              onChange={(e) => setUnbanReason(e.target.value)}
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { setUnbanningBankId(null); setUnbanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
+              <button onClick={handleUnbanBank} disabled={!unbanReason.trim() || isUnbanningBank} className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+                {isUnbanningBank ? "Unbanning..." : "Confirm Unban"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -872,7 +1035,7 @@ export default function BusinessDetailPage() {
                   <p className="font-semibold">Bank Verification</p>
                   <p className="text-xs text-muted-foreground">Bank account verification status</p>
                 </div>
-                {business.bank_accounts.some((b) => b.is_active) ? (
+                {business.bank_accounts.some((b) => b.status === "verified") ? (
                   <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
