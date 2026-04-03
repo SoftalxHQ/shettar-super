@@ -105,7 +105,7 @@ export default function ActivityPage() {
     action_type: actionType || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
-  });
+  }, { refetchOnMountOrArgChange: true });
 
   const activities = data?.activities ?? [];
   const pagination = data?.pagination;

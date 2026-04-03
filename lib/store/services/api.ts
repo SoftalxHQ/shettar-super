@@ -109,6 +109,41 @@ export interface AccountTransaction {
   created_at: string;
 }
 
+export interface DashboardStats {
+  total_businesses: number;
+  active_businesses: number;
+  pending_businesses: number;
+  total_accounts: number;
+  active_accounts: number;
+  open_tickets: number;
+  total_revenue: number;
+  pending_payouts: number;
+}
+
+export interface DashboardSummary {
+  stats: DashboardStats;
+  recent_businesses: {
+    id: number;
+    business_unique_id: string;
+    name: string;
+    city: string;
+    state: string;
+    verification_status: string;
+    suspended: boolean;
+    created_at: string;
+  }[];
+  recent_tickets: {
+    id: number;
+    ticket_id: string;
+    subject: string;
+    priority: string;
+    status: string;
+    created_at: string;
+    user: { name: string; email: string } | null;
+    business: { name: string } | null;
+  }[];
+}
+
 // (PaginatedResponse removed — unused)
 
 // ── Business types ────────────────────────────────────────────────────────────
@@ -468,6 +503,9 @@ export const apiService = createApi({
         method: "DELETE",
       }),
     }),
+    getDashboardSummary: builder.query<DashboardSummary, void>({
+      query: () => "/api/v1/admin/dashboard_summary",
+    }),
     getAccounts: builder.query<GetAccountsResponse, GetAccountsParams>({
       query: ({ page = 1, search, status } = {}) => {
         const params = new URLSearchParams({ page: String(page) });
@@ -712,6 +750,7 @@ export const apiService = createApi({
 export const {
   useLoginMutation,
   useLogoutMutation,
+  useGetDashboardSummaryQuery,
   useGetAccountsQuery,
   useGetAccountQuery,
   useSuspendAccountMutation,
