@@ -26,6 +26,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       configurations: { view: true, edit: true },
       staff: { view: true, invite: true, edit: true, deactivate: true },
       activities: { view: true },
+      system_jobs: { view: true, manage: true },
     } as AdminPermissions,
   },
   support_agent: {
@@ -65,6 +66,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       configurations: { view: true },
       staff: { view: true },
       activities: { view: true },
+      system_jobs: { view: true },
     } as AdminPermissions,
   },
   custom: {
@@ -129,6 +131,13 @@ export const ADMIN_PERMISSION_LABELS = {
     title: "Activities",
     actions: {
       view: "View Activity Logs",
+    },
+  },
+  system_jobs: {
+    title: "System Jobs",
+    actions: {
+      view: "View System Jobs",
+      manage: "Retry & Delete Jobs",
     },
   },
 } as const;

@@ -9,6 +9,7 @@ export interface AdminPermissions {
   configurations?: { view?: boolean; edit?: boolean };
   staff?: { view?: boolean; invite?: boolean; edit?: boolean; deactivate?: boolean };
   activities?: { view?: boolean };
+  system_jobs?: { view?: boolean; manage?: boolean };
 }
 
 export interface Admin {

@@ -448,6 +448,33 @@ interface GetAdminActivitiesParams {
   date_to?: string;
 }
 
+// ── System Job Types ────────────────────────────────────────────────────────
+
+export interface SystemJob {
+  id: number;
+  queue_name: string;
+  class_name: string;
+  arguments: string | null;
+  priority: number;
+  active_job_id: string | null;
+  scheduled_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+  status: "pending" | "running" | "scheduled" | "failed" | "completed" | "unknown";
+  error?: string | Record<string, unknown> | null;
+  concurrency_key?: string | null;
+}
+
+export interface SystemJobStats {
+  total: number;
+  pending: number;
+  running: number;
+  scheduled: number;
+  failed: number;
+  completed: number;
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -490,7 +517,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -783,6 +810,49 @@ export const apiService = createApi({
       },
       providesTags: ["AdminActivity"],
     }),
+
+    // ── System Jobs endpoints ───────────────────────────────────────────────
+    getSystemJobs: builder.query<{ jobs: SystemJob[]; meta: AccountsMeta }, { page?: number; status?: string; search?: string }>({
+      query: ({ page = 1, status, search } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (status && status !== "all") params.set("status", status);
+        if (search) params.set("search", search);
+        return `/api/v1/admin/system_jobs?${params.toString()}`;
+      },
+      providesTags: ["SystemJob"],
+    }),
+    getSystemJob: builder.query<{ job: SystemJob }, number | string>({
+      query: (id) => `/api/v1/admin/system_jobs/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "SystemJob", id }],
+    }),
+    getSystemJobStats: builder.query<SystemJobStats, void>({
+      query: () => "/api/v1/admin/system_jobs/stats",
+      providesTags: ["SystemJob"],
+    }),
+    deleteSystemJob: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({ url: `/api/v1/admin/system_jobs/${id}`, method: "DELETE" }),
+      invalidatesTags: ["SystemJob"],
+    }),
+    retrySystemJob: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({ url: `/api/v1/admin/system_jobs/${id}/retry`, method: "PATCH" }),
+      invalidatesTags: ["SystemJob"],
+    }),
+    retryAllFailedJobs: builder.mutation<{ message: string }, void>({
+      query: () => ({ url: "/api/v1/admin/system_jobs/retry_all_failed", method: "PATCH" }),
+      invalidatesTags: ["SystemJob"],
+    }),
+    deleteAllCompletedJobs: builder.mutation<{ message: string }, void>({
+      query: () => ({ url: "/api/v1/admin/system_jobs/delete_all_completed", method: "DELETE" }),
+      invalidatesTags: ["SystemJob"],
+    }),
+    getRecurringTasks: builder.query<{ recurring_tasks: { key: string; schedule: string; class_name: string | null; command: string | null; queue_name: string | null; priority: number; static: boolean; description: string | null }[] }, void>({
+      query: () => "/api/v1/admin/system_jobs/recurring_tasks",
+      providesTags: ["SystemJob"],
+    }),
+    triggerRecurringTask: builder.mutation<{ message: string }, string>({
+      query: (key) => ({ url: "/api/v1/admin/system_jobs/trigger_recurring", method: "POST", body: { key } }),
+      invalidatesTags: ["SystemJob"],
+    }),
   }),
 });
 
@@ -825,4 +895,13 @@ export const {
   useChangePasswordMutation,
   useUpdateAdminProfileMutation,
   useGetAdminActivitiesQuery,
+  useGetSystemJobsQuery,
+  useGetSystemJobQuery,
+  useGetSystemJobStatsQuery,
+  useDeleteSystemJobMutation,
+  useRetrySystemJobMutation,
+  useRetryAllFailedJobsMutation,
+  useDeleteAllCompletedJobsMutation,
+  useGetRecurringTasksQuery,
+  useTriggerRecurringTaskMutation,
 } = apiService;
