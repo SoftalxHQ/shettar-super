@@ -398,7 +398,7 @@ export default function PayoutsPage() {
                   <td className="py-4">
                     <p className="font-bold text-sm">{formatCurrency(payout.amount)}</p>
                     <p className="text-xs text-muted-foreground">Net: {formatCurrency(payout.net_amount)}</p>
-                    <p className="text-xs text-muted-foreground">Fee: {formatCurrency(payout.commission_amount)}</p>
+                    <p className="text-xs text-muted-foreground">Commission: {formatCurrency(payout.commission_amount)}</p>
                   </td>
                   <td className="py-4">
                     <p className="text-sm">{payout.bank_name ?? "—"}</p>
