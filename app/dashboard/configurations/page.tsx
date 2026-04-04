@@ -18,6 +18,7 @@ export default function ConfigurationPage() {
   const [config, setConfig] = useState({
     withdrawal_commission_rate: 0,
     cancellation_fee_percentage: 10,
+    business_cancellation_credit_percentage: 22.22,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,7 @@ export default function ConfigurationPage() {
           setConfig({
             withdrawal_commission_rate: data.withdrawal_commission_rate ?? 0,
             cancellation_fee_percentage: data.cancellation_fee_percentage ?? 10,
+            business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
           });
         }
       } catch {
@@ -177,6 +179,41 @@ export default function ConfigurationPage() {
               </p>
             </div>
 
+            {/* Business Cancellation Credit */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Business Cancellation Credit</h3>
+                  <p className="text-xs text-muted-foreground">Percentage of the refundable amount credited to the business when a guest cancels</p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={config.business_cancellation_credit_percentage}
+                  onChange={(e) => canEdit && setConfig({ ...config, business_cancellation_credit_percentage: parseFloat(e.target.value) || 0 })}
+                  readOnly={!canEdit}
+                  className="input pr-10 text-lg font-bold read-only:opacity-70 read-only:cursor-default"
+                  placeholder="22.22"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When a guest cancels, the refundable amount (after the platform fee) is split between the guest and the business. This sets the business&apos;s share. The remainder goes to the guest&apos;s wallet.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Default is 22.22% (2/9 of the refundable amount). The guest receives the remaining {(100 - config.business_cancellation_credit_percentage).toFixed(2)}%.
+              </p>
+            </div>
+
             {canEdit && (
               <button
                 type="submit"
@@ -215,13 +252,30 @@ export default function ConfigurationPage() {
                 </p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                <p className="text-xs text-muted-foreground mb-1">Est. Fee on ₦100K cancellation</p>
-                <p className="text-xl font-bold text-rose-600">
-                  ₦{((100000 * config.cancellation_fee_percentage) / 100).toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Guest refunded ₦{((100000 * (1 - config.cancellation_fee_percentage / 100))).toLocaleString()}
-                </p>
+                <p className="text-xs text-muted-foreground mb-2">₦100K cancellation split</p>
+                {(() => {
+                  const total = 100000;
+                  const platformFee = Math.round(total * config.cancellation_fee_percentage / 100);
+                  const refundable = total - platformFee;
+                  const businessCredit = Math.round(refundable * config.business_cancellation_credit_percentage / 100);
+                  const guestRefund = refundable - businessCredit;
+                  return (
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Platform fee ({config.cancellation_fee_percentage}%)</span>
+                        <span className="font-bold text-rose-600">₦{platformFee.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Business credit ({config.business_cancellation_credit_percentage}% of ₦{refundable.toLocaleString()})</span>
+                        <span className="font-bold text-blue-600">₦{businessCredit.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-border pt-1.5">
+                        <span className="text-muted-foreground">Guest refund</span>
+                        <span className="font-bold text-green-600">₦{guestRefund.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

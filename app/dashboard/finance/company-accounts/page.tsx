@@ -77,7 +77,7 @@ export default function CompanyAccountsPage() {
     bank_name: "",
     currency: "NGN",
   });
-  const [resolved, setResolved] = useState(false);
+  const [resolveStatus, setResolveStatus] = useState<"idle" | "resolving" | "resolved" | "manual">("idle");
 
   const banks: PaystackBank[] = banksData?.data ?? [];
   const accounts = data?.company_bank_accounts ?? [];
@@ -85,20 +85,26 @@ export default function CompanyAccountsPage() {
   // Auto-resolve when account_number is 10 digits and bank_code is selected
   useEffect(() => {
     if (form.account_number.length === 10 && form.bank_code) {
-      setResolved(false);
+      setResolveStatus("resolving");
       setForm((prev) => ({ ...prev, account_name: "" }));
       resolveAccount({ account_number: form.account_number, bank_code: form.bank_code })
         .unwrap()
         .then((res) => {
           const name = res?.data?.account_name ?? "";
-          setForm((prev) => ({ ...prev, account_name: name }));
-          setResolved(true);
+          if (name) {
+            setForm((prev) => ({ ...prev, account_name: name }));
+            setResolveStatus("resolved");
+          } else {
+            // Paystack returned empty — fall back to manual
+            setResolveStatus("manual");
+          }
         })
         .catch(() => {
-          toast.error("Could not resolve account. Check the account number and bank.");
+          // Business accounts often fail — allow manual entry
+          setResolveStatus("manual");
         });
     } else {
-      setResolved(false);
+      setResolveStatus("idle");
       setForm((prev) => ({ ...prev, account_name: "" }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,21 +117,21 @@ export default function CompanyAccountsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resolved || !form.account_name) {
-      toast.error("Please wait for account resolution before adding.");
+    if (!form.account_name.trim()) {
+      toast.error("Account name is required.");
       return;
     }
     try {
       await createAccount({
         bank_name: form.bank_name,
         account_number: form.account_number,
-        account_name: form.account_name,
+        account_name: form.account_name.trim(),
         bank_code: form.bank_code,
         currency: form.currency,
       }).unwrap();
       toast.success("Bank account added successfully.");
       setForm({ account_number: "", bank_code: "", account_name: "", bank_name: "", currency: "NGN" });
-      setResolved(false);
+      setResolveStatus("idle");
     } catch (err: unknown) {
       const msg = (err as { data?: { error?: string | string[] } })?.data?.error;
       const errorText = Array.isArray(msg) ? msg.join(", ") : (msg ?? "Failed to add bank account.");
@@ -206,23 +212,40 @@ export default function CompanyAccountsPage() {
             </div>
           </div>
 
-          {/* Resolved account name */}
+          {/* Account name — auto-filled or manual */}
           <div>
-            <label className="label">Account Name</label>
+            <label className="label">
+              Account Name <span className="text-red-500">*</span>
+              {resolveStatus === "manual" && (
+                <span className="ml-2 text-xs text-orange-500 font-normal">
+                  Auto-resolve unavailable — enter manually
+                </span>
+              )}
+            </label>
             <div className="relative">
               <input
                 type="text"
-                className="input bg-slate-50 dark:bg-zinc-800/50"
-                placeholder={resolving ? "Resolving…" : "Auto-filled after account resolution"}
+                className={`input ${resolveStatus === "resolved" ? "bg-slate-50 dark:bg-zinc-800/50" : ""}`}
+                placeholder={
+                  resolveStatus === "resolving" ? "Resolving…" :
+                  resolveStatus === "manual" ? "Enter account name as it appears on the account" :
+                  "Auto-filled after account resolution"
+                }
                 value={form.account_name}
-                readOnly
+                readOnly={resolveStatus === "resolved"}
+                onChange={(e) => {
+                  if (resolveStatus === "manual") {
+                    setForm((prev) => ({ ...prev, account_name: e.target.value }));
+                  }
+                }}
+                required
               />
-              {resolving && (
+              {resolveStatus === "resolving" && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
                   <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                 </div>
               )}
-              {resolved && form.account_name && (
+              {resolveStatus === "resolved" && form.account_name && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
                   <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -242,7 +265,7 @@ export default function CompanyAccountsPage() {
             <div className="flex items-end pb-0.5">
               <button
                 type="submit"
-                disabled={creating || !resolved || !form.account_name}
+                disabled={creating || resolveStatus === "resolving" || !form.account_name.trim()}
                 className="px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {creating ? "Adding…" : "Add Account"}
