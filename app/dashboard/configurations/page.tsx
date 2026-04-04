@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useAppSelector } from "@/lib/store/hooks";
+import { selectToken } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import { toast } from "sonner";
 
 export default function ConfigurationPage() {
   const { admin } = useAuth();
+  const token = useAppSelector(selectToken);
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
@@ -17,42 +21,55 @@ export default function ConfigurationPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   useEffect(() => {
-    // In a real app, this would fetch from the API
-    // fetch("/api/v1/configurations")
-    setTimeout(() => {
-      setConfig({
-        withdrawal_commission_rate: 2.5,
-        cancellation_fee_percentage: 10.0,
-      });
-      setLoading(false);
-    }, 800);
-  }, []);
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/configurations`, {
+          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setConfig({
+            withdrawal_commission_rate: data.withdrawal_commission_rate ?? 0,
+            cancellation_fee_percentage: data.cancellation_fee_percentage ?? 10,
+          });
+        }
+      } catch {
+        // silent — use defaults
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConfig();
+  }, [API_URL, token]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/configurations`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-Client-Platform": "web-super",
+        },
+        body: JSON.stringify({ configuration: config }),
+      });
+      if (res.ok) {
+        toast.success("Configuration updated successfully");
+      } else {
+        toast.error("Failed to update configuration");
+      }
+    } catch {
+      toast.error("An error occurred");
+    } finally {
       setSaving(false);
-      setMessage({ type: "success", text: "Global configurations updated successfully!" });
-      setTimeout(() => setMessage({ type: "", text: "" }), 4000);
-    }, 1200);
+    }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground font-medium animate-pulse">Loading configurations...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!can("configurations", "view") && !can("configurations", "edit")) {
     return (
@@ -70,176 +87,160 @@ export default function ConfigurationPage() {
 
   const canEdit = can("configurations", "edit");
 
-  return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wider mb-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            </svg>
-            System Settings
-          </div>
-          <h1 className="text-4xl font-black tracking-tight">Platform Configuration</h1>
-          <p className="text-muted-foreground text-lg mt-1">Global financial parameters and transaction rules for Shettar.</p>
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading configuration...</p>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Settings Form */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass p-8 rounded-[2.5rem] border border-white/20 shadow-2xl overflow-hidden relative">
-            {/* Background decorative blob */}
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl"></div>
-            
-            <form onSubmit={handleSave} className="relative space-y-10">
-              <div className="space-y-8">
-                {/* Withdrawal Commission Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-xl">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold">Withdrawal Settings</h3>
-                      <p className="text-xs text-muted-foreground">Define commission rates for business fund withdrawals.</p>
-                    </div>
-                  </div>
+  return (
+    <div className="p-8 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold">Platform Configuration</h1>
+        <p className="text-muted-foreground mt-1">Global financial parameters and transaction rules</p>
+      </div>
 
-                  <div className="space-y-3">
-                    <label className="text-sm font-semibold text-foreground/70 ml-1">Commission Rate (%)</label>
-                    <div className="relative group">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={config.withdrawal_commission_rate}
-                        onChange={(e) => canEdit && setConfig({ ...config, withdrawal_commission_rate: parseFloat(e.target.value) })}
-                        readOnly={!canEdit}
-                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800 read-only:cursor-default read-only:opacity-70"
-                        placeholder="0.00"
-                      />
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-muted-foreground/30">%</div>
-                    </div>
-                    <p className="text-xs text-muted-foreground ml-1">
-                      This percentage will be automatically deducted from the total amount requested by a business during withdrawal.
-                    </p>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Settings Form */}
+        <div className="lg:col-span-2">
+          <form onSubmit={handleSave} className="space-y-4">
+            {/* Withdrawal Commission */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+                  </svg>
                 </div>
-
-                {/* Cancellation Fee Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-xl">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold">Cancellation Rules</h3>
-                      <p className="text-xs text-muted-foreground">Manage platform fees for reservation cancellations.</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="text-sm font-semibold text-foreground/70 ml-1">Platform Cancellation Fee (%)</label>
-                    <div className="relative group">
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={config.cancellation_fee_percentage}
-                        onChange={(e) => canEdit && setConfig({ ...config, cancellation_fee_percentage: parseFloat(e.target.value) })}
-                        readOnly={!canEdit}
-                        className="w-full bg-slate-50/50 dark:bg-zinc-800/50 border border-border rounded-3xl p-5 pl-7 text-xl font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none group-hover:bg-white dark:group-hover:bg-zinc-800 read-only:cursor-default read-only:opacity-70"
-                        placeholder="10.00"
-                      />
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 text-2xl font-black text-muted-foreground/30">%</div>
-                    </div>
-                    <p className="text-xs text-muted-foreground ml-1">
-                      The fixed percentage of the refundable amount that the platform retains as a service fee upon cancellation.
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="font-bold">Withdrawal Commission Rate</h3>
+                  <p className="text-xs text-muted-foreground">Percentage deducted from each business withdrawal</p>
                 </div>
               </div>
-
-              <div className="pt-8 border-t border-border flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  {message.text && (
-                    <div className={`flex items-center gap-2 p-3 rounded-2xl animate-in fade-in slide-in-from-left-2 ${
-                      message.type === "success" ? "bg-green-500/10 text-green-600" : "bg-rose-500/10 text-rose-600"
-                    }`}>
-                      <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-bold">{message.text}</span>
-                    </div>
-                  )}
-                </div>
-                {canEdit && (
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-primary text-primary-foreground px-10 py-5 rounded-[1.5rem] font-black text-lg shadow-xl shadow-primary/30 hover:shadow-2xl hover:translate-y-[-2px] transition-all active:scale-[0.98] disabled:opacity-50 disabled:translate-y-0"
-                >
-                  {saving ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Updating...
-                    </div>
-                  ) : "Update Configuration"}
-                </button>
-                )}
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={config.withdrawal_commission_rate}
+                  onChange={(e) => canEdit && setConfig({ ...config, withdrawal_commission_rate: parseFloat(e.target.value) || 0 })}
+                  readOnly={!canEdit}
+                  className="input pr-10 text-lg font-bold read-only:opacity-70 read-only:cursor-default"
+                  placeholder="0.00"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
               </div>
-            </form>
-          </div>
+              <p className="text-xs text-muted-foreground">
+                This percentage is automatically deducted when a business initiates a withdrawal.
+              </p>
+            </div>
+
+            {/* Cancellation Fee */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-rose-100 dark:bg-rose-900/30 text-rose-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Cancellation Fee</h3>
+                  <p className="text-xs text-muted-foreground">Platform fee retained on reservation cancellations</p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={config.cancellation_fee_percentage}
+                  onChange={(e) => canEdit && setConfig({ ...config, cancellation_fee_percentage: parseFloat(e.target.value) || 0 })}
+                  readOnly={!canEdit}
+                  className="input pr-10 text-lg font-bold read-only:opacity-70 read-only:cursor-default"
+                  placeholder="10.00"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The fixed percentage of the refundable amount the platform retains as a service fee on cancellation.
+              </p>
+            </div>
+
+            {canEdit && (
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : "Save Configuration"}
+              </button>
+            )}
+          </form>
         </div>
 
-        {/* Sidebar Analytics/Info */}
-        <div className="space-y-6">
-          <div className="glass p-6 rounded-[2rem] border border-white/20 shadow-xl space-y-6 bg-gradient-to-br from-primary/5 to-transparent">
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Impact preview */}
+          <div className="glass p-6 rounded-3xl space-y-4">
             <h4 className="font-bold flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              Impact Analysis
+              Impact Preview
             </h4>
-            
-            <div className="space-y-4 text-sm">
-              <div className="p-4 bg-white/50 dark:bg-zinc-900/50 rounded-2xl border border-border">
-                <p className="text-muted-foreground mb-1 font-medium">Est. Monthly Commission</p>
-                <p className="text-2xl font-black">₦{((12500000 * config.withdrawal_commission_rate) / 100).toLocaleString()}</p>
-                <div className="mt-2 w-full bg-slate-200 dark:bg-zinc-700 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full w-[45%]" />
-                </div>
+            <div className="space-y-3">
+              <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <p className="text-xs text-muted-foreground mb-1">Est. Commission on ₦1M withdrawal</p>
+                <p className="text-xl font-bold text-emerald-600">
+                  ₦{((1000000 * config.withdrawal_commission_rate) / 100).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Business receives ₦{((1000000 * (1 - config.withdrawal_commission_rate / 100))).toLocaleString()}
+                </p>
               </div>
-
-              <div className="p-4 bg-white/50 dark:bg-zinc-900/50 rounded-2xl border border-border">
-                <p className="text-muted-foreground mb-1 font-medium">Est. Cancellation Revenue</p>
-                <p className="text-2xl font-black">₦{((2800000 * config.cancellation_fee_percentage) / 100).toLocaleString()}</p>
-                <div className="mt-2 w-full bg-slate-200 dark:bg-zinc-700 h-1.5 rounded-full overflow-hidden">
-                  <div className="bg-indigo-500 h-full w-[30%]" />
-                </div>
+              <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <p className="text-xs text-muted-foreground mb-1">Est. Fee on ₦100K cancellation</p>
+                <p className="text-xl font-bold text-rose-600">
+                  ₦{((100000 * config.cancellation_fee_percentage) / 100).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Guest refunded ₦{((100000 * (1 - config.cancellation_fee_percentage / 100))).toLocaleString()}
+                </p>
               </div>
-            </div>
-
-            <div className="text-xs text-muted-foreground px-2 italic">
-              * Calculations based on current month's transaction volume of ₦12.5M.
             </div>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-[2rem] space-y-3">
-            <div className="flex items-center gap-3 text-amber-600">
-              <svg className="w-5 h-5 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          {/* Warning */}
+          <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-orange-600">
+              <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
-              <h4 className="font-bold">Important Notice</h4>
+              <p className="text-xs font-bold">Important</p>
             </div>
-            <p className="text-xs text-amber-800/80 dark:text-amber-500/80 leading-relaxed">
-              Updates to these configurations are <strong>permanent</strong> and take <strong>immediate effect</strong> on all new transactions. Existing pending withdrawals will not be affected. 
+            <p className="text-xs text-orange-700 dark:text-orange-400">
+              Changes take immediate effect on all new transactions. Existing pending withdrawals are not affected.
             </p>
           </div>
+
+          {!canEdit && can("configurations", "view") && (
+            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+              <p className="text-xs text-muted-foreground text-center">You have read-only access to this section.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

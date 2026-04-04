@@ -92,13 +92,7 @@ export default function DashboardLayout({
         </nav>
 
         <div className="p-4 mt-auto">
-          <div className="glass p-4 rounded-2xl space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Storage Usage</p>
-            <div className="w-full bg-slate-200 dark:bg-zinc-700 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-primary h-full w-[65%]" />
-            </div>
-            <p className="text-xs text-muted-foreground">6.5 GB of 10 GB used</p>
-          </div>
+         
           <button 
             onClick={logout}
             className="w-full flex items-center gap-3 px-4 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl mt-4 transition-colors"

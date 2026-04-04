@@ -475,6 +475,37 @@ export interface SystemJobStats {
   completed: number;
 }
 
+export interface Payout {
+  id: number;
+  business_id: number;
+  business_name: string | null;
+  business_unique_id: string | null;
+  amount: number;
+  net_amount: number;
+  commission_amount: number;
+  status: "pending" | "completed" | "failed";
+  description: string | null;
+  bank_name: string | null;
+  account_number: string | null;
+  transfer_code: string | null;
+  user_name: string | null;
+  rejection_reason: string | null;
+  rejected_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PayoutStats {
+  total: number;
+  total_amount: number;
+  completed: number;
+  completed_amount: number;
+  failed: number;
+  failed_amount: number;
+  pending: number;
+  pending_amount: number;
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -517,7 +548,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -853,6 +884,37 @@ export const apiService = createApi({
       query: (key) => ({ url: "/api/v1/admin/system_jobs/trigger_recurring", method: "POST", body: { key } }),
       invalidatesTags: ["SystemJob"],
     }),
+
+    // ── Payout endpoints ────────────────────────────────────────────────────
+    getPayouts: builder.query<{ payouts: Payout[]; meta: AccountsMeta }, { page?: number; status?: string; search?: string }>({
+      query: ({ page = 1, status, search } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (status && status !== "all") params.set("status", status);
+        if (search) params.set("search", search);
+        return `/api/v1/admin/payouts?${params.toString()}`;
+      },
+      providesTags: ["Payout"],
+    }),
+    getPayoutStats: builder.query<PayoutStats, void>({
+      query: () => "/api/v1/admin/payouts/stats",
+      providesTags: ["Payout"],
+    }),
+    approvePayout: builder.mutation<{ message: string; payout: Payout }, number | string>({
+      query: (id) => ({ url: `/api/v1/admin/payouts/${id}/approve`, method: "PATCH" }),
+      invalidatesTags: ["Payout"],
+    }),
+    rejectPayout: builder.mutation<{ message: string; payout: Payout }, { id: number | string; reason: string }>({
+      query: ({ id, reason }) => ({ url: `/api/v1/admin/payouts/${id}/reject`, method: "PATCH", body: { reason } }),
+      invalidatesTags: ["Payout"],
+    }),
+    getPayoutStatus: builder.query<{ payouts_paused: boolean }, void>({
+      query: () => "/api/v1/admin/payouts/payout_status",
+      providesTags: ["Payout"],
+    }),
+    togglePayoutPause: builder.mutation<{ message: string; payouts_paused: boolean }, void>({
+      query: () => ({ url: "/api/v1/admin/payouts/toggle_payout_pause", method: "PATCH" }),
+      invalidatesTags: ["Payout"],
+    }),
   }),
 });
 
@@ -904,4 +966,10 @@ export const {
   useDeleteAllCompletedJobsMutation,
   useGetRecurringTasksQuery,
   useTriggerRecurringTaskMutation,
+  useGetPayoutsQuery,
+  useGetPayoutStatsQuery,
+  useApprovePayoutMutation,
+  useRejectPayoutMutation,
+  useGetPayoutStatusQuery,
+  useTogglePayoutPauseMutation,
 } = apiService;
