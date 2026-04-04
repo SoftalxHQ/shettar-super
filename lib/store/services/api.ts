@@ -495,6 +495,38 @@ export interface Payout {
   updated_at: string;
 }
 
+export interface AnalyticsKpi {
+  value: number;
+  change: number | null;
+}
+
+export interface AnalyticsSummary {
+  kpis: {
+    total_revenue: AnalyticsKpi;
+    total_bookings: AnalyticsKpi;
+    active_businesses: AnalyticsKpi;
+    total_accounts: AnalyticsKpi;
+  };
+  revenue_trend: { month: string; revenue: number }[];
+  booking_sources: { source: string; count: number }[];
+  payment_methods: { method: string; count: number }[];
+  top_businesses: { id: number; name: string; city: string; state: string; total_revenue: number }[];
+  geographic_distribution: { state: string; bookings: number; revenue: number }[];
+  demographics: { group: string; count: number }[];
+  booking_trends: { month: string; bookings: number; cancellations: number }[];
+  platform_health: {
+    active_accounts: number;
+    verified_accounts: number;
+    suspended_accounts: number;
+    pending_businesses: number;
+  };
+}
+
+export interface GetAnalyticsSummaryParams {
+  start_date?: string; // YYYY-MM-DD
+  end_date?: string;   // YYYY-MM-DD
+}
+
 export interface PayoutStats {
   total: number;
   total_amount: number;
@@ -915,6 +947,16 @@ export const apiService = createApi({
       query: () => ({ url: "/api/v1/admin/payouts/toggle_payout_pause", method: "PATCH" }),
       invalidatesTags: ["Payout"],
     }),
+
+    // ── Analytics endpoint ──────────────────────────────────────────────────
+    getAnalyticsSummary: builder.query<AnalyticsSummary, GetAnalyticsSummaryParams>({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.start_date) queryParams.set("start_date", params.start_date);
+        if (params.end_date) queryParams.set("end_date", params.end_date);
+        return `/api/v1/admin/analytics/summary?${queryParams.toString()}`;
+      },
+    }),
   }),
 });
 
@@ -972,4 +1014,5 @@ export const {
   useRejectPayoutMutation,
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
+  useGetAnalyticsSummaryQuery,
 } = apiService;
