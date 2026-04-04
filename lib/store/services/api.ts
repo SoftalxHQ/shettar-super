@@ -224,6 +224,7 @@ export interface BusinessDetail extends Business {
   owners: BusinessOwner[];
   bank_accounts: BankAccount[];
   commission_rate: number | null;
+  cancellation_fee_percentage: number | null;
 }
 
 export interface BusinessReservation {
@@ -538,6 +539,39 @@ export interface PayoutStats {
   pending_amount: number;
 }
 
+export interface CompanyBankAccount {
+  id: number;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  bank_code: string | null;
+  currency: string;
+  recipient_code: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PaystackBank {
+  id: number;
+  name: string;
+  code: string;
+  currency: string;
+}
+
+export interface PlatformWithdrawal {
+  id: number;
+  amount: number;
+  status: string;
+  description: string | null;
+  created_at: string;
+  metadata: {
+    transfer_code?: string;
+    paystack_fee?: number;
+    net_amount?: number;
+    company_bank_account_id?: number;
+  } | null;
+}
+
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
@@ -580,7 +614,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -692,6 +726,14 @@ export const apiService = createApi({
         url: `/api/v1/admin/businesses/${id}/set_commission`,
         method: "PATCH",
         body: { commission_rate },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
+    setBusinessCancellationFee: builder.mutation<{ message: string; cancellation_fee_percentage: number | null }, { id: number | string; cancellation_fee_percentage: number | null }>({
+      query: ({ id, cancellation_fee_percentage }) => ({
+        url: `/api/v1/admin/businesses/${id}/set_cancellation_fee`,
+        method: "PATCH",
+        body: { cancellation_fee_percentage },
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
@@ -957,6 +999,48 @@ export const apiService = createApi({
         return `/api/v1/admin/analytics/summary?${queryParams.toString()}`;
       },
     }),
+
+    // ── Company Bank Account endpoints ──────────────────────────────────────
+    getCompanyBankAccounts: builder.query<{ company_bank_accounts: CompanyBankAccount[] }, void>({
+      query: () => "/api/v1/admin/company_bank_accounts",
+      providesTags: ["CompanyBankAccount"],
+    }),
+    createCompanyBankAccount: builder.mutation<{ message: string; company_bank_account: CompanyBankAccount }, Partial<CompanyBankAccount>>({
+      query: (body) => ({
+        url: "/api/v1/admin/company_bank_accounts",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CompanyBankAccount"],
+    }),
+    deleteCompanyBankAccount: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/company_bank_accounts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["CompanyBankAccount"],
+    }),
+    withdrawPlatformRevenue: builder.mutation<{ message: string; transfer_code: string }, { amount: number; company_bank_account_id: number }>({
+      query: (body) => ({
+        url: "/api/v1/admin/company_withdrawals/withdraw",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["CompanyBankAccount"],
+    }),
+    getPlatformWithdrawals: builder.query<{ withdrawals: PlatformWithdrawal[] }, void>({
+      query: () => "/api/v1/admin/company_withdrawals",
+      providesTags: ["CompanyBankAccount"],
+    }),
+
+    // ── Paystack banks ───────────────────────────────────────────────────────
+    getPaystackBanks: builder.query<{ data: PaystackBank[] }, void>({
+      query: () => "/api/v1/banks",
+    }),
+    resolvePaystackAccount: builder.query<{ data: { account_name: string; account_number: string } }, { account_number: string; bank_code: string }>({
+      query: ({ account_number, bank_code }) =>
+        `/api/v1/banks/resolve_account?account_number=${account_number}&bank_code=${bank_code}`,
+    }),
   }),
 });
 
@@ -976,6 +1060,7 @@ export const {
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
   useSetBusinessCommissionMutation,
+  useSetBusinessCancellationFeeMutation,
   useVerifyBankAccountMutation,
   useRejectBankAccountMutation,
   useBanBankAccountMutation,
@@ -1015,4 +1100,11 @@ export const {
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
   useGetAnalyticsSummaryQuery,
+  useGetCompanyBankAccountsQuery,
+  useCreateCompanyBankAccountMutation,
+  useDeleteCompanyBankAccountMutation,
+  useWithdrawPlatformRevenueMutation,
+  useGetPlatformWithdrawalsQuery,
+  useGetPaystackBanksQuery,
+  useLazyResolvePaystackAccountQuery,
 } = apiService;

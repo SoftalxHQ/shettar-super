@@ -172,6 +172,9 @@ export default function ConfigurationPage() {
               <p className="text-xs text-muted-foreground">
                 The fixed percentage of the refundable amount the platform retains as a service fee on cancellation.
               </p>
+              <p className="text-xs text-muted-foreground">
+                This rate applies to businesses that do not have a per-business override set.
+              </p>
             </div>
 
             {canEdit && (

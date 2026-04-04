@@ -22,7 +22,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       accounts: { view: true, suspend: true, activate: true },
       businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true },
       support_tickets: { view: true, reply: true, assign: true, update_status: true },
-      finance: { view: true, manage_payouts: true },
+      finance: { view: true, manage_payouts: true, manage_company_accounts: true, withdraw_revenue: true },
       configurations: { view: true, edit: true },
       staff: { view: true, invite: true, edit: true, deactivate: true },
       activities: { view: true },
@@ -51,7 +51,7 @@ export const ADMIN_PERMISSION_PRESETS = {
     name: "Finance",
     description: "Manage financial operations",
     permissions: {
-      finance: { view: true, manage_payouts: true },
+      finance: { view: true, manage_payouts: true, manage_company_accounts: true, withdraw_revenue: true },
       businesses: { view: true },
       accounts: { view: true },
     } as AdminPermissions,
@@ -111,6 +111,8 @@ export const ADMIN_PERMISSION_LABELS = {
     actions: {
       view: "View Finance",
       manage_payouts: "Manage Payouts",
+      manage_company_accounts: "Manage Company Bank Accounts",
+      withdraw_revenue: "Withdraw Platform Revenue",
     },
   },
   configurations: {

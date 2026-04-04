@@ -16,6 +16,7 @@ import { useGetBusinessQuery,
   useBanBankAccountMutation,
   useUnbanBankAccountMutation,
   useSetBusinessCommissionMutation,
+  useSetBusinessCancellationFeeMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -70,10 +71,15 @@ export default function BusinessDetailPage() {
   const [banBankAccount, { isLoading: isBanningBank }] = useBanBankAccountMutation();
   const [unbanBankAccount, { isLoading: isUnbanningBank }] = useUnbanBankAccountMutation();
   const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
+  const [setBusinessCancellationFee, { isLoading: isSettingCancellationFee }] = useSetBusinessCancellationFeeMutation();
 
   // Commission state
   const [showCommissionForm, setShowCommissionForm] = useState(false);
   const [commissionInput, setCommissionInput] = useState("");
+
+  // Cancellation fee state
+  const [showCancellationFeeForm, setShowCancellationFeeForm] = useState(false);
+  const [cancellationFeeInput, setCancellationFeeInput] = useState("");
 
   // Bank account reject modal state
   const [rejectingBankId, setRejectingBankId] = useState<number | null>(null);
@@ -209,6 +215,21 @@ export default function BusinessDetailPage() {
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || "Failed to update commission rate");
+    }
+  };
+
+  const handleSetCancellationFee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const fee = cancellationFeeInput.trim() === "" ? null : parseFloat(cancellationFeeInput);
+      await setBusinessCancellationFee({ id, cancellation_fee_percentage: fee }).unwrap();
+      toast.success(fee === null ? "Cancellation fee cleared" : `Cancellation fee set to ${fee}%`);
+      setShowCancellationFeeForm(false);
+      setCancellationFeeInput("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to update cancellation fee");
     }
   };
 
@@ -664,6 +685,76 @@ export default function BusinessDetailPage() {
                     className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {isSettingCommission ? "Saving..." : "Save Rate"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+
+          {/* Cancellation Fee */}
+          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold">Cancellation Fee</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Override the global cancellation fee for this business. Leave blank to use the global rate.
+                </p>
+              </div>
+              {!showCancellationFeeForm && can("businesses", "set_cancellation_fee") && (
+                <button
+                  onClick={() => {
+                    setCancellationFeeInput(business.cancellation_fee_percentage != null ? String(business.cancellation_fee_percentage) : "");
+                    setShowCancellationFeeForm(true);
+                  }}
+                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  {business.cancellation_fee_percentage != null ? "Edit Rate" : "Set Custom Rate"}
+                </button>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-between">
+              <span className="text-sm font-medium">Current Rate</span>
+              {business.cancellation_fee_percentage != null ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-indigo-600">{business.cancellation_fee_percentage}%</span>
+                  <span className="text-xs text-muted-foreground">(custom)</span>
+                </div>
+              ) : (
+                <span className="text-sm text-muted-foreground">Using global rate</span>
+              )}
+            </div>
+
+            {showCancellationFeeForm && can("businesses", "set_cancellation_fee") && (
+              <form onSubmit={handleSetCancellationFee} className="space-y-3">
+                <div>
+                  <label className="label">Cancellation Fee (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="input"
+                    placeholder="e.g. 15 — leave blank to use global rate"
+                    value={cancellationFeeInput}
+                    onChange={(e) => setCancellationFeeInput(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Enter a value between 0–100, or leave blank to clear the custom rate.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => { setShowCancellationFeeForm(false); setCancellationFeeInput(""); }}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSettingCancellationFee}
+                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {isSettingCancellationFee ? "Saving..." : "Save Rate"}
                   </button>
                 </div>
               </form>

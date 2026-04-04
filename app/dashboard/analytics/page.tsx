@@ -42,19 +42,21 @@ function ChangeIndicator({ change }: { change: number | null }) {
 
 // ── Date range ────────────────────────────────────────────────────────────────
 
-type PresetRange = "30d" | "3m" | "6m" | "12m";
+type PresetRange = "30d" | "3m" | "6m" | "12m" | "all";
 
-const PRESETS: { key: PresetRange; label: string; days: number }[] = [
+const PRESETS: { key: PresetRange; label: string; days: number | null }[] = [
   { key: "30d", label: "Last 30 Days", days: 30 },
   { key: "3m",  label: "Last 3 Months", days: 90 },
   { key: "6m",  label: "Last 6 Months", days: 180 },
   { key: "12m", label: "Last 12 Months", days: 365 },
+  { key: "all", label: "All Time", days: null },
 ];
 
-function getDateRange(preset: PresetRange): { start_date: string; end_date: string } {
+function getDateRange(preset: PresetRange): { start_date?: string; end_date?: string } {
+  if (preset === "all") return {};
   const end = new Date();
   const start = new Date();
-  const days = PRESETS.find((p) => p.key === preset)!.days;
+  const days = PRESETS.find((p) => p.key === preset)!.days!;
   start.setDate(end.getDate() - days + 1);
   return {
     start_date: start.toISOString().slice(0, 10),
