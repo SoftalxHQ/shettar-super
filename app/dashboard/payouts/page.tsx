@@ -10,7 +10,9 @@ import {
   useRejectPayoutMutation,
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
+  useGetCancellationFeesQuery,
   type Payout,
+  type CancellationFee,
 } from "@/lib/store/services/api";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
@@ -44,7 +46,6 @@ function DetailModal({ payout, onClose }: { payout: Payout; onClose: () => void 
             </svg>
           </button>
         </div>
-
         <div className="space-y-3 text-sm">
           <Row label="ID" value={`#${payout.id}`} />
           <Row label="Business" value={payout.business_name ?? "—"} />
@@ -71,7 +72,6 @@ function DetailModal({ payout, onClose }: { payout: Payout; onClose: () => void 
             </>
           )}
         </div>
-
         <button onClick={onClose} className="w-full mt-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
           Close
         </button>
@@ -145,12 +145,159 @@ function RejectDialog({ payout, onConfirm, onClose, loading }: { payout: Payout;
   );
 }
 
+// ── Cancellation Fees Tab ────────────────────────────────────────────────────
+
+function CancellationFeesTab({ can }: { can: (section: keyof AdminPermissions, action: string) => boolean }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { data, isLoading, isFetching, isError } = useGetCancellationFeesQuery(
+    { page, search: debouncedSearch || undefined },
+    { skip: !can("finance", "view"), refetchOnMountOrArgChange: true }
+  );
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 400);
+  }, []);
+
+  const fees: CancellationFee[] = data?.fees ?? [];
+  const stats = data?.stats;
+  const meta = data?.meta;
+
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {[
+          {
+            label: "Total Fees Collected",
+            value: stats ? formatCurrency(stats.total_amount) : "—",
+            icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+            color: "text-emerald-600",
+          },
+          {
+            label: "This Month",
+            value: stats ? formatCurrency(stats.this_month_amount) : "—",
+            icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+            color: "text-blue-600",
+          },
+          {
+            label: "Total Count",
+            value: stats ? String(stats.total_count) : "—",
+            icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
+            color: "text-violet-600",
+          },
+        ].map((stat, i) => (
+          <div key={i} className="glass p-6 rounded-3xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-3 bg-primary/10 rounded-2xl ${stat.color}`}>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                </svg>
+              </div>
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+            <p className="text-2xl font-bold mt-1">{isLoading ? "—" : stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="glass p-6 rounded-3xl">
+        <label className="label">Search</label>
+        <div className="relative">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search by description…"
+            className="input pl-10"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="glass p-6 rounded-3xl overflow-x-auto">
+        {isError && (
+          <div className="text-center py-12 text-red-500">Failed to load cancellation fees. Please try again.</div>
+        )}
+
+        {(isLoading || isFetching) && !isError && (
+          <div className="text-center py-12">
+            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-muted-foreground mt-4">Loading cancellation fees…</p>
+          </div>
+        )}
+
+        {!isLoading && !isFetching && !isError && (
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-sm text-muted-foreground border-b border-border">
+                <th className="pb-4 font-medium">Business</th>
+                <th className="pb-4 font-medium">Booking ID</th>
+                <th className="pb-4 font-medium">Fee Amount</th>
+                <th className="pb-4 font-medium">Booking Total</th>
+                <th className="pb-4 font-medium">Fee Rate</th>
+                <th className="pb-4 font-medium">Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {fees.map((fee) => (
+                <tr key={fee.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <td className="py-4 text-sm font-semibold">{fee.business_name ?? "—"}</td>
+                  <td className="py-4 text-sm font-mono text-muted-foreground">{fee.booking_id ?? "—"}</td>
+                  <td className="py-4 text-sm font-bold text-emerald-600">{formatCurrency(fee.amount)}</td>
+                  <td className="py-4 text-sm">{formatCurrency(fee.total_booking)}</td>
+                  <td className="py-4 text-sm">{fee.fee_rate > 0 ? `${fee.fee_rate}%` : "—"}</td>
+                  <td className="py-4 text-sm text-muted-foreground">{new Date(fee.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {!isLoading && !isFetching && !isError && fees.length === 0 && (
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+            </svg>
+            <p className="text-muted-foreground mt-4">No cancellation fees found</p>
+          </div>
+        )}
+      </div>
+
+      {meta && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.total_pages}
+          totalCount={meta.total_count}
+          onPageChange={setPage}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────────────
+
+type Tab = "business_payouts" | "cancellation_fees";
+
 export default function PayoutsPage() {
   const { admin } = useAuth();
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
+
+  const [activeTab, setActiveTab] = useState<Tab>("business_payouts");
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -169,7 +316,7 @@ export default function PayoutsPage() {
 
   const { data, isLoading, isFetching, isError } = useGetPayoutsQuery(
     { page, status: statusFilter, search: debouncedSearch || undefined },
-    { skip: !can("finance", "view"), refetchOnMountOrArgChange: true }
+    { skip: !can("finance", "view") || activeTab !== "business_payouts", refetchOnMountOrArgChange: true }
   );
 
   const [approvePayoutMutation, { isLoading: approving }] = useApprovePayoutMutation();
@@ -283,183 +430,208 @@ export default function PayoutsPage() {
         </div>
       )}
 
-      {/* Stats Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          {
-            label: "Total Payouts",
-            count: stats?.total ?? 0,
-            amount: stats?.total_amount ?? 0,
-            icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
-            color: "text-slate-600",
-          },
-          {
-            label: "Completed",
-            count: stats?.completed ?? 0,
-            amount: stats?.completed_amount ?? 0,
-            icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
-            color: "text-green-600",
-          },
-          {
-            label: "Failed",
-            count: stats?.failed ?? 0,
-            amount: stats?.failed_amount ?? 0,
-            icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
-            color: "text-red-600",
-          },
-          {
-            label: "Pending",
-            count: stats?.pending ?? 0,
-            amount: stats?.pending_amount ?? 0,
-            icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-            color: "text-orange-600",
-          },
-        ].map((stat, i) => (
-          <div key={i} className="glass p-6 rounded-3xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`p-3 bg-primary/10 rounded-2xl ${stat.color}`}>
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
-                </svg>
-              </div>
-              <span className="text-xs font-bold text-muted-foreground">
-                {statsLoading ? "—" : stat.count} payouts
-              </span>
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{statsLoading ? "—" : formatCurrency(stat.amount)}</p>
-          </div>
+      {/* Tab Bar */}
+      <div className="flex gap-1 p-1 glass rounded-2xl w-fit">
+        {(["business_payouts", "cancellation_fees"] as Tab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              activeTab === tab
+                ? "bg-primary text-primary-foreground shadow"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab === "business_payouts" ? "Business Payouts" : "Cancellation Fees"}
+          </button>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="glass p-6 rounded-3xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <label className="label">Search</label>
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search by business name or ID…"
-                className="input pl-10"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
+      {/* Business Payouts Tab */}
+      {activeTab === "business_payouts" && (
+        <>
+          {/* Stats Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                label: "Total Payouts",
+                count: stats?.total ?? 0,
+                amount: stats?.total_amount ?? 0,
+                icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+                color: "text-slate-600",
+              },
+              {
+                label: "Completed",
+                count: stats?.completed ?? 0,
+                amount: stats?.completed_amount ?? 0,
+                icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+                color: "text-green-600",
+              },
+              {
+                label: "Failed",
+                count: stats?.failed ?? 0,
+                amount: stats?.failed_amount ?? 0,
+                icon: "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z",
+                color: "text-red-600",
+              },
+              {
+                label: "Pending",
+                count: stats?.pending ?? 0,
+                amount: stats?.pending_amount ?? 0,
+                icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+                color: "text-orange-600",
+              },
+            ].map((stat, i) => (
+              <div key={i} className="glass p-6 rounded-3xl">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-3 bg-primary/10 rounded-2xl ${stat.color}`}>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {statsLoading ? "—" : stat.count} payouts
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-bold mt-1">{statsLoading ? "—" : formatCurrency(stat.amount)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters */}
+          <div className="glass p-6 rounded-3xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <label className="label">Search</label>
+                <div className="relative">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search by business name or ID…"
+                    className="input pl-10"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="label">Status</label>
+                <select className="input" value={statusFilter} onChange={(e) => handleStatusChange(e.target.value)}>
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="label">Status</label>
-            <select className="input" value={statusFilter} onChange={(e) => handleStatusChange(e.target.value)}>
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
+
+          {/* Table */}
+          <div className="glass p-6 rounded-3xl overflow-x-auto">
+            {isError && (
+              <div className="text-center py-12 text-red-500">Failed to load payouts. Please try again.</div>
+            )}
+
+            {(isLoading || isFetching) && !isError && (
+              <div className="text-center py-12">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+                <p className="text-sm text-muted-foreground mt-4">Loading payouts…</p>
+              </div>
+            )}
+
+            {!isLoading && !isFetching && !isError && (
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-sm text-muted-foreground border-b border-border">
+                    <th className="pb-4 font-medium">Business</th>
+                    <th className="pb-4 font-medium">Amount / Net</th>
+                    <th className="pb-4 font-medium">Bank Account</th>
+                    <th className="pb-4 font-medium">Requested</th>
+                    <th className="pb-4 font-medium">Status</th>
+                    <th className="pb-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {payouts.map((payout) => (
+                    <tr key={payout.id} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                      <td className="py-4">
+                        <p className="font-semibold text-sm">{payout.business_name ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{payout.business_unique_id ?? "—"}</p>
+                        {payout.user_name && <p className="text-xs text-muted-foreground">by {payout.user_name}</p>}
+                      </td>
+                      <td className="py-4">
+                        <p className="font-bold text-sm">{formatCurrency(payout.amount)}</p>
+                        <p className="text-xs text-muted-foreground">Net: {formatCurrency(payout.net_amount)}</p>
+                        <p className="text-xs text-muted-foreground">Commission: {formatCurrency(payout.commission_amount)}</p>
+                      </td>
+                      <td className="py-4">
+                        <p className="text-sm">{payout.bank_name ?? "—"}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{payout.account_number ?? "—"}</p>
+                      </td>
+                      <td className="py-4 text-sm text-muted-foreground">
+                        {new Date(payout.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-4">
+                        <StatusBadge status={payout.status} />
+                      </td>
+                      <td className="py-4 text-right">
+                        {payout.status === "failed" && can("finance", "manage_payouts") ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setApprovePayout(payout)}
+                              className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => setRejectPayout(payout)}
+                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDetailPayout(payout)}
+                            className="text-xs text-primary hover:underline font-medium"
+                          >
+                            View Details
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {!isLoading && !isFetching && !isError && payouts.length === 0 && (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p className="text-muted-foreground mt-4">No payouts found</p>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="glass p-6 rounded-3xl overflow-x-auto">
-        {isError && (
-          <div className="text-center py-12 text-red-500">Failed to load payouts. Please try again.</div>
-        )}
-
-        {(isLoading || isFetching) && !isError && (
-          <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground mt-4">Loading payouts…</p>
-          </div>
-        )}
-
-        {!isLoading && !isFetching && !isError && (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                <th className="pb-4 font-medium">Business</th>
-                <th className="pb-4 font-medium">Amount / Net</th>
-                <th className="pb-4 font-medium">Bank Account</th>
-                <th className="pb-4 font-medium">Requested</th>
-                <th className="pb-4 font-medium">Status</th>
-                <th className="pb-4 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {payouts.map((payout) => (
-                <tr key={payout.id} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                  <td className="py-4">
-                    <p className="font-semibold text-sm">{payout.business_name ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{payout.business_unique_id ?? "—"}</p>
-                    {payout.user_name && <p className="text-xs text-muted-foreground">by {payout.user_name}</p>}
-                  </td>
-                  <td className="py-4">
-                    <p className="font-bold text-sm">{formatCurrency(payout.amount)}</p>
-                    <p className="text-xs text-muted-foreground">Net: {formatCurrency(payout.net_amount)}</p>
-                    <p className="text-xs text-muted-foreground">Commission: {formatCurrency(payout.commission_amount)}</p>
-                  </td>
-                  <td className="py-4">
-                    <p className="text-sm">{payout.bank_name ?? "—"}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{payout.account_number ?? "—"}</p>
-                  </td>
-                  <td className="py-4 text-sm text-muted-foreground">
-                    {new Date(payout.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="py-4">
-                    <StatusBadge status={payout.status} />
-                  </td>
-                  <td className="py-4 text-right">
-                    {payout.status === "failed" && can("finance", "manage_payouts") ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => setApprovePayout(payout)}
-                          className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => setRejectPayout(payout)}
-                          className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setDetailPayout(payout)}
-                        className="text-xs text-primary hover:underline font-medium"
-                      >
-                        View Details
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {!isLoading && !isFetching && !isError && payouts.length === 0 && (
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <p className="text-muted-foreground mt-4">No payouts found</p>
-          </div>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {meta && (
-        <Pagination
-          currentPage={meta.current_page}
-          totalPages={meta.total_pages}
-          totalCount={meta.total_count}
-          onPageChange={setPage}
-        />
+          {/* Pagination */}
+          {meta && (
+            <Pagination
+              currentPage={meta.current_page}
+              totalPages={meta.total_pages}
+              totalCount={meta.total_count}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
+
+      {/* Cancellation Fees Tab */}
+      {activeTab === "cancellation_fees" && <CancellationFeesTab can={can} />}
 
       {/* Modals */}
       {detailPayout && <DetailModal payout={detailPayout} onClose={() => setDetailPayout(null)} />}

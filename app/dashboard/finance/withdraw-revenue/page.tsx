@@ -147,11 +147,13 @@ function WithdrawModal({
                 <span className="font-semibold">{fmt(parsedAmount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Paystack fee</span>
+                <span className="text-muted-foreground">
+                  Paystack transfer fee ({parsedAmount <= 5000 ? "₦10" : parsedAmount <= 50000 ? "₦25" : "₦50"} flat)
+                </span>
                 <span className="text-xs text-muted-foreground italic">From Paystack balance</span>
               </div>
               <div className="border-t border-indigo-200 pt-2 flex justify-between">
-                <span className="font-bold">You receive</span>
+                <span className="font-bold">Recipient receives</span>
                 <span className="font-bold text-emerald-600">{fmt(parsedAmount)}</span>
               </div>
             </div>
@@ -331,6 +333,7 @@ export default function WithdrawRevenuePage() {
                 <th className="pb-4 font-medium">Description</th>
                 <th className="pb-4 font-medium">Amount</th>
                 <th className="pb-4 font-medium">Transfer Code</th>
+                <th className="pb-4 font-medium">Paystack Fee</th>
                 <th className="pb-4 font-medium">Date</th>
                 <th className="pb-4 font-medium">Status</th>
               </tr>
@@ -341,6 +344,11 @@ export default function WithdrawRevenuePage() {
                   <td className="py-4 text-sm max-w-xs truncate">{w.description ?? "—"}</td>
                   <td className="py-4 font-bold text-sm">{fmt(Number(w.amount))}</td>
                   <td className="py-4 text-xs text-muted-foreground font-mono">{w.metadata?.transfer_code ?? "—"}</td>
+                  <td className="py-4 text-xs text-muted-foreground">
+                    {w.metadata?.paystack_transfer_fee != null
+                      ? `₦${w.metadata.paystack_transfer_fee} (from Paystack balance)`
+                      : "—"}
+                  </td>
                   <td className="py-4 text-sm text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</td>
                   <td className="py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${

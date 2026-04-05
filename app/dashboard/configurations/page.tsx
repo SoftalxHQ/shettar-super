@@ -17,6 +17,8 @@ export default function ConfigurationPage() {
 
   const [config, setConfig] = useState({
     withdrawal_commission_rate: 0,
+    withdrawal_flat_fee: 100,
+    minimum_withdrawal_amount: 10000,
     cancellation_fee_percentage: 10,
     business_cancellation_credit_percentage: 22.22,
   });
@@ -34,8 +36,10 @@ export default function ConfigurationPage() {
         if (res.ok) {
           const data = await res.json();
           setConfig({
-            withdrawal_commission_rate: data.withdrawal_commission_rate ?? 0,
-            cancellation_fee_percentage: data.cancellation_fee_percentage ?? 10,
+            withdrawal_commission_rate:              data.withdrawal_commission_rate ?? 0,
+            withdrawal_flat_fee:                     data.withdrawal_flat_fee ?? 100,
+            minimum_withdrawal_amount:               data.minimum_withdrawal_amount ?? 10000,
+            cancellation_fee_percentage:             data.cancellation_fee_percentage ?? 10,
             business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
           });
         }
@@ -144,6 +148,68 @@ export default function ConfigurationPage() {
               </p>
             </div>
 
+            {/* Withdrawal Flat Fee */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-teal-100 dark:bg-teal-900/30 text-teal-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Withdrawal Flat Fee</h3>
+                  <p className="text-xs text-muted-foreground">Fixed naira amount added to the commission on every withdrawal</p>
+                </div>
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₦</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={config.withdrawal_flat_fee}
+                  onChange={(e) => canEdit && setConfig({ ...config, withdrawal_flat_fee: parseFloat(e.target.value) || 0 })}
+                  readOnly={!canEdit}
+                  className="input pl-8 text-lg font-bold read-only:opacity-70 read-only:cursor-default"
+                  placeholder="100"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total commission = (rate% × amount) + flat fee. Default ₦100 covers Paystack&apos;s fixed transfer charge.
+              </p>
+            </div>
+
+            {/* Minimum Withdrawal */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Minimum Withdrawal Amount</h3>
+                  <p className="text-xs text-muted-foreground">Businesses cannot withdraw below this amount</p>
+                </div>
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₦</span>
+                <input
+                  type="number"
+                  step="1000"
+                  min="0"
+                  value={config.minimum_withdrawal_amount}
+                  onChange={(e) => canEdit && setConfig({ ...config, minimum_withdrawal_amount: parseFloat(e.target.value) || 0 })}
+                  readOnly={!canEdit}
+                  className="input pl-8 text-lg font-bold read-only:opacity-70 read-only:cursor-default"
+                  placeholder="10000"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Prevents unprofitable micro-withdrawals where Paystack&apos;s flat fees exceed your commission.
+              </p>
+            </div>
+
             {/* Cancellation Fee */}
             <div className="glass p-6 rounded-3xl space-y-4">
               <div className="flex items-center gap-3">
@@ -245,10 +311,13 @@ export default function ConfigurationPage() {
               <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
                 <p className="text-xs text-muted-foreground mb-1">Est. Commission on ₦1M withdrawal</p>
                 <p className="text-xl font-bold text-emerald-600">
-                  ₦{((1000000 * config.withdrawal_commission_rate) / 100).toLocaleString()}
+                  ₦{(Math.round(1000000 * config.withdrawal_commission_rate / 100) + config.withdrawal_flat_fee).toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Business receives ₦{((1000000 * (1 - config.withdrawal_commission_rate / 100))).toLocaleString()}
+                  {config.withdrawal_commission_rate}% (₦{Math.round(1000000 * config.withdrawal_commission_rate / 100).toLocaleString()}) + ₦{config.withdrawal_flat_fee} flat fee
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Business receives ₦{(1000000 - Math.round(1000000 * config.withdrawal_commission_rate / 100) - config.withdrawal_flat_fee).toLocaleString()}
                 </p>
               </div>
               <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">

@@ -528,6 +528,17 @@ export interface GetAnalyticsSummaryParams {
   end_date?: string;   // YYYY-MM-DD
 }
 
+export interface CancellationFee {
+  id: number;
+  amount: number;
+  description: string | null;
+  business_name: string | null;
+  booking_id: string | null;
+  total_booking: number;
+  fee_rate: number;
+  created_at: string;
+}
+
 export interface PayoutStats {
   total: number;
   total_amount: number;
@@ -567,6 +578,7 @@ export interface PlatformWithdrawal {
   metadata: {
     transfer_code?: string;
     paystack_fee?: number;
+    paystack_transfer_fee?: number;
     net_amount?: number;
     company_bank_account_id?: number;
   } | null;
@@ -990,6 +1002,20 @@ export const apiService = createApi({
       invalidatesTags: ["Payout"],
     }),
 
+    // ── Cancellation Fees endpoint ──────────────────────────────────────────
+    getCancellationFees: builder.query<{
+      fees: CancellationFee[];
+      stats: { total_amount: number; this_month_amount: number; total_count: number };
+      meta: AccountsMeta;
+    }, { page?: number; search?: string }>({
+      query: ({ page = 1, search } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        return `/api/v1/admin/cancellation_fees?${params.toString()}`;
+      },
+      providesTags: ["Payout"],
+    }),
+
     // ── Analytics endpoint ──────────────────────────────────────────────────
     getAnalyticsSummary: builder.query<AnalyticsSummary, GetAnalyticsSummaryParams>({
       query: (params = {}) => {
@@ -1099,6 +1125,7 @@ export const {
   useRejectPayoutMutation,
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
+  useGetCancellationFeesQuery,
   useGetAnalyticsSummaryQuery,
   useGetCompanyBankAccountsQuery,
   useCreateCompanyBankAccountMutation,
