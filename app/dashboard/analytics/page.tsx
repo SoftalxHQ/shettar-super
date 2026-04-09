@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatCurrency} tick={{ fontSize: 11 }} width={70} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
+              <Tooltip formatter={(v: number | undefined) => v != null ? formatCurrency(v) : ''} />
               <Area type="monotone" dataKey="revenue" stroke="#6366f1" fill="url(#revGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
@@ -311,7 +311,7 @@ export default function AnalyticsPage() {
                     <Cell key={entry.source} fill={SOURCE_COLORS[entry.source] ?? "#94a3b8"} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                <Tooltip formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''} />
               </PieChart>
             </ResponsiveContainer>
             <div className="flex-1 space-y-2">
@@ -364,7 +364,7 @@ export default function AnalyticsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
               <XAxis type="number" tickFormatter={formatCurrency} tick={{ fontSize: 10 }} />
               <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
+              <Tooltip formatter={(v: number | undefined) => v != null ? formatCurrency(v) : ''} />
               <Bar dataKey="total_revenue" fill="#6366f1" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -449,7 +449,7 @@ export default function AnalyticsPage() {
                     <Cell key={entry.group} fill={DEMO_COLORS[entry.group] ?? "#94a3b8"} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => v.toLocaleString()} />
+                <Tooltip formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''} />
               </PieChart>
             </ResponsiveContainer>
             <div className="flex-1 space-y-2">

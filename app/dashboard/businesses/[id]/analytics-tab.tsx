@@ -1,4 +1,16 @@
-{
+"use client";
+
+import { formatCurrency } from "@/lib/utils";
+
+interface AnalyticsTabProps {
+  activeTab: string;
+  business: any;
+}
+
+export default function AnalyticsTab({ activeTab, business }: AnalyticsTabProps) {
+  return (
+    <>
+      {
   activeTab === "analytics" && (
     <div className="space-y-6">
       {/* Key Metrics */}
@@ -40,9 +52,9 @@
           </div>
         </div>
         <div className="space-y-4">
-          {business.analytics.monthly_revenue.map((month, i) => {
-            const maxRevenue = Math.max(...business.analytics.monthly_revenue.map(m => m.revenue));
-            const maxBookings = Math.max(...business.analytics.monthly_revenue.map(m => m.bookings));
+          {business.analytics.monthly_revenue.map((month: any, i: number) => {
+            const maxRevenue = Math.max(...business.analytics.monthly_revenue.map((m: any) => m.revenue));
+            const maxBookings = Math.max(...business.analytics.monthly_revenue.map((m: any) => m.bookings));
             const revenueWidth = (month.revenue / maxRevenue) * 100;
             const bookingsWidth = (month.bookings / maxBookings) * 100;
             return (
@@ -74,7 +86,7 @@
         <div className="glass p-6 rounded-3xl">
           <h3 className="text-xl font-bold mb-6">Room Type Performance</h3>
           <div className="space-y-4">
-            {business.analytics.room_performance.map((room, i) => (
+            {business.analytics.room_performance.map((room: any, i: number) => (
               <div key={i} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-semibold">{room.type}</h4>
@@ -104,7 +116,7 @@
         <div className="glass p-6 rounded-3xl">
           <h3 className="text-xl font-bold mb-6">Booking Sources & Insights</h3>
           <div className="space-y-4">
-            {business.analytics.booking_sources.map((source, i) => {
+            {business.analytics.booking_sources.map((source: any, i: number) => {
               const colors = [
                 { bg: "bg-primary", text: "text-primary" },
                 { bg: "bg-green-500", text: "text-green-600" },
@@ -136,7 +148,7 @@
                 Top Performing Months
               </h4>
               <div className="space-y-2">
-                {business.analytics.top_months.map((month, i) => (
+                {business.analytics.top_months.map((month: any, i: number) => (
                   <div key={i} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">{i + 1}</span>
@@ -179,7 +191,7 @@
               </div>
               <div className="p-4 bg-white dark:bg-zinc-800/50 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">Monthly Avg Revenue</p>
-                <p className="font-bold text-sm">{formatCurrency(business.analytics.monthly_revenue.reduce((acc, m) => acc + m.revenue, 0) / business.analytics.monthly_revenue.length)}</p>
+                <p className="font-bold text-sm">{formatCurrency(business.analytics.monthly_revenue.reduce((acc: number, m: any) => acc + m.revenue, 0) / business.analytics.monthly_revenue.length)}</p>
                 <p className="text-xs text-purple-600 font-semibold mt-1">Last 6 months</p>
               </div>
             </div>
@@ -188,4 +200,7 @@
       </div>
     </div>
   )
+}
+    </>
+  );
 }

@@ -6,6 +6,12 @@ interface RequestOptions extends RequestInit {
   requiresAuth?: boolean
 }
 
+interface ErrorResponse {
+  status?: { message?: string }
+  message?: string
+  [key: string]: unknown
+}
+
 class ApiClient {
   private baseUrl: string
 
@@ -44,8 +50,8 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      
+      const errorData: ErrorResponse = await response.json().catch(() => ({}))
+
       // Auto-logout on 401 Unauthorized (Expired/Invalid Token)
       if (response.status === 401) {
         storageLogout()
@@ -55,8 +61,8 @@ class ApiClient {
       }
 
       throw new ApiError(
-        response.status, 
-        errorData.status?.message || errorData.message || response.statusText, 
+        response.status,
+        errorData.status?.message || errorData.message || response.statusText,
         errorData
       )
     }
@@ -72,15 +78,12 @@ class ApiClient {
         "X-Client-Platform": "web-super",
       },
       body: JSON.stringify({
-        admin: {
-          email,
-          password,
-        },
+        admin: { email, password },
       }),
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
+      const errorData: ErrorResponse = await response.json().catch(() => ({}))
       throw new ApiError(
         response.status,
         errorData.status?.message || errorData.message || "Login failed",
@@ -88,16 +91,11 @@ class ApiClient {
       )
     }
 
-    const data = await response.json()
-
-    // Extract JWT from Authorization header
+    const data: Record<string, unknown> = await response.json()
     const authHeader = response.headers.get("Authorization")
     const token = authHeader?.replace("Bearer ", "") || ""
 
-    return {
-      ...data,
-      token,
-    }
+    return { ...data, token }
   }
 
   async logout() {
@@ -113,12 +111,11 @@ class ApiClient {
     })
   }
 
-  // Convenience methods
   async get<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: "GET" })
   }
 
-  async post<T>(endpoint: string, data: any, options: RequestOptions = {}): Promise<T> {
+  async post<T>(endpoint: string, data: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "POST",
@@ -126,7 +123,7 @@ class ApiClient {
     })
   }
 
-  async patch<T>(endpoint: string, data: any, options: RequestOptions = {}): Promise<T> {
+  async patch<T>(endpoint: string, data: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "PATCH",
@@ -134,7 +131,7 @@ class ApiClient {
     })
   }
 
-  async put<T>(endpoint: string, data: any, options: RequestOptions = {}): Promise<T> {
+  async put<T>(endpoint: string, data: unknown, options: RequestOptions = {}): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "PUT",
@@ -145,9 +142,9 @@ class ApiClient {
 
 export class ApiError extends Error {
   status: number
-  data: any
+  data: unknown
 
-  constructor(status: number, message: string, data: any = {}) {
+  constructor(status: number, message: string, data: unknown = {}) {
     super(message)
     this.name = "ApiError"
     this.status = status
