@@ -22,6 +22,38 @@ interface LoginResponse {
   token: string;
 }
 
+export interface Marketer {
+  id: number;
+  full_name: string;
+  email: string;
+  phone_number: string | null;
+  referrer_code: string;
+  status: string;
+  created_at: string;
+}
+
+export interface MarketerPerformance {
+  total_referrals: number;
+  total_revenue: number;
+  commission_earned: number;
+  paid_commission: number;
+  unpaid_commission: number;
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  usage_limit: number | null;
+  usage_count: number;
+  per_customer_limit: number | null;
+  valid_from: string | null;
+  valid_to: string | null;
+  status: string;
+  created_at: string;
+}
+
 export interface Account {
   id: number;
   account_unique_id: string;
@@ -164,6 +196,8 @@ export interface Business {
   created_at: string;
   owner_name: string | null;
   owner_email: string | null;
+  commission_rate?: number | null;
+  is_featured?: boolean;
 }
 
 export interface BankAccount {
@@ -225,6 +259,7 @@ export interface BusinessDetail extends Business {
   bank_accounts: BankAccount[];
   commission_rate: number | null;
   cancellation_fee_percentage: number | null;
+  is_featured: boolean;
 }
 
 export interface BusinessReservation {
@@ -240,6 +275,10 @@ export interface BusinessReservation {
   total_amount: number;
   payment_method: string;
   cancelled: boolean;
+  /** Date-window status from API: upcoming | active | past | cancelled */
+  status: string;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
   occupied: boolean;
   processed: boolean;
   created_at: string;
@@ -626,7 +665,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -738,6 +777,14 @@ export const apiService = createApi({
         url: `/api/v1/admin/businesses/${id}/set_commission`,
         method: "PATCH",
         body: { commission_rate },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
+    setBusinessFeatured: builder.mutation<BusinessActionResponse, { id: number | string; is_featured: boolean }>({
+      query: ({ id, is_featured }) => ({
+        url: `/api/v1/admin/businesses/${id}/set_featured`,
+        method: "PATCH",
+        body: { is_featured },
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
@@ -1067,6 +1114,89 @@ export const apiService = createApi({
       query: ({ account_number, bank_code }) =>
         `/api/v1/banks/resolve_account?account_number=${account_number}&bank_code=${bank_code}`,
     }),
+
+    // ── Promo codes endpoints ───────────────────────────────────────────
+    getPromoCodes: builder.query<{ 
+      promo_codes: PromoCode[]; 
+      meta?: any;
+      stats?: {
+        total_count: number;
+        active_count: number;
+        total_redemptions: number;
+        avg_discount: number;
+      }
+    }, { page?: number }>({
+      query: ({ page = 1 } = {}) => `/api/v1/admin/promo_codes?page=${page}`,
+      transformResponse: (response: {
+        promo_codes?: PromoCode[];
+        meta?: unknown;
+        stats?: {
+          total_count?: number;
+          active_count?: number;
+          total_redemptions?: number;
+          avg_discount?: number;
+        };
+      }) => ({
+        promo_codes: (response.promo_codes ?? []).map((p) => ({
+          ...p,
+          discount_value: Number(p.discount_value ?? 0),
+          usage_count: Number(p.usage_count ?? 0),
+          usage_limit: p.usage_limit != null ? Number(p.usage_limit) : null,
+          per_customer_limit: p.per_customer_limit != null ? Number(p.per_customer_limit) : null,
+        })),
+        meta: response.meta,
+        stats: response.stats
+          ? {
+              total_count: Number(response.stats.total_count ?? 0),
+              active_count: Number(response.stats.active_count ?? 0),
+              total_redemptions: Number(response.stats.total_redemptions ?? 0),
+              avg_discount: Number(response.stats.avg_discount ?? 0),
+            }
+          : undefined,
+      }),
+      providesTags: ["PromoCode" as any],
+    }),
+    createPromoCode: builder.mutation<{ promo_code: PromoCode }, Partial<PromoCode>>({
+      query: (promo_code) => ({
+        url: "/api/v1/admin/promo_codes",
+        method: "POST",
+        body: { promo_code },
+      }),
+      invalidatesTags: ["PromoCode" as any],
+    }),
+    updatePromoCode: builder.mutation<{ promo_code: PromoCode }, { id: number; promo_code: Partial<PromoCode> }>({
+      query: ({ id, promo_code }) => ({
+        url: `/api/v1/admin/promo_codes/${id}`,
+        method: "PATCH",
+        body: { promo_code },
+      }),
+      invalidatesTags: ["PromoCode" as any],
+    }),
+
+    // ── Marketers endpoints ───────────────────────────────────────────────
+    getMarketers: builder.query<{ marketers: Marketer[] }, void>({
+      query: () => "/api/v1/admin/marketers",
+      providesTags: ["Marketer" as any],
+    }),
+    createMarketer: builder.mutation<{ marketer: Marketer }, any>({
+      query: (marketer) => ({
+        url: "/api/v1/admin/marketers",
+        method: "POST",
+        body: { marketer },
+      }),
+      invalidatesTags: ["Marketer" as any],
+    }),
+    getMarketerPerformance: builder.query<MarketerPerformance, number | string>({
+      query: (id) => `/api/v1/admin/marketers/${id}/performance`,
+    }),
+    updateMarketer: builder.mutation<{ marketer: Marketer }, { id: number; marketer: Partial<Marketer> }>({
+      query: ({ id, marketer }) => ({
+        url: `/api/v1/admin/marketers/${id}`,
+        method: "PATCH",
+        body: { marketer },
+      }),
+      invalidatesTags: ["Marketer" as any],
+    }),
   }),
 });
 
@@ -1086,6 +1216,7 @@ export const {
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
   useSetBusinessCommissionMutation,
+  useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
   useVerifyBankAccountMutation,
   useRejectBankAccountMutation,
@@ -1134,4 +1265,11 @@ export const {
   useGetPlatformWithdrawalsQuery,
   useGetPaystackBanksQuery,
   useLazyResolvePaystackAccountQuery,
+  useGetPromoCodesQuery,
+  useCreatePromoCodeMutation,
+  useUpdatePromoCodeMutation,
+  useGetMarketersQuery,
+  useCreateMarketerMutation,
+  useUpdateMarketerMutation,
+  useGetMarketerPerformanceQuery,
 } = apiService;

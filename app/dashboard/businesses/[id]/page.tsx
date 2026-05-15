@@ -16,6 +16,7 @@ import { useGetBusinessQuery,
   useBanBankAccountMutation,
   useUnbanBankAccountMutation,
   useSetBusinessCommissionMutation,
+  useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ export default function BusinessDetailPage() {
   const [banBankAccount, { isLoading: isBanningBank }] = useBanBankAccountMutation();
   const [unbanBankAccount, { isLoading: isUnbanningBank }] = useUnbanBankAccountMutation();
   const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
+  const [setBusinessFeatured, { isLoading: isSettingFeatured }] = useSetBusinessFeaturedMutation();
   const [setBusinessCancellationFee, { isLoading: isSettingCancellationFee }] = useSetBusinessCancellationFeeMutation();
 
   // Commission state
@@ -215,6 +217,18 @@ export default function BusinessDetailPage() {
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || "Failed to update commission rate");
+    }
+  };
+
+  const handleToggleFeatured = async () => {
+    if (!business) return;
+    try {
+      await setBusinessFeatured({ id, is_featured: !business.is_featured }).unwrap();
+      toast.success(business.is_featured ? "Removed from featured" : "Marked as featured");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to update featured status");
     }
   };
 
@@ -619,6 +633,36 @@ export default function BusinessDetailPage() {
                 )}
               </div>
             ))}
+          </div>
+
+          {/* Featured listing */}
+          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold">Featured on homepage</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Featured properties appear first in discovery lists (within date and availability filters).
+                </p>
+              </div>
+              {can("businesses", "set_commission") && (
+                <button
+                  type="button"
+                  onClick={handleToggleFeatured}
+                  disabled={isSettingFeatured || !business}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 ${
+                    business?.is_featured
+                      ? "bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-100"
+                      : "bg-primary text-primary-foreground hover:bg-primary/90"
+                  }`}
+                >
+                  {isSettingFeatured ? "Saving…" : business?.is_featured ? "Remove featured" : "Mark featured"}
+                </button>
+              )}
+            </div>
+            <p className="text-sm">
+              Status:{" "}
+              <span className="font-semibold">{business?.is_featured ? "Featured" : "Standard listing"}</span>
+            </p>
           </div>
 
           {/* Commission Rate */}
@@ -1153,7 +1197,8 @@ export default function BusinessDetailPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {reservations.map((r) => {
-                      const status = r.cancelled ? "cancelled" : r.occupied ? "active" : r.processed ? "past" : "upcoming";
+                      const rawStatus = r.status ?? (r.cancelled ? "cancelled" : "upcoming");
+                      const statusLabel = rawStatus === "past" ? "completed" : rawStatus;
                       return (
                         <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                           <td className="py-4 font-mono text-sm font-semibold">{r.booking_id}</td>
@@ -1166,12 +1211,12 @@ export default function BusinessDetailPage() {
                           <td className="py-4 text-sm">{r.guests}</td>
                           <td className="py-4 font-bold text-sm">{formatCurrency(r.total_amount)}</td>
                           <td className="py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${status === "upcoming" ? "bg-blue-100 text-blue-600" :
-                                status === "active" ? "bg-green-100 text-green-600" :
-                                  status === "past" ? "bg-slate-100 text-slate-600" :
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusLabel === "upcoming" ? "bg-blue-100 text-blue-600" :
+                                statusLabel === "active" ? "bg-green-100 text-green-600" :
+                                  statusLabel === "completed" ? "bg-slate-100 text-slate-600" :
                                     "bg-red-100 text-red-600"
                               }`}>
-                              {status}
+                              {statusLabel}
                             </span>
                           </td>
                         </tr>
