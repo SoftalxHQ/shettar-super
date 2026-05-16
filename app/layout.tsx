@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: "Shettar Super | Platform Management",
   description: "Enterprise oversight and support for the Shettar property network.",
   icons: {
-    icon: "/favicon.png",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
   },
 };
 
