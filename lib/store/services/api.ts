@@ -1186,14 +1186,25 @@ export const apiService = createApi({
       }),
       invalidatesTags: ["Marketer" as any],
     }),
+    getMarketer: builder.query<{ marketer: Marketer }, number | string>({
+      query: (id) => `/api/v1/admin/marketers/${id}`,
+      providesTags: ["Marketer" as any],
+    }),
     getMarketerPerformance: builder.query<MarketerPerformance, number | string>({
       query: (id) => `/api/v1/admin/marketers/${id}/performance`,
     }),
-    updateMarketer: builder.mutation<{ marketer: Marketer }, { id: number; marketer: Partial<Marketer> }>({
-      query: ({ id, marketer }) => ({
+    getMarketerTransactions: builder.query<{ transactions: any[]; meta: any }, { id: number | string; page?: number; transaction_type?: string }>({
+      query: ({ id, page = 1, transaction_type }) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (transaction_type && transaction_type !== "all") params.set("transaction_type", transaction_type);
+        return `/api/v1/admin/marketers/${id}/transactions?${params.toString()}`;
+      },
+    }),
+    updateMarketer: builder.mutation<{ marketer: Marketer }, { id: number; marketer: Partial<Marketer>; reason?: string }>({
+      query: ({ id, marketer, reason }) => ({
         url: `/api/v1/admin/marketers/${id}`,
         method: "PATCH",
-        body: { marketer },
+        body: { marketer, reason },
       }),
       invalidatesTags: ["Marketer" as any],
     }),
@@ -1269,7 +1280,9 @@ export const {
   useCreatePromoCodeMutation,
   useUpdatePromoCodeMutation,
   useGetMarketersQuery,
+  useGetMarketerQuery,
   useCreateMarketerMutation,
   useUpdateMarketerMutation,
   useGetMarketerPerformanceQuery,
+  useGetMarketerTransactionsQuery,
 } = apiService;

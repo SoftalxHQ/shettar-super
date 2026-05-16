@@ -8,6 +8,7 @@ import {
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import Link from "next/link";
 
 export default function MarketersPage() {
   const { data, isLoading } = useGetMarketersQuery();
@@ -155,15 +156,15 @@ export default function MarketersPage() {
               {marketers.map((m) => (
                 <tr key={m.id} className="hover:bg-primary/[0.02] transition-colors group">
                   <td className="p-5">
-                    <div className="flex items-center gap-3">
+                    <Link href={`/dashboard/marketers/${m.id}`} className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-black">
                         {(m.full_name?.[0] ?? "?").toUpperCase()}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-base">{m.full_name}</span>
+                        <span className="font-bold text-base group-hover:text-primary transition-colors">{m.full_name}</span>
                         <span className="text-xs text-muted-foreground">{m.email}</span>
                       </div>
-                    </div>
+                    </Link>
                   </td>
                   <td className="p-5">
                     <span className="font-mono font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded border border-border text-primary group-hover:bg-primary group-hover:text-white transition-all">
@@ -211,6 +212,15 @@ export default function MarketersPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+                      <Link 
+                        href={`/dashboard/marketers/${m.id}`}
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors inline-flex"
+                        title="View Details"
+                      >
+                        <svg className="w-5 h-5 text-muted-foreground hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </Link>
                     </div>
                   </td>
                 </tr>
