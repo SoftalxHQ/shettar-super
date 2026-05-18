@@ -10,6 +10,8 @@ import {
   useGetMarketerTransactionsQuery,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import {
   MarketerCommissionTiersEditor,
   DEFAULT_MARKETER_TIERS,
@@ -40,6 +42,12 @@ function Spinner() {
 }
 
 export default function MarketerDetailPage() {
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
   const params = useParams();
   const id = params.id as string;
 
@@ -55,7 +63,7 @@ export default function MarketerDetailPage() {
   const [customTiers, setCustomTiers] = useState<CommissionTier[]>(DEFAULT_MARKETER_TIERS);
 
   const [updateMarketer, { isLoading: isUpdating }] = useUpdateMarketerMutation();
-  const { data, isLoading, isError } = useGetMarketerQuery(id);
+  const { data, isLoading, isError } = useGetMarketerQuery(id, { skip: !can("marketers", "view") });
   const { data: perfData, isLoading: perfLoading } = useGetMarketerPerformanceQuery(id, { skip: activeTab !== "performance" });
   const { data: txData, isLoading: txLoading } = useGetMarketerTransactionsQuery(
     { id, page: txPage, transaction_type: txFilter },
@@ -129,6 +137,15 @@ export default function MarketerDetailPage() {
     }
   };
 
+  if (!can("marketers", "view")) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center py-24 text-center">
+        <h2 className="text-lg font-semibold">Access restricted</h2>
+        <p className="text-sm text-muted-foreground mt-1">You don&apos;t have permission to view marketers.</p>
+      </div>
+    );
+  }
+
   if (isLoading) return <div className="p-8 flex justify-center py-20"><Spinner /></div>;
   if (isError || !marketer) return (
     <div className="p-8 text-center py-20">
@@ -160,10 +177,12 @@ export default function MarketerDetailPage() {
           <span className={`px-4 py-2 rounded-full text-sm font-bold ${marketer.status === "active" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
             {marketer.status === "active" ? "Active" : "Inactive"}
           </span>
-          {marketer.status === "inactive" ? (
-            <button onClick={() => openAction("active", "Activate Marketer", "Activate & Notify", "green", ACT_REASONS)} disabled={isUpdating} className="px-4 py-2 rounded-full text-sm font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">Activate</button>
-          ) : (
-            <button onClick={() => openAction("inactive", "Deactivate Marketer", "Deactivate & Notify", "red", DEACT_REASONS)} disabled={isUpdating} className="px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Deactivate</button>
+          {can("marketers", "manage") && (
+            marketer.status === "inactive" ? (
+              <button onClick={() => openAction("active", "Activate Marketer", "Activate & Notify", "green", ACT_REASONS)} disabled={isUpdating} className="px-4 py-2 rounded-full text-sm font-bold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50">Activate</button>
+            ) : (
+              <button onClick={() => openAction("inactive", "Deactivate Marketer", "Deactivate & Notify", "red", DEACT_REASONS)} disabled={isUpdating} className="px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50">Deactivate</button>
+            )
           )}
         </div>
       </div>
@@ -221,7 +240,7 @@ export default function MarketerDetailPage() {
           <div className="glass p-6 rounded-3xl">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold">Bank Account</h3>
-              {marketer.bank_name && !marketer.bank_verified && (
+              {can("marketers", "manage") && marketer.bank_name && !marketer.bank_verified && (
                 <button onClick={() => openAction("verify_bank", "Verify Bank Account", "Verify Account", "green")} className="px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-xl font-bold text-xs transition-colors flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
                   Verify Now
@@ -262,7 +281,7 @@ export default function MarketerDetailPage() {
                   Referral payout tiers (one-time on verification) and optional booking revenue share from verified businesses only.
                 </p>
               </div>
-              {!showCommissionForm && (
+              {!showCommissionForm && can("marketers", "manage") && (
                 <button
                   onClick={openCommissionForm}
                   className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0"

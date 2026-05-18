@@ -8,12 +8,20 @@ import {
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function AdminPromosPage() {
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
   const [page, setPage] = useState(1);
   const { data, isLoading, isFetching } = useGetPromoCodesQuery(
     { page },
-    { refetchOnMountOrArgChange: true },
+    { refetchOnMountOrArgChange: true, skip: !can("promos", "view") },
   );
   const [createPromoCode, { isLoading: isCreating }] = useCreatePromoCodeMutation();
   const [updatePromoCode, { isLoading: isUpdating }] = useUpdatePromoCodeMutation();
@@ -141,6 +149,15 @@ export default function AdminPromosPage() {
     return { label: "Active", color: "bg-green-100 text-green-700", dot: "bg-green-500" };
   };
 
+  if (!can("promos", "view")) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center py-24 text-center">
+        <h2 className="text-lg font-semibold">Access restricted</h2>
+        <p className="text-sm text-muted-foreground mt-1">You don&apos;t have permission to view promo codes.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="p-8 flex justify-center py-20">
@@ -167,6 +184,7 @@ export default function AdminPromosPage() {
           <h1 className="text-3xl font-black tracking-tight">Platform Promos</h1>
           <p className="text-muted-foreground mt-1">Manage global discount codes and promotional campaigns across the platform.</p>
         </div>
+        {can("promos", "create") && (
         <button 
           onClick={() => handleOpenModal()}
           className="btn-primary w-fit px-6 py-3 shadow-lg shadow-primary/20"
@@ -178,6 +196,7 @@ export default function AdminPromosPage() {
             Create Promo
           </span>
         </button>
+        )}
       </div>
 
       {/* Stats Overview (all platform promos) */}
@@ -283,6 +302,7 @@ export default function AdminPromosPage() {
                       </span>
                     </td>
                     <td className="p-5 text-right">
+                      {can("promos", "edit") ? (
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => toggleStatus(p)}
@@ -313,6 +333,9 @@ export default function AdminPromosPage() {
                           </svg>
                         </button>
                       </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </td>
                   </tr>
                 );

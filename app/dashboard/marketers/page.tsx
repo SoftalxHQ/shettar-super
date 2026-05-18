@@ -9,9 +9,17 @@ import {
 import { toast } from "sonner";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 export default function MarketersPage() {
-  const { data, isLoading } = useGetMarketersQuery();
+  const { admin } = useAuth();
+  const can = (section: keyof AdminPermissions, action: string): boolean => {
+    if (admin?.admin_role === "super_admin") return true;
+    return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
+  };
+
+  const { data, isLoading } = useGetMarketersQuery(undefined, { skip: !can("marketers", "view") });
   const [createMarketer, { isLoading: isCreating }] = useCreateMarketerMutation();
   const [updateMarketer, { isLoading: isUpdating }] = useUpdateMarketerMutation();
   
@@ -82,6 +90,15 @@ export default function MarketersPage() {
     }
   };
 
+  if (!can("marketers", "view")) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center py-24 text-center">
+        <h2 className="text-lg font-semibold">Access restricted</h2>
+        <p className="text-sm text-muted-foreground mt-1">You don&apos;t have permission to view marketers.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="p-8 flex justify-center py-20">
@@ -105,6 +122,7 @@ export default function MarketersPage() {
               {portalUrl.replace(/^https?:\/\//, '')}
             </a>
           </div>
+          {can("marketers", "manage") && (
           <button 
             onClick={() => handleOpenModal()}
             className="btn-primary px-6 py-3 shadow-lg shadow-primary/20"
@@ -116,6 +134,7 @@ export default function MarketersPage() {
               Invite Marketer
             </span>
           </button>
+          )}
         </div>
       </div>
 
@@ -184,34 +203,38 @@ export default function MarketersPage() {
                   </td>
                   <td className="p-5 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => toggleStatus(m)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          m.status === 'active' 
-                          ? 'text-red-600 hover:bg-red-50' 
-                          : 'text-green-600 hover:bg-green-50'
-                        }`}
-                        title={m.status === 'active' ? 'Deactivate' : 'Activate'}
-                      >
-                        {m.status === 'active' ? (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => handleOpenModal(m)}
-                        className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
+                      {can("marketers", "manage") && (
+                        <>
+                          <button
+                            onClick={() => toggleStatus(m)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              m.status === "active"
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
+                            }`}
+                            title={m.status === "active" ? "Deactivate" : "Activate"}
+                          >
+                            {m.status === "active" ? (
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleOpenModal(m)}
+                            className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                       <Link 
                         href={`/dashboard/marketers/${m.id}`}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors inline-flex"

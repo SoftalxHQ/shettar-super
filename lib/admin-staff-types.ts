@@ -28,6 +28,8 @@ export const ADMIN_PERMISSION_PRESETS = {
       activities: { view: true },
       system_jobs: { view: true, manage: true },
       analytics: { view: true },
+      marketers: { view: true, manage: true },
+      promos: { view: true, create: true, edit: true },
     } as AdminPermissions,
   },
   support_agent: {
@@ -69,6 +71,8 @@ export const ADMIN_PERMISSION_PRESETS = {
       activities: { view: true },
       system_jobs: { view: true },
       analytics: { view: true },
+      marketers: { view: true },
+      promos: { view: true },
     } as AdminPermissions,
   },
   custom: {
@@ -147,5 +151,20 @@ export const ADMIN_PERMISSION_LABELS = {
   analytics: {
     title: "Analytics",
     actions: { view: "View Platform Analytics" },
+  },
+  marketers: {
+    title: "Marketers",
+    actions: {
+      view: "View Marketers",
+      manage: "Create & Edit Marketers",
+    },
+  },
+  promos: {
+    title: "Promo Codes",
+    actions: {
+      view: "View Promo Codes",
+      create: "Create Promo Codes",
+      edit: "Edit Promo Codes",
+    },
   },
 } as const;

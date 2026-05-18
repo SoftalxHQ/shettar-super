@@ -33,6 +33,10 @@ const ACTION_LABELS: Record<string, string> = {
   staff_removed: "Staff Removed",
   admin_signed_in: "Admin Signed In",
   admin_signed_out: "Admin Signed Out",
+  promo_code_created: "Promo Created",
+  promo_code_updated: "Promo Updated",
+  marketer_created: "Marketer Created",
+  marketer_updated: "Marketer Updated",
 };
 
 function formatTimeAgo(dateStr: string): string {

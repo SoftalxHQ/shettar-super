@@ -11,6 +11,8 @@ export interface AdminPermissions {
   activities?: { view?: boolean };
   system_jobs?: { view?: boolean; manage?: boolean };
   analytics?: { view?: boolean };
+  marketers?: { view?: boolean; manage?: boolean };
+  promos?: { view?: boolean; create?: boolean; edit?: boolean };
 }
 
 export interface Admin {
