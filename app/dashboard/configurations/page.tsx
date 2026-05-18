@@ -6,6 +6,11 @@ import { useAppSelector } from "@/lib/store/hooks";
 import { selectToken } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
+import {
+  MarketerCommissionTiersEditor,
+  DEFAULT_MARKETER_TIERS,
+  type CommissionTier,
+} from "@/components/marketer-commission-tiers-editor";
 
 export default function ConfigurationPage() {
   const { admin } = useAuth();
@@ -21,6 +26,7 @@ export default function ConfigurationPage() {
     minimum_withdrawal_amount: 10000,
     cancellation_fee_percentage: 10,
     business_cancellation_credit_percentage: 22.22,
+    marketer_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,6 +47,11 @@ export default function ConfigurationPage() {
             minimum_withdrawal_amount:               data.minimum_withdrawal_amount ?? 10000,
             cancellation_fee_percentage:             data.cancellation_fee_percentage ?? 10,
             business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
+            marketer_commission_tiers:               (data.marketer_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
+              min_rooms: t.min_rooms ?? 0,
+              max_rooms: t.max_rooms ?? null,
+              amount: Number(t.amount) || 0,
+            })),
           });
         }
       } catch {
@@ -242,6 +253,29 @@ export default function ConfigurationPage() {
               </p>
               <p className="text-xs text-muted-foreground">
                 This rate applies to businesses that do not have a per-business override set.
+              </p>
+            </div>
+
+            {/* Marketer referral commission tiers */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Marketer Referral Commission</h3>
+                  <p className="text-xs text-muted-foreground">One-time flat payout when a referred business is fully verified, based on room count</p>
+                </div>
+              </div>
+              <MarketerCommissionTiersEditor
+                tiers={config.marketer_commission_tiers}
+                onChange={(tiers) => canEdit && setConfig({ ...config, marketer_commission_tiers: tiers })}
+                readOnly={!canEdit}
+              />
+              <p className="text-xs text-muted-foreground">
+                Marketers only earn after the business is fully verified. Per-marketer custom tiers can override these defaults.
               </p>
             </div>
 

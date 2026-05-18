@@ -10,6 +10,12 @@ import {
   useGetMarketerTransactionsQuery,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
+import {
+  MarketerCommissionTiersEditor,
+  DEFAULT_MARKETER_TIERS,
+  tierLabel,
+  type CommissionTier,
+} from "@/components/marketer-commission-tiers-editor";
 
 const DEACT_REASONS = [
   { value: "", label: "Select a reason..." },
@@ -43,6 +49,10 @@ export default function MarketerDetailPage() {
   const [showModal, setShowModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [action, setAction] = useState<{ type: string; title: string; confirmText: string; variant: "green" | "red"; reasons?: { value: string; label: string }[] } | null>(null);
+  const [showCommissionForm, setShowCommissionForm] = useState(false);
+  const [commissionRateInput, setCommissionRateInput] = useState("");
+  const [useCustomTiers, setUseCustomTiers] = useState(false);
+  const [customTiers, setCustomTiers] = useState<CommissionTier[]>(DEFAULT_MARKETER_TIERS);
 
   const [updateMarketer, { isLoading: isUpdating }] = useUpdateMarketerMutation();
   const { data, isLoading, isError } = useGetMarketerQuery(id);
@@ -61,6 +71,43 @@ export default function MarketerDetailPage() {
     setAction({ type, title, confirmText, variant, reasons });
     setSelectedReason("");
     setShowModal(true);
+  };
+
+  const openCommissionForm = () => {
+    if (!marketer) return;
+    setCommissionRateInput(marketer.commission_rate != null ? String(marketer.commission_rate) : "");
+    setUseCustomTiers(!!marketer.use_custom_commission_tiers);
+    setCustomTiers(
+      (marketer.custom_commission_tiers ?? marketer.default_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
+        min_rooms: t.min_rooms ?? 0,
+        max_rooms: t.max_rooms ?? null,
+        amount: Number(t.amount) || 0,
+      }))
+    );
+    setShowCommissionForm(true);
+  };
+
+  const handleSaveCommission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const rate = commissionRateInput.trim() === "" ? 0 : parseFloat(commissionRateInput);
+    if (Number.isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error("Booking commission rate must be between 0 and 100");
+      return;
+    }
+    try {
+      await updateMarketer({
+        id: Number(id),
+        marketer: {
+          commission_rate: rate,
+          use_custom_commission_tiers: useCustomTiers,
+          custom_commission_tiers: useCustomTiers ? customTiers : [],
+        },
+      }).unwrap();
+      toast.success("Commission settings updated");
+      setShowCommissionForm(false);
+    } catch (err: any) {
+      toast.error(err?.data?.error || "Failed to update commission settings");
+    }
   };
 
   const handleAction = async () => {
@@ -150,6 +197,7 @@ export default function MarketerDetailPage() {
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
+        <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="glass p-6 rounded-3xl">
             <h3 className="text-xl font-bold mb-4">Personal Information</h3>
@@ -205,6 +253,98 @@ export default function MarketerDetailPage() {
             )}
           </div>
         </div>
+
+          <div className="glass p-6 rounded-3xl space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold">Commission Settings</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Referral payout tiers (one-time on verification) and optional booking revenue share from verified businesses only.
+                </p>
+              </div>
+              {!showCommissionForm && (
+                <button
+                  onClick={openCommissionForm}
+                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                >
+                  Edit Commission
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <p className="text-xs text-muted-foreground mb-1">Booking commission rate</p>
+                <p className="text-lg font-bold text-indigo-600">
+                  {marketer.commission_rate ? `${marketer.commission_rate}%` : "0%"} of verified business booking revenue
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <p className="text-xs text-muted-foreground mb-1">Referral tier source</p>
+                <p className="text-lg font-bold">
+                  {marketer.use_custom_commission_tiers ? "Custom (negotiated)" : "Platform default"}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active referral tiers</p>
+              <div className="flex flex-wrap gap-2">
+                {(marketer.use_custom_commission_tiers
+                  ? marketer.custom_commission_tiers
+                  : marketer.default_commission_tiers ?? DEFAULT_MARKETER_TIERS
+                )?.map((tier: CommissionTier, i: number) => (
+                  <span key={i} className="text-xs px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-semibold">
+                    {tierLabel(tier)} → ₦{Number(tier.amount).toLocaleString()}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {showCommissionForm && (
+              <form onSubmit={handleSaveCommission} className="space-y-5 pt-2 border-t border-border">
+                <div>
+                  <label className="label">Booking commission rate (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className="input"
+                    placeholder="0 — no booking share"
+                    value={commissionRateInput}
+                    onChange={(e) => setCommissionRateInput(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Percentage of booking revenue from fully verified, non-suspended referred businesses.</p>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useCustomTiers}
+                    onChange={(e) => setUseCustomTiers(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  <span className="text-sm font-semibold">Use custom referral tiers (override platform default)</span>
+                </label>
+                {useCustomTiers ? (
+                  <MarketerCommissionTiersEditor tiers={customTiers} onChange={setCustomTiers} />
+                ) : (
+                  <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl text-sm text-muted-foreground">
+                    Platform default tiers apply. Enable custom tiers to negotiate different referral amounts per room band.
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowCommissionForm(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={isUpdating} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+                    {isUpdating ? "Saving…" : "Save Commission Settings"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Performance Tab */}
@@ -214,13 +354,11 @@ export default function MarketerDetailPage() {
             <div className="glass p-12 rounded-3xl text-center"><Spinner /></div>
           ) : perf ? (
             <>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: "Total Referrals", value: perf.total_referrals ?? 0, color: "bg-indigo-100 text-indigo-600" },
-                  { label: "Active Businesses", value: perf.active_businesses ?? 0, color: "bg-green-100 text-green-600" },
-                  { label: "Total Bookings", value: perf.total_bookings ?? 0, color: "bg-blue-100 text-blue-600" },
-                  { label: "Revenue Generated", value: formatCurrency(perf.revenue ?? 0), color: "bg-purple-100 text-purple-600" },
-                  { label: "Commission Earned", value: formatCurrency(perf.commission_earned ?? 0), color: "bg-amber-100 text-amber-600" },
+                  { label: "Verified Businesses", value: perf.verified_businesses ?? perf.active_businesses ?? 0, color: "bg-green-100 text-green-600" },
+                  { label: "Referral Commission", value: formatCurrency(perf.referral_commission_earned ?? 0), color: "bg-amber-100 text-amber-600" },
                   { label: "Conversion Rate", value: `${perf.conversion_rate ?? 0}%`, color: "bg-rose-100 text-rose-600" },
                 ].map((s, i) => (
                   <div key={i} className="glass p-5 rounded-3xl">
