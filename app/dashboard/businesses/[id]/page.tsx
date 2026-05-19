@@ -137,8 +137,8 @@ export default function BusinessDetailPage() {
         await activateBusiness({ id, reason: statusReason }).unwrap();
         toast.success("Business activated successfully");
       } else if (statusAction.type === "verify") {
-        await verifyBusiness({ id, status: "approved", reason: statusReason }).unwrap();
-        toast.success("Business verified successfully");
+        const res = await verifyBusiness({ id, status: "approved", reason: statusReason }).unwrap();
+        toast.success(res.message || "Business verified successfully");
       } else if (statusAction.type === "reject") {
         await verifyBusiness({ id, status: "rejected", reason: statusReason }).unwrap();
         toast.success("Business rejected");
