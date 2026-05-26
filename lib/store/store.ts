@@ -17,6 +17,7 @@ import businessesReducer from "./slices/businessesSlice";
 import notificationsReducer from "./slices/notificationsSlice";
 import supportTicketsReducer from "./slices/supportTicketsSlice";
 import { apiService } from "./services/api";
+import "./services/marketer-agency-api";
 
 const persistConfig = {
   key: "root",

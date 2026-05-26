@@ -27,6 +27,7 @@ export default function ConfigurationPage() {
     cancellation_fee_percentage: 10,
     business_cancellation_credit_percentage: 22.22,
     marketer_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
+    agency_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,11 @@ export default function ConfigurationPage() {
             cancellation_fee_percentage:             data.cancellation_fee_percentage ?? 10,
             business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
             marketer_commission_tiers:               (data.marketer_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
+              min_rooms: t.min_rooms ?? 0,
+              max_rooms: t.max_rooms ?? null,
+              amount: Number(t.amount) || 0,
+            })),
+            agency_commission_tiers:               (data.agency_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
               min_rooms: t.min_rooms ?? 0,
               max_rooms: t.max_rooms ?? null,
               amount: Number(t.amount) || 0,
@@ -277,6 +283,26 @@ export default function ConfigurationPage() {
               <p className="text-xs text-muted-foreground">
                 Marketers only earn after the business is fully verified. Per-marketer custom tiers can override these defaults.
               </p>
+            </div>
+
+            {/* Agency referral commission tiers */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-violet-100 dark:bg-violet-900/30 text-violet-600 rounded-2xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold">Agency Referral Commission</h3>
+                  <p className="text-xs text-muted-foreground">One-time payout to agency pool when a team member&apos;s referred business is verified</p>
+                </div>
+              </div>
+              <MarketerCommissionTiersEditor
+                tiers={config.agency_commission_tiers}
+                onChange={(tiers) => canEdit && setConfig({ ...config, agency_commission_tiers: tiers })}
+                readOnly={!canEdit}
+              />
             </div>
 
             {/* Business Cancellation Credit */}

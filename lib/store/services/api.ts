@@ -29,7 +29,38 @@ export interface Marketer {
   phone_number: string | null;
   referrer_code: string;
   status: string;
+  account_type?: "individual" | "agency" | "agency_member";
+  agency_name?: string | null;
+  agency_id?: number | null;
+  agency?: { id: number; name: string } | null;
+  agency_summary?: Record<string, unknown> | null;
+  agency_members?: AgencyMemberStats[] | null;
+  balance?: number;
+  commission_balance?: number;
+  businesses_referred?: number;
+  commission_rate?: number | null;
+  use_custom_commission_tiers?: boolean;
+  custom_commission_tiers?: { min_rooms: number; max_rooms: number | null; amount: number }[];
+  default_commission_tiers?: { min_rooms: number; max_rooms: number | null; amount: number }[];
+  bank_name?: string | null;
+  account_name?: string | null;
+  account_number?: string | null;
+  bank_code?: string | null;
+  bank_verified?: boolean;
   created_at: string;
+}
+
+export interface AgencyMemberStats {
+  id: number;
+  full_name: string;
+  email: string;
+  referrer_code: string;
+  status: string;
+  total_referrals: number;
+  verified_businesses: number;
+  referral_commission_earned: number;
+  balance: number;
+  commission_balance: number;
 }
 
 export interface MarketerPerformance {

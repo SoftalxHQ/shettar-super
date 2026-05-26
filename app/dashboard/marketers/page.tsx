@@ -29,11 +29,25 @@ export default function MarketersPage() {
   const [form, setForm] = useState({ 
     full_name: "", 
     email: "", 
-    phone_number: "", 
+    phone_number: "",
+    account_type: "individual" as "individual" | "agency",
+    agency_name: "",
   });
 
   const marketers = data?.marketers || [];
   const portalUrl = (process.env.NEXT_PUBLIC_MARKETER_PORTAL_URL || "http://localhost:3005").replace(/\/$/, "");
+
+  const accountTypeLabel = (type?: string) => {
+    if (type === "agency") return "Agency";
+    if (type === "agency_member") return "Agency Member";
+    return "Individual";
+  };
+
+  const accountTypeBadgeClass = (type?: string) => {
+    if (type === "agency") return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300";
+    if (type === "agency_member") return "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-300";
+    return "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300";
+  };
 
   const handleOpenModal = (marketer: any = null) => {
     if (marketer) {
@@ -42,6 +56,8 @@ export default function MarketersPage() {
         full_name: marketer.full_name,
         email: marketer.email,
         phone_number: marketer.phone_number || "",
+        account_type: marketer.account_type === "agency" ? "agency" : "individual",
+        agency_name: marketer.agency_name || "",
       });
     } else {
       setEditingMarketer(null);
@@ -49,6 +65,8 @@ export default function MarketersPage() {
         full_name: "",
         email: "",
         phone_number: "",
+        account_type: "individual",
+        agency_name: "",
       });
     }
     setIsModalOpen(true);
@@ -64,14 +82,31 @@ export default function MarketersPage() {
     
     try {
       if (editingMarketer) {
-        const payload = {
+        const payload: Record<string, string> = {
           full_name: form.full_name,
           phone_number: form.phone_number,
         };
+        if (editingMarketer.account_type === "individual") {
+          payload.account_type = form.account_type;
+          if (form.account_type === "agency") {
+            payload.agency_name = form.agency_name;
+          }
+        } else if (editingMarketer.account_type === "agency") {
+          payload.agency_name = form.agency_name;
+        }
         await updateMarketer({ id: editingMarketer.id, marketer: payload }).unwrap();
         toast.success("Marketer updated successfully");
       } else {
-        await createMarketer(form).unwrap();
+        const payload: Record<string, string> = {
+          full_name: form.full_name,
+          email: form.email,
+          phone_number: form.phone_number,
+          account_type: form.account_type,
+        };
+        if (form.account_type === "agency") {
+          payload.agency_name = form.agency_name;
+        }
+        await createMarketer(payload).unwrap();
         toast.success("Marketer invited! An email with their login credentials has been sent.");
       }
       handleCloseModal();
@@ -165,6 +200,7 @@ export default function MarketersPage() {
             <thead>
               <tr className="bg-slate-50/50 dark:bg-zinc-800/50 border-b border-border">
                 <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Marketer</th>
+                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Account Type</th>
                 <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Ref Code</th>
                 <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Status</th>
                 <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Joined</th>
@@ -186,6 +222,16 @@ export default function MarketersPage() {
                     </Link>
                   </td>
                   <td className="p-5">
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex w-fit px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${accountTypeBadgeClass(m.account_type)}`}>
+                        {accountTypeLabel(m.account_type)}
+                      </span>
+                      {m.account_type === "agency" && m.agency_name && (
+                        <span className="text-xs text-muted-foreground">{m.agency_name}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-5">
                     <span className="font-mono font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded border border-border text-primary group-hover:bg-primary group-hover:text-white transition-all">
                       {m.referrer_code}
                     </span>
@@ -205,25 +251,6 @@ export default function MarketersPage() {
                     <div className="flex items-center justify-end gap-2">
                       {can("marketers", "manage") && (
                         <>
-                          <button
-                            onClick={() => toggleStatus(m)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              m.status === "active"
-                                ? "text-red-600 hover:bg-red-50"
-                                : "text-green-600 hover:bg-green-50"
-                            }`}
-                            title={m.status === "active" ? "Deactivate" : "Activate"}
-                          >
-                            {m.status === "active" ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            )}
-                          </button>
                           <button
                             onClick={() => handleOpenModal(m)}
                             className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
@@ -312,6 +339,78 @@ export default function MarketersPage() {
                   />
                   {editingMarketer && <p className="text-[10px] text-muted-foreground">Email cannot be changed after creation.</p>}
                 </div>
+
+                {!editingMarketer && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account Type</label>
+                      <select
+                        className="input"
+                        value={form.account_type}
+                        onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
+                      >
+                        <option value="individual">Individual Marketer</option>
+                        <option value="agency">Agency</option>
+                      </select>
+                    </div>
+                    {form.account_type === "agency" && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
+                        <input
+                          className="input"
+                          placeholder="Acme Marketing Ltd"
+                          value={form.agency_name}
+                          onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                          required
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {editingMarketer?.account_type === "individual" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account Type</label>
+                      <select
+                        className="input"
+                        value={form.account_type}
+                        onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
+                      >
+                        <option value="individual">Individual Marketer</option>
+                        <option value="agency">Agency</option>
+                      </select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Switch to Agency to enable team management and a shared commission pool in the marketer portal.
+                      </p>
+                    </div>
+                    {form.account_type === "agency" && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
+                        <input
+                          className="input"
+                          placeholder="Acme Marketing Ltd"
+                          value={form.agency_name}
+                          onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                          required
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {editingMarketer?.account_type === "agency" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
+                    <input
+                      className="input"
+                      placeholder="Acme Marketing Ltd"
+                      value={form.agency_name}
+                      onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</label>

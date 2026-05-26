@@ -9,6 +9,10 @@ import {
   useGetMarketerPerformanceQuery,
   useGetMarketerTransactionsQuery,
 } from "@/lib/store/services/api";
+import {
+  useCreateAgencyMemberMutation,
+  useAllocateAgencyFundsMutation,
+} from "@/lib/store/services/marketer-agency-api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
@@ -61,8 +65,14 @@ export default function MarketerDetailPage() {
   const [commissionRateInput, setCommissionRateInput] = useState("");
   const [useCustomTiers, setUseCustomTiers] = useState(false);
   const [customTiers, setCustomTiers] = useState<CommissionTier[]>(DEFAULT_MARKETER_TIERS);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [showAllocate, setShowAllocate] = useState(false);
+  const [memberForm, setMemberForm] = useState({ full_name: "", email: "", phone_number: "" });
+  const [allocateForm, setAllocateForm] = useState({ member_id: "", amount: "", wallet_type: "commission_balance", notes: "" });
 
   const [updateMarketer, { isLoading: isUpdating }] = useUpdateMarketerMutation();
+  const [createAgencyMember, { isLoading: isCreatingMember }] = useCreateAgencyMemberMutation();
+  const [allocateAgencyFunds, { isLoading: isAllocating }] = useAllocateAgencyFundsMutation();
   const { data, isLoading, isError } = useGetMarketerQuery(id, { skip: !can("marketers", "view") });
   const { data: perfData, isLoading: perfLoading } = useGetMarketerPerformanceQuery(id, { skip: activeTab !== "performance" });
   const { data: txData, isLoading: txLoading } = useGetMarketerTransactionsQuery(
@@ -137,6 +147,51 @@ export default function MarketerDetailPage() {
     }
   };
 
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createAgencyMember({ agencyId: Number(id), member: memberForm }).unwrap();
+      toast.success("Team member invited. Login credentials sent via email.");
+      setShowAddMember(false);
+      setMemberForm({ full_name: "", email: "", phone_number: "" });
+    } catch (err: any) {
+      toast.error(err?.data?.error || err?.data?.errors?.join?.(", ") || "Failed to add team member");
+    }
+  };
+
+  const handleAllocate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amount = parseFloat(allocateForm.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    if (!allocateForm.member_id) {
+      toast.error("Select a team member");
+      return;
+    }
+    try {
+      await allocateAgencyFunds({
+        agencyId: Number(id),
+        member_id: Number(allocateForm.member_id),
+        amount,
+        wallet_type: allocateForm.wallet_type,
+        notes: allocateForm.notes || undefined,
+      }).unwrap();
+      toast.success("Funds released to team member");
+      setShowAllocate(false);
+      setAllocateForm({ member_id: "", amount: "", wallet_type: "commission_balance", notes: "" });
+    } catch (err: any) {
+      toast.error(err?.data?.error || "Failed to release funds");
+    }
+  };
+
+  const accountTypeLabel = (type?: string) => {
+    if (type === "agency") return "Agency";
+    if (type === "agency_member") return "Agency Member";
+    return "Individual";
+  };
+
   if (!can("marketers", "view")) {
     return (
       <div className="p-8 flex flex-col items-center justify-center py-24 text-center">
@@ -157,6 +212,7 @@ export default function MarketerDetailPage() {
   const tabs = [
     { id: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
     { id: "performance", label: "Performance", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
+    ...(marketer.account_type === "agency" ? [{ id: "team", label: "Team", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" }] : []),
     { id: "transactions", label: "Transactions", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
   ];
 
@@ -170,7 +226,19 @@ export default function MarketerDetailPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold">{marketer.full_name}</h1>
-            <p className="text-muted-foreground mt-1">Ref: <span className="font-mono font-bold text-primary">{marketer.referrer_code}</span></p>
+            <p className="text-muted-foreground mt-1">
+              Ref: <span className="font-mono font-bold text-primary">{marketer.referrer_code}</span>
+              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                marketer.account_type === "agency" ? "bg-violet-100 text-violet-700" :
+                marketer.account_type === "agency_member" ? "bg-slate-100 text-slate-600" :
+                "bg-indigo-50 text-indigo-600"
+              }`}>
+                {accountTypeLabel(marketer.account_type)}
+              </span>
+              {marketer.account_type === "agency" && marketer.agency_name && (
+                <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">{marketer.agency_name}</span>
+              )}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -225,6 +293,16 @@ export default function MarketerDetailPage() {
                 { label: "Full Name", value: marketer.full_name },
                 { label: "Email", value: marketer.email },
                 { label: "Phone", value: marketer.phone_number || "—" },
+                { label: "Account Type", value: accountTypeLabel(marketer.account_type) },
+                ...(marketer.account_type === "agency" ? [{ label: "Agency Name", value: marketer.agency_name || "—" }] : []),
+                ...(marketer.account_type === "agency_member" && marketer.agency ? [{
+                  label: "Parent Agency",
+                  value: (
+                    <Link href={`/dashboard/marketers/${marketer.agency.id}`} className="text-primary hover:underline">
+                      {marketer.agency.name}
+                    </Link>
+                  ),
+                }] : []),
                 { label: "Commission Rate", value: marketer.commission_rate ? `${marketer.commission_rate}%` : "—" },
                 { label: "Status", value: marketer.status },
                 { label: "Joined", value: formatDate(marketer.created_at) },
@@ -428,6 +506,93 @@ export default function MarketerDetailPage() {
         </div>
       )}
 
+      {/* Team Tab */}
+      {activeTab === "team" && marketer.account_type === "agency" && (
+        <div className="space-y-6">
+          {marketer.agency_summary && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: "Pool Balance", value: formatCurrency(marketer.agency_summary.commission_balance ?? 0), color: "bg-green-100 text-green-600" },
+                { label: "Team Members", value: marketer.agency_summary.team_members_count ?? 0, color: "bg-violet-100 text-violet-600" },
+                { label: "Team Referrals", value: marketer.agency_summary.total_referrals ?? 0, color: "bg-indigo-100 text-indigo-600" },
+                { label: "Total Allocated", value: formatCurrency(marketer.agency_summary.total_allocated ?? 0), color: "bg-amber-100 text-amber-600" },
+              ].map((s, i) => (
+                <div key={i} className="glass p-5 rounded-3xl">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 mb-1">{s.label}</p>
+                  <p className="text-2xl font-black">{s.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="glass p-6 rounded-3xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-xl font-bold">Team Members</h3>
+                <p className="text-sm text-muted-foreground mt-1">Sub-marketers under this agency. Referral commissions pay into the agency pool.</p>
+              </div>
+              {can("marketers", "manage") && (
+                <div className="flex gap-2">
+                  <button onClick={() => setShowAllocate(true)} className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800">
+                    Release Funds
+                  </button>
+                  <button onClick={() => setShowAddMember(true)} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+                    Add Member
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {(marketer.agency_members ?? []).length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-border rounded-2xl">
+                No team members yet. Add sub-marketers to start building the agency team.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b border-border text-muted-foreground">
+                      <th className="pb-3 font-medium">Member</th>
+                      <th className="pb-3 font-medium">Ref Code</th>
+                      <th className="pb-3 font-medium">Referrals</th>
+                      <th className="pb-3 font-medium">Verified</th>
+                      <th className="pb-3 font-medium">Commission Earned</th>
+                      <th className="pb-3 font-medium">Wallets</th>
+                      <th className="pb-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {marketer.agency_members.map((member: any) => (
+                      <tr key={member.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50">
+                        <td className="py-3">
+                          <div>
+                            <p className="font-semibold">{member.full_name}</p>
+                            <p className="text-xs text-muted-foreground">{member.email}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 font-mono text-xs">{member.referrer_code}</td>
+                        <td className="py-3">{member.total_referrals ?? 0}</td>
+                        <td className="py-3">{member.verified_businesses ?? 0}</td>
+                        <td className="py-3 font-semibold">{formatCurrency(member.referral_commission_earned ?? 0)}</td>
+                        <td className="py-3 text-xs">
+                          <p>Salary: {formatCurrency(member.balance ?? 0)}</p>
+                          <p>Commission: {formatCurrency(member.commission_balance ?? 0)}</p>
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold capitalize ${member.status === "active" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
+                            {member.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
         <div className="glass p-6 rounded-3xl">
@@ -502,6 +667,84 @@ export default function MarketerDetailPage() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Add Member Modal */}
+      {showAddMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAddMember(false)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-bold">Add Team Member</h3>
+              <p className="text-sm text-muted-foreground mt-1">Create a sub-marketer under {marketer.agency_name || marketer.full_name}.</p>
+            </div>
+            <form onSubmit={handleAddMember} className="p-6 space-y-4">
+              <div>
+                <label className="label">Full Name</label>
+                <input className="input" value={memberForm.full_name} onChange={e => setMemberForm({ ...memberForm, full_name: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Email</label>
+                <input className="input" type="email" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Phone (optional)</label>
+                <input className="input" value={memberForm.phone_number} onChange={e => setMemberForm({ ...memberForm, phone_number: e.target.value })} />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowAddMember(false)} className="flex-1 px-4 py-3 rounded-xl border border-border text-sm font-semibold">Cancel</button>
+                <button type="submit" disabled={isCreatingMember} className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50">
+                  {isCreatingMember ? "Creating…" : "Send Invitation"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Allocate Modal */}
+      {showAllocate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAllocate(false)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-bold">Release Funds</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Pool balance: {formatCurrency(marketer.commission_balance ?? 0)}
+              </p>
+            </div>
+            <form onSubmit={handleAllocate} className="p-6 space-y-4">
+              <div>
+                <label className="label">Team Member</label>
+                <select className="input" value={allocateForm.member_id} onChange={e => setAllocateForm({ ...allocateForm, member_id: e.target.value })} required>
+                  <option value="">Select member…</option>
+                  {(marketer.agency_members ?? []).map((m: any) => (
+                    <option key={m.id} value={m.id}>{m.full_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Amount (₦)</label>
+                <input className="input" type="number" min="0" step="0.01" value={allocateForm.amount} onChange={e => setAllocateForm({ ...allocateForm, amount: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Wallet</label>
+                <select className="input" value={allocateForm.wallet_type} onChange={e => setAllocateForm({ ...allocateForm, wallet_type: e.target.value })}>
+                  <option value="commission_balance">Commission wallet</option>
+                  <option value="balance">Salary wallet</option>
+                </select>
+              </div>
+              <div>
+                <label className="label">Notes (optional)</label>
+                <input className="input" value={allocateForm.notes} onChange={e => setAllocateForm({ ...allocateForm, notes: e.target.value })} />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowAllocate(false)} className="flex-1 px-4 py-3 rounded-xl border border-border text-sm font-semibold">Cancel</button>
+                <button type="submit" disabled={isAllocating} className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold disabled:opacity-50">
+                  {isAllocating ? "Processing…" : "Release Funds"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
