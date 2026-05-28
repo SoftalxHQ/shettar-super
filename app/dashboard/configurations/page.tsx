@@ -31,8 +31,34 @@ export default function ConfigurationPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [adSettings, setAdSettings] = useState({
+    default_cpm_rate: 500,
+    default_cpc_rate: 50,
+    max_sponsored_ratio: 0.25,
+    min_campaign_budget: 1000,
+    attribution_window_hours: 168,
+    ads_system_enabled: true,
+  });
+  const [savingAds, setSavingAds] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+  useEffect(() => {
+    const fetchAdSettings = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/admin/ad_settings`, {
+          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAdSettings((prev) => ({ ...prev, ...data.settings }));
+        }
+      } catch {
+        /* use defaults */
+      }
+    };
+    if (token) fetchAdSettings();
+  }, [API_URL, token]);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -338,6 +364,87 @@ export default function ConfigurationPage() {
               <p className="text-xs text-muted-foreground">
                 Default is 22.22% (2/9 of the refundable amount). The guest receives the remaining {(100 - config.business_cancellation_credit_percentage).toFixed(2)}%.
               </p>
+            </div>
+
+            {/* Sponsored ads platform settings */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <div>
+                <h3 className="font-bold">Sponsored ads</h3>
+                <p className="text-xs text-muted-foreground">Default rates, search ad ratio, and attribution window</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <label className="space-y-1 text-sm">
+                  <span className="text-muted-foreground">Default CPM (₦ / 1000 impressions)</span>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={adSettings.default_cpm_rate}
+                    onChange={(e) => setAdSettings({ ...adSettings, default_cpm_rate: parseFloat(e.target.value) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-muted-foreground">Min campaign budget (₦)</span>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={adSettings.min_campaign_budget}
+                    onChange={(e) => setAdSettings({ ...adSettings, min_campaign_budget: parseFloat(e.target.value) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-muted-foreground">Max sponsored ratio in search</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    max="1"
+                    className="input w-full"
+                    value={adSettings.max_sponsored_ratio}
+                    onChange={(e) => setAdSettings({ ...adSettings, max_sponsored_ratio: parseFloat(e.target.value) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-muted-foreground">Attribution window (hours)</span>
+                  <input
+                    type="number"
+                    className="input w-full"
+                    value={adSettings.attribution_window_hours}
+                    onChange={(e) => setAdSettings({ ...adSettings, attribution_window_hours: parseInt(e.target.value, 10) || 168 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+              </div>
+              {canEdit && (
+                <button
+                  type="button"
+                  disabled={savingAds}
+                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                  onClick={async () => {
+                    setSavingAds(true);
+                    try {
+                      const res = await fetch(`${API_URL}/api/v1/admin/ad_settings`, {
+                        method: "PATCH",
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                          "Content-Type": "application/json",
+                          "X-Client-Platform": "web-super",
+                        },
+                        body: JSON.stringify({ settings: adSettings }),
+                      });
+                      if (!res.ok) throw new Error("Save failed");
+                      toast.success("Ad settings saved");
+                    } catch {
+                      toast.error("Failed to save ad settings");
+                    } finally {
+                      setSavingAds(false);
+                    }
+                  }}
+                >
+                  {savingAds ? "Saving…" : "Save ad settings"}
+                </button>
+              )}
             </div>
 
             {canEdit && (

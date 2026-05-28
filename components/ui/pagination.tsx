@@ -5,6 +5,7 @@ interface PaginationProps {
   totalPages: number;
   totalCount?: number;
   onPageChange: (page: number) => void;
+  alwaysShow?: boolean;
 }
 
 function getPageNumbers(current: number, total: number): (number | "...")[] {
@@ -17,9 +18,9 @@ function getPageNumbers(current: number, total: number): (number | "...")[] {
   return pages;
 }
 
-export function Pagination({ currentPage, totalPages, totalCount, onPageChange }: PaginationProps) {
-  if (totalPages <= 1) return null;
-  const pages = getPageNumbers(currentPage, totalPages);
+export function Pagination({ currentPage, totalPages, totalCount, onPageChange, alwaysShow = false }: PaginationProps) {
+  if (totalPages <= 1 && !alwaysShow) return null;
+  const pages = totalPages <= 1 ? [1] : getPageNumbers(currentPage, totalPages);
 
   return (
     <div className="flex items-center justify-between">

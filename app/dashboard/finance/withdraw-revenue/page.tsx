@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useAppSelector } from "@/lib/store/hooks";
-import { selectToken } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import {
   useGetCompanyBankAccountsQuery,
@@ -181,46 +179,22 @@ function WithdrawModal({
 
 export default function WithdrawRevenuePage() {
   const { admin } = useAuth();
-  const token = useAppSelector(selectToken);
 
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
 
-  const canManage = can("finance", "manage_company_accounts");
+  const canManage = can("finance", "manage_company_accounts") || can("finance", "withdraw_revenue");
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [balanceLoading, setBalanceLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
   const { data: withdrawalsData, isLoading: withdrawalsLoading, refetch: refetchWithdrawals } = useGetPlatformWithdrawalsQuery(undefined, { skip: !canManage });
   const withdrawals = withdrawalsData?.withdrawals ?? [];
-
-  const fetchBalance = async () => {
-    try {
-      setBalanceLoading(true);
-      const res = await fetch(`${API_URL}/api/v1/configurations`, {
-        headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setWalletBalance(data.wallet_balance ?? 0);
-      }
-    } catch { /* silent */ } finally {
-      setBalanceLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (canManage) fetchBalance();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canManage]);
+  const walletBalance = withdrawalsData?.wallet_balance ?? 0;
 
   const handleWithdrawSuccess = () => {
     setShowModal(false);
-    fetchBalance();
     refetchWithdrawals();
   };
 
@@ -273,11 +247,14 @@ export default function WithdrawRevenuePage() {
             </div>
           </div>
           <p className="text-sm font-medium text-muted-foreground">Platform Wallet Balance</p>
-          {balanceLoading ? (
+          {withdrawalsLoading ? (
             <div className="h-8 w-36 bg-muted animate-pulse rounded-lg mt-1" />
           ) : (
-            <p className="text-2xl font-bold mt-1 text-emerald-600">{fmt(walletBalance ?? 0)}</p>
+            <p className="text-2xl font-bold mt-1 text-emerald-600">{fmt(walletBalance)}</p>
           )}
+          <p className="text-xs text-muted-foreground mt-2">
+            From booking commissions, cancellation fees & ad impression/click charges — not ad wallet top-ups
+          </p>
         </div>
 
         {/* Total Withdrawn */}
@@ -366,7 +343,7 @@ export default function WithdrawRevenuePage() {
         )}
       </div>
 
-      {showModal && walletBalance !== null && (
+      {showModal && (
         <WithdrawModal
           walletBalance={walletBalance}
           onClose={() => setShowModal(false)}

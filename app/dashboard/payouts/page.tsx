@@ -11,8 +11,10 @@ import {
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
   useGetCancellationFeesQuery,
+  useGetAdWalletTransactionsQuery,
   type Payout,
   type CancellationFee,
+  type AdWalletTransaction,
 } from "@/lib/store/services/api";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
@@ -286,9 +288,313 @@ function CancellationFeesTab({ can }: { can: (section: keyof AdminPermissions, a
   );
 }
 
+const AD_SOURCE_OPTIONS = [
+  { value: "", label: "All types" },
+  { value: "paystack_card", label: "Paystack top-up" },
+  { value: "withdrawable_transfer", label: "Withdrawable transfer" },
+  { value: "impression_charge", label: "Impression charge" },
+  { value: "click_charge", label: "Click charge" },
+  { value: "refund", label: "Refund" },
+  { value: "admin_adjustment", label: "Admin adjustment" },
+];
+
+function formatAdSource(source: string) {
+  return AD_SOURCE_OPTIONS.find((o) => o.value === source)?.label ?? source.replace(/_/g, " ");
+}
+
+function isProfitSource(source: string) {
+  return source === "impression_charge" || source === "click_charge";
+}
+
+// ── Ad Revenue Tab ───────────────────────────────────────────────────────────
+
+function AdRevenueTab({ can }: { can: (section: keyof AdminPermissions, action: string) => boolean }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [profitOnly, setProfitOnly] = useState(true);
+  const [direction, setDirection] = useState<"" | "credit" | "debit">("");
+  const [source, setSource] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { data, isLoading, isFetching, isError } = useGetAdWalletTransactionsQuery(
+    {
+      page,
+      search: debouncedSearch || undefined,
+      direction: direction || undefined,
+      source: source || undefined,
+      from: from || undefined,
+      to: to || undefined,
+      profit_only: profitOnly,
+    },
+    { skip: !can("finance", "view"), refetchOnMountOrArgChange: true }
+  );
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 400);
+  }, []);
+
+  const transactions: AdWalletTransaction[] = data?.transactions ?? [];
+  const stats = data?.stats;
+  const meta = data?.meta;
+
+  return (
+    <div className="space-y-6">
+      <div className="glass p-4 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-emerald-700 dark:text-emerald-300">Platform ad profit</span> comes from
+          impression and click charges only. Wallet top-ups are prepaid business credits — not platform revenue.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[
+          {
+            label: "Platform ad profit",
+            subtitle: "Impressions + clicks",
+            value: stats ? formatCurrency(stats.platform_profit) : "—",
+            icon: "M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z",
+            color: "text-emerald-600",
+          },
+          {
+            label: "Impression revenue",
+            subtitle: "Views billed",
+            value: stats ? formatCurrency(stats.impression_revenue) : "—",
+            icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z",
+            color: "text-violet-600",
+          },
+          {
+            label: "Click revenue",
+            subtitle: "Clicks billed",
+            value: stats ? formatCurrency(stats.click_revenue) : "—",
+            icon: "M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122",
+            color: "text-blue-600",
+          },
+          {
+            label: "This month profit",
+            subtitle: "Current month charges",
+            value: stats ? formatCurrency(stats.this_month_profit) : "—",
+            icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+            color: "text-amber-600",
+          },
+        ].map((stat, i) => (
+          <div key={i} className="glass p-6 rounded-3xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className={`p-3 bg-primary/10 rounded-2xl ${stat.color}`}>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                </svg>
+              </div>
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+            {stat.subtitle && <p className="text-xs text-muted-foreground/80">{stat.subtitle}</p>}
+            <p className="text-2xl font-bold mt-1">{isLoading ? "—" : stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="glass p-4 rounded-2xl">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prepaid wallet funding</p>
+          <p className="text-lg font-bold mt-1">{stats ? formatCurrency(stats.total_funded) : "—"}</p>
+          <p className="text-xs text-muted-foreground mt-1">Top-ups & transfers — not platform profit</p>
+        </div>
+        <div className="glass p-4 rounded-2xl">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Unspent ads balance</p>
+          <p className="text-lg font-bold mt-1">{stats ? formatCurrency(stats.outstanding_ads_balance) : "—"}</p>
+          <p className="text-xs text-muted-foreground mt-1">Remaining prepaid credit across businesses</p>
+        </div>
+      </div>
+
+      <div className="glass p-6 rounded-3xl space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer">
+            <input
+              type="checkbox"
+              checked={profitOnly}
+              onChange={(e) => {
+                setProfitOnly(e.target.checked);
+                setPage(1);
+              }}
+              className="rounded border-border"
+            />
+            Profit transactions only (impressions & clicks)
+          </label>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="label">Search</label>
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Reference or business…"
+                className="input pl-10"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="label">Direction</label>
+            <select
+              className="input"
+              value={direction}
+              onChange={(e) => {
+                setDirection(e.target.value as "" | "credit" | "debit");
+                setPage(1);
+              }}
+            >
+              <option value="">All</option>
+              <option value="credit">Credit (+)</option>
+              <option value="debit">Debit (−)</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Type</label>
+            <select
+              className="input"
+              value={source}
+              onChange={(e) => {
+                setSource(e.target.value);
+                setPage(1);
+              }}
+            >
+              {AD_SOURCE_OPTIONS.map((opt) => (
+                <option key={opt.value || "all"} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">From</label>
+              <input
+                type="date"
+                className="input"
+                value={from}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div>
+              <label className="label">To</label>
+              <input
+                type="date"
+                className="input"
+                value={to}
+                onChange={(e) => {
+                  setTo(e.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass p-6 rounded-3xl overflow-x-auto">
+        {isError && (
+          <div className="text-center py-12 text-red-500">Failed to load ad transactions. Please try again.</div>
+        )}
+
+        {(isLoading || isFetching) && !isError && (
+          <div className="text-center py-12">
+            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-muted-foreground mt-4">Loading ad transactions…</p>
+          </div>
+        )}
+
+        {!isLoading && !isFetching && !isError && (
+          <table className="w-full">
+            <thead>
+              <tr className="text-left text-sm text-muted-foreground border-b border-border">
+                <th className="pb-4 font-medium">Date</th>
+                <th className="pb-4 font-medium">Reference</th>
+                <th className="pb-4 font-medium">Business</th>
+                <th className="pb-4 font-medium">Campaign</th>
+                <th className="pb-4 font-medium">Type</th>
+                <th className="pb-4 font-medium">Category</th>
+                <th className="pb-4 font-medium">Amount</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {transactions.map((tx) => {
+                const isProfit = isProfitSource(tx.source);
+                return (
+                <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <td className="py-4 text-sm text-muted-foreground whitespace-nowrap">
+                    {new Date(tx.created_at).toLocaleString()}
+                  </td>
+                  <td className="py-4 text-sm font-mono text-muted-foreground">{tx.reference_code}</td>
+                  <td className="py-4 text-sm font-semibold">{tx.business?.name ?? "—"}</td>
+                  <td className="py-4 text-sm">{tx.campaign_name ?? "—"}</td>
+                  <td className="py-4 text-sm capitalize">{formatAdSource(tx.source)}</td>
+                  <td className="py-4 text-sm">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                        isProfit
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                          : tx.direction === "credit"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                      }`}
+                    >
+                      {isProfit ? "Profit" : tx.direction === "credit" ? "Funded" : "Debit"}
+                    </span>
+                  </td>
+                  <td
+                    className={`py-4 text-sm font-bold ${
+                      isProfit ? "text-emerald-600" : tx.direction === "credit" ? "text-blue-600" : "text-red-600"
+                    }`}
+                  >
+                    {formatCurrency(tx.amount)}
+                  </td>
+                </tr>
+              );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {!isLoading && !isFetching && !isError && transactions.length === 0 && (
+          <div className="text-center py-12">
+            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            <p className="text-muted-foreground mt-4">No ad transactions found</p>
+          </div>
+        )}
+
+        {meta && !isLoading && !isError && (
+          <div className="pt-6 mt-6 border-t border-border">
+            <Pagination
+              currentPage={meta.current_page}
+              totalPages={Math.max(meta.total_pages, 1)}
+              totalCount={meta.total_count}
+              onPageChange={setPage}
+              alwaysShow
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 
-type Tab = "business_payouts" | "cancellation_fees";
+type Tab = "business_payouts" | "cancellation_fees" | "ad_revenue";
 
 export default function PayoutsPage() {
   const { admin } = useAuth();
@@ -431,8 +737,8 @@ export default function PayoutsPage() {
       )}
 
       {/* Tab Bar */}
-      <div className="flex gap-1 p-1 glass rounded-2xl w-fit">
-        {(["business_payouts", "cancellation_fees"] as Tab[]).map((tab) => (
+      <div className="flex gap-1 p-1 glass rounded-2xl w-fit flex-wrap">
+        {(["business_payouts", "cancellation_fees", "ad_revenue"] as Tab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -442,7 +748,11 @@ export default function PayoutsPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {tab === "business_payouts" ? "Business Payouts" : "Cancellation Fees"}
+            {tab === "business_payouts"
+              ? "Business Payouts"
+              : tab === "cancellation_fees"
+                ? "Cancellation Fees"
+                : "Ad Revenue"}
           </button>
         ))}
       </div>
@@ -632,6 +942,9 @@ export default function PayoutsPage() {
 
       {/* Cancellation Fees Tab */}
       {activeTab === "cancellation_fees" && <CancellationFeesTab can={can} />}
+
+      {/* Ad Revenue Tab */}
+      {activeTab === "ad_revenue" && <AdRevenueTab can={can} />}
 
       {/* Modals */}
       {detailPayout && <DetailModal payout={detailPayout} onClose={() => setDetailPayout(null)} />}

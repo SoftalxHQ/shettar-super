@@ -609,6 +609,47 @@ export interface CancellationFee {
   created_at: string;
 }
 
+export interface AdWalletTransaction {
+  id: number;
+  amount: number;
+  direction: "credit" | "debit";
+  source: string;
+  reference_code: string;
+  paystack_reference: string | null;
+  ad_campaign_id: number | null;
+  campaign_name: string | null;
+  business: {
+    id: number;
+    name: string;
+    business_unique_id: string;
+  } | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AdWalletTransactionsStats {
+  platform_profit: number;
+  impression_revenue: number;
+  click_revenue: number;
+  this_month_profit: number;
+  total_funded: number;
+  outstanding_ads_balance: number;
+  profit_transaction_count: number;
+  funded_transaction_count: number;
+}
+
+export interface GetAdWalletTransactionsParams {
+  page?: number;
+  direction?: "credit" | "debit";
+  source?: string;
+  business_id?: number | string;
+  campaign_id?: number | string;
+  from?: string;
+  to?: string;
+  search?: string;
+  profit_only?: boolean;
+}
+
 export interface PayoutStats {
   total: number;
   total_amount: number;
@@ -1094,6 +1135,39 @@ export const apiService = createApi({
       providesTags: ["Payout"],
     }),
 
+    getAdWalletTransactions: builder.query<
+      {
+        transactions: AdWalletTransaction[];
+        stats: AdWalletTransactionsStats;
+        meta: AccountsMeta;
+      },
+      GetAdWalletTransactionsParams
+    >({
+      query: ({
+        page = 1,
+        direction,
+        source,
+        business_id,
+        campaign_id,
+        from,
+        to,
+        search,
+        profit_only,
+      } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (direction) params.set("direction", direction);
+        if (source) params.set("source", source);
+        if (business_id) params.set("business_id", String(business_id));
+        if (campaign_id) params.set("campaign_id", String(campaign_id));
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        if (search) params.set("search", search);
+        if (profit_only) params.set("profit_only", "true");
+        return `/api/v1/admin/ad_wallet_transactions?${params.toString()}`;
+      },
+      providesTags: ["Payout"],
+    }),
+
     // ── Analytics endpoint ──────────────────────────────────────────────────
     getAnalyticsSummary: builder.query<AnalyticsSummary, GetAnalyticsSummaryParams>({
       query: (params = {}) => {
@@ -1132,7 +1206,7 @@ export const apiService = createApi({
       }),
       invalidatesTags: ["CompanyBankAccount"],
     }),
-    getPlatformWithdrawals: builder.query<{ withdrawals: PlatformWithdrawal[] }, void>({
+    getPlatformWithdrawals: builder.query<{ wallet_balance: number; withdrawals: PlatformWithdrawal[] }, void>({
       query: () => "/api/v1/admin/company_withdrawals",
       providesTags: ["CompanyBankAccount"],
     }),
@@ -1299,6 +1373,7 @@ export const {
   useGetPayoutStatusQuery,
   useTogglePayoutPauseMutation,
   useGetCancellationFeesQuery,
+  useGetAdWalletTransactionsQuery,
   useGetAnalyticsSummaryQuery,
   useGetCompanyBankAccountsQuery,
   useCreateCompanyBankAccountMutation,
