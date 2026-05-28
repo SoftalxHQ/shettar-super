@@ -10,6 +10,7 @@ import {
   useGetAccountTransactionsQuery,
   useSuspendAccountMutation,
   useActivateAccountMutation,
+  useSendAccountNotificationMutation,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -43,6 +44,13 @@ export default function AccountDetailPage() {
   } | null>(null);
   const [statusReason, setStatusReason] = useState("");
 
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [notifyRoute, setNotifyRoute] = useState("");
+
+  const [sendNotification, { isLoading: isSendingNotification }] = useSendAccountNotificationMutation();
+
   const { data: reservationsData, isLoading: reservationsLoading } = useGetAccountReservationsQuery(
     { id, page: reservationPage, status: bookingStatusFilter },
     { skip: activeTab !== "bookings" }
@@ -75,6 +83,31 @@ export default function AccountDetailPage() {
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || `Failed to ${statusAction.type} account`);
+    }
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifyTitle.trim() || !notifyMessage.trim()) {
+      toast.error("Title and message are required");
+      return;
+    }
+
+    try {
+      await sendNotification({
+        title: notifyTitle.trim(),
+        message: notifyMessage.trim(),
+        target_type: "account_id",
+        account_id: id,
+        ...(notifyRoute.trim() ? { route: notifyRoute.trim() } : {}),
+      }).unwrap();
+      toast.success("Notification sent");
+      setShowNotifyModal(false);
+      setNotifyTitle("");
+      setNotifyMessage("");
+      setNotifyRoute("");
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to send notification");
     }
   };
 
@@ -162,6 +195,14 @@ export default function AccountDetailPage() {
               Suspend
             </button>
             )
+          )}
+          {can("accounts", "notify") && (
+            <button
+              onClick={() => setShowNotifyModal(true)}
+              className="px-4 py-2 rounded-full text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Send notification
+            </button>
           )}
         </div>
       </div>
@@ -529,6 +570,72 @@ export default function AccountDetailPage() {
                 }`}
               >
                 {(isSuspending || isActivating) ? "Processing..." : statusAction.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showNotifyModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowNotifyModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-bold">Send notification</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Deliver an in-app and push notification to {account.first_name} {account.last_name}.
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Title</label>
+                <input
+                  type="text"
+                  value={notifyTitle}
+                  onChange={(e) => setNotifyTitle(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+                  placeholder="Notification title"
+                  maxLength={120}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Message</label>
+                <textarea
+                  value={notifyMessage}
+                  onChange={(e) => setNotifyMessage(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-28 text-sm"
+                  placeholder="Notification body"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Deep link (optional)</label>
+                <input
+                  type="text"
+                  value={notifyRoute}
+                  onChange={(e) => setNotifyRoute(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+                  placeholder="/bookings"
+                />
+              </div>
+            </div>
+            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+              <button
+                onClick={() => setShowNotifyModal(false)}
+                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendNotification}
+                disabled={isSendingNotification || !notifyTitle.trim() || !notifyMessage.trim()}
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isSendingNotification ? "Sending..." : "Send"}
               </button>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
 
 export interface AdminPermissions {
-  accounts?: { view?: boolean; suspend?: boolean; activate?: boolean };
+  accounts?: { view?: boolean; suspend?: boolean; activate?: boolean; notify?: boolean };
   businesses?: { view?: boolean; verify?: boolean; suspend?: boolean; activate?: boolean; set_commission?: boolean; set_cancellation_fee?: boolean };
   support_tickets?: { view?: boolean; reply?: boolean; assign?: boolean; update_status?: boolean };
   finance?: { view?: boolean; manage_payouts?: boolean; manage_company_accounts?: boolean; withdraw_revenue?: boolean };

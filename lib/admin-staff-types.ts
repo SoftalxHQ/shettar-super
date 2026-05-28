@@ -19,7 +19,7 @@ export const ADMIN_PERMISSION_PRESETS = {
     name: "Full Access",
     description: "Complete access to all sections and actions",
     permissions: {
-      accounts: { view: true, suspend: true, activate: true },
+      accounts: { view: true, suspend: true, activate: true, notify: true },
       businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true },
       support_tickets: { view: true, reply: true, assign: true, update_status: true },
       finance: { view: true, manage_payouts: true, manage_company_accounts: true, withdraw_revenue: true },
@@ -46,7 +46,7 @@ export const ADMIN_PERMISSION_PRESETS = {
     description: "Manage businesses and accounts",
     permissions: {
       businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true },
-      accounts: { view: true, suspend: true, activate: true },
+      accounts: { view: true, suspend: true, activate: true, notify: true },
     } as AdminPermissions,
   },
   finance: {
@@ -89,6 +89,7 @@ export const ADMIN_PERMISSION_LABELS = {
       view: "View Accounts",
       suspend: "Suspend Accounts",
       activate: "Activate Accounts",
+      notify: "Send Push Notifications",
     },
   },
   businesses: {

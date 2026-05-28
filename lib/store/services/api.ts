@@ -789,6 +789,24 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { id }) => ["Account", { type: "Account", id }],
     }),
+    sendAccountNotification: builder.mutation<
+      { message: string; notification_id?: number; broadcast_id?: number; target_type?: string; segment?: string },
+      {
+        title: string;
+        message: string;
+        target_type: "account_id" | "segment" | "all";
+        account_id?: number | string;
+        segment?: string;
+        route?: string;
+        data?: Record<string, unknown>;
+      }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/account_notifications",
+        method: "POST",
+        body,
+      }),
+    }),
     getAccountReservations: builder.query<{ reservations: AccountReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
       query: ({ id, page = 1, status }) => {
         const params = new URLSearchParams({ page: String(page) });
@@ -1324,6 +1342,7 @@ export const {
   useGetAccountQuery,
   useSuspendAccountMutation,
   useActivateAccountMutation,
+  useSendAccountNotificationMutation,
   useGetAccountReservationsQuery,
   useGetAccountTransactionsQuery,
   useGetBusinessesQuery,
