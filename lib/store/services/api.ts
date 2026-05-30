@@ -794,7 +794,7 @@ export const apiService = createApi({
       {
         title: string;
         message: string;
-        target_type: "account_id" | "segment" | "all";
+        target_type: "account_id" | "segment" | "all" | "guests" | "all_devices";
         account_id?: number | string;
         segment?: string;
         route?: string;

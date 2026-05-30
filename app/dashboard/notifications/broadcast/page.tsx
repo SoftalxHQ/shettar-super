@@ -23,7 +23,7 @@ export default function BroadcastNotificationsPage() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [route, setRoute] = useState("");
-  const [targetType, setTargetType] = useState<"all" | "segment" | "account_id">("all");
+  const [targetType, setTargetType] = useState<"all" | "segment" | "account_id" | "guests" | "all_devices">("all");
   const [segment, setSegment] = useState<string>("verified");
   const [accountSearch, setAccountSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
@@ -93,7 +93,7 @@ export default function BroadcastNotificationsPage() {
       <div>
         <h1 className="text-3xl font-bold">Push Notifications</h1>
         <p className="text-muted-foreground mt-2">
-          Send in-app and push notifications to one customer, a segment, or all customers.
+          Send in-app and push notifications to customers, anonymous visitors, or everyone.
         </p>
       </div>
 
@@ -136,18 +136,26 @@ export default function BroadcastNotificationsPage() {
         <div className="space-y-3">
           <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Audience</label>
           <div className="flex flex-wrap gap-2">
-            {(["all", "segment", "account_id"] as const).map((type) => (
+            {(
+              [
+                { value: "all", label: "All customers" },
+                { value: "segment", label: "Segment" },
+                { value: "account_id", label: "Single customer" },
+                { value: "guests", label: "Anonymous (not signed up)" },
+                { value: "all_devices", label: "Everyone (accounts + guests)" },
+              ] as const
+            ).map(({ value, label }) => (
               <button
-                key={type}
+                key={value}
                 type="button"
-                onClick={() => setTargetType(type)}
+                onClick={() => setTargetType(value)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  targetType === type
+                  targetType === value
                     ? "bg-primary text-primary-foreground"
                     : "bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700"
                 }`}
               >
-                {type === "all" ? "All customers" : type === "segment" ? "Segment" : "Single customer"}
+                {label}
               </button>
             ))}
           </div>
@@ -211,7 +219,11 @@ export default function BroadcastNotificationsPage() {
           disabled={isLoading}
           className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-2xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {isLoading ? "Sending..." : targetType === "all" || targetType === "segment" ? "Queue broadcast" : "Send notification"}
+          {isLoading
+            ? "Sending..."
+            : targetType === "account_id"
+              ? "Send notification"
+              : "Queue broadcast"}
         </button>
       </form>
     </div>
