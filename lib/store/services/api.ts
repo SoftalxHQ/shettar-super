@@ -14,12 +14,42 @@ interface LoginRequest {
 }
 
 interface LoginResponse {
-  status: {
+  status?: {
+    code: number;
+    message: string;
+  };
+  data?: Admin;
+  token: string;
+  // Present when the backend requires a second factor before issuing a token.
+  requires_2fa?: boolean;
+  stage?: "enroll" | "verify";
+  challenge_token?: string;
+  otp_secret?: string;
+  otp_provisioning_uri?: string;
+  qr_svg?: string;
+  message?: string;
+}
+
+interface VerifyTwoFactorRequest {
+  challenge_token: string;
+  code: string;
+  recovery?: boolean;
+}
+
+interface VerifyTwoFactorResponse {
+  status?: {
     code: number;
     message: string;
   };
   data: Admin;
   token: string;
+  backup_codes?: string[];
+  message?: string;
+}
+
+interface BackupCodesResponse {
+  status?: { code: number; message: string };
+  backup_codes: string[];
 }
 
 export interface Marketer {
@@ -757,6 +787,30 @@ export const apiService = createApi({
         method: "DELETE",
       }),
     }),
+    verifyTwoFactor: builder.mutation<VerifyTwoFactorResponse, VerifyTwoFactorRequest>({
+      query: (body) => ({
+        url: "/admins/two_factor/verify",
+        method: "POST",
+        body,
+      }),
+      transformResponse: (response: VerifyTwoFactorResponse, meta?: { response?: Response }) => {
+        const authHeader = meta?.response?.headers.get("Authorization");
+        const token = authHeader?.replace("Bearer ", "") || "";
+        return { ...response, token };
+      },
+    }),
+    regenerateBackupCodes: builder.mutation<BackupCodesResponse, void>({
+      query: () => ({
+        url: "/admins/two_factor/backup_codes",
+        method: "POST",
+      }),
+    }),
+    resetTwoFactor: builder.mutation<{ status?: { code: number; message: string } }, void>({
+      query: () => ({
+        url: "/admins/two_factor",
+        method: "DELETE",
+      }),
+    }),
     getDashboardSummary: builder.query<DashboardSummary, void>({
       query: () => "/api/v1/admin/dashboard_summary",
     }),
@@ -1030,6 +1084,13 @@ export const apiService = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["AdminStaff"],
+    }),
+    resetStaffTwoFactor: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/staff/${id}/reset_two_factor`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (_result, _err, id) => ["AdminStaff", { type: "AdminStaff", id }],
     }),
 
     // ── Password change ─────────────────────────────────────────────────────
@@ -1337,6 +1398,9 @@ export const apiService = createApi({
 export const {
   useLoginMutation,
   useLogoutMutation,
+  useVerifyTwoFactorMutation,
+  useRegenerateBackupCodesMutation,
+  useResetTwoFactorMutation,
   useGetDashboardSummaryQuery,
   useGetAccountsQuery,
   useGetAccountQuery,
@@ -1373,6 +1437,7 @@ export const {
   useDeactivateAdminStaffMutation,
   useReactivateAdminStaffMutation,
   useRemoveAdminStaffMutation,
+  useResetStaffTwoFactorMutation,
   useChangePasswordMutation,
   useUpdateAdminProfileMutation,
   useGetAdminActivitiesQuery,

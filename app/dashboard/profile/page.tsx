@@ -2,13 +2,51 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { ADMIN_PERMISSION_LABELS } from "@/lib/admin-staff-types";
-import { useChangePasswordMutation, useGetAdminActivitiesQuery } from "@/lib/store/services/api";
+import {
+  useChangePasswordMutation,
+  useGetAdminActivitiesQuery,
+  useRegenerateBackupCodesMutation,
+  useResetTwoFactorMutation,
+} from "@/lib/store/services/api";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
-  const { admin } = useAuth();
+  const { admin, logout } = useAuth();
+  const [regenerateBackupCodes, { isLoading: isRegenerating }] = useRegenerateBackupCodesMutation();
+  const [resetTwoFactor, { isLoading: isResetting }] = useResetTwoFactorMutation();
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const twoFactorActive = admin?.otp_required_for_login ?? true;
+
+  const handleRegenerateCodes = async () => {
+    try {
+      const result = await regenerateBackupCodes().unwrap();
+      setRecoveryCodes(result.backup_codes);
+      toast.success("New recovery codes generated", {
+        description: "Save them now — the old codes no longer work.",
+      });
+    } catch (error: unknown) {
+      const e = error as { data?: { status?: { message?: string } } };
+      toast.error(e?.data?.status?.message || "Failed to regenerate recovery codes");
+    }
+  };
+
+  const handleResetTwoFactor = async () => {
+    if (!window.confirm("Reset your authenticator? You'll be signed out and must set up 2FA again on your next login.")) {
+      return;
+    }
+    try {
+      await resetTwoFactor().unwrap();
+      toast.success("Two-factor authentication reset", {
+        description: "Sign in again to set up a new authenticator.",
+      });
+      await logout();
+    } catch (error: unknown) {
+      const e = error as { data?: { status?: { message?: string } } };
+      toast.error(e?.data?.status?.message || "Failed to reset two-factor authentication");
+    }
+  };
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     current_password: "",
@@ -159,7 +197,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Security Summary */}
+        {/* Two-Factor Authentication */}
         <div className="glass p-8 rounded-[2.5rem] space-y-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl flex items-center justify-center">
@@ -167,25 +205,59 @@ export default function ProfilePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold">Security Status</h3>
+            <h3 className="text-xl font-bold">Two-Factor Authentication</h3>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-border/50">
               <div>
-                <p className="text-sm font-bold">Two-Factor Auth</p>
-                <p className="text-xs text-muted-foreground">Extra layer of security</p>
+                <p className="text-sm font-bold">Authenticator App</p>
+                <p className="text-xs text-muted-foreground">Required for every sign-in</p>
               </div>
-              <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold uppercase tracking-wider">Active</span>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${twoFactorActive ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+                {twoFactorActive ? "Active" : "Setup pending"}
+              </span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-border/50">
-              <div>
-                <p className="text-sm font-bold">Session Activity</p>
-                <p className="text-xs text-muted-foreground">Last active: Just now</p>
+
+            {recoveryCodes && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4 space-y-3">
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">
+                  New recovery codes — save them now
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {recoveryCodes.map((rc) => (
+                    <code key={rc} className="text-center font-mono text-xs font-bold tracking-wider rounded-lg bg-white dark:bg-zinc-900 py-2 select-all">
+                      {rc}
+                    </code>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRecoveryCodes(null)}
+                  className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline"
+                >
+                  Done, hide codes
+                </button>
               </div>
-              {(admin?.admin_role === "super_admin" || !admin?.admin_role || admin?.permissions?.configurations?.view === true) && (
-                <Link href="/dashboard/configurations" className="text-xs text-primary font-bold hover:underline">Manage</Link>
-              )}
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={handleRegenerateCodes}
+                disabled={isRegenerating}
+                className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 text-sm"
+              >
+                {isRegenerating ? "Generating..." : "Regenerate Recovery Codes"}
+              </button>
+              <button
+                type="button"
+                onClick={handleResetTwoFactor}
+                disabled={isResetting}
+                className="flex-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold py-3 rounded-2xl border border-rose-200 dark:border-rose-900 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-all disabled:opacity-50 text-sm"
+              >
+                {isResetting ? "Resetting..." : "Reset Authenticator"}
+              </button>
             </div>
           </div>
         </div>

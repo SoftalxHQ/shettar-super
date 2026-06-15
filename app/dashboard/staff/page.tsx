@@ -9,6 +9,7 @@ import {
   useDeactivateAdminStaffMutation,
   useReactivateAdminStaffMutation,
   useRemoveAdminStaffMutation,
+  useResetStaffTwoFactorMutation,
 } from "@/lib/store/services/api";
 import {
   ADMIN_PERMISSION_PRESETS,
@@ -162,6 +163,10 @@ export default function StaffManagementPage() {
   const [removingStaff, setRemovingStaff] = useState<AdminStaff | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
+  // Reset 2FA
+  const [resettingTwoFactorStaff, setResettingTwoFactorStaff] = useState<AdminStaff | null>(null);
+  const [resetTwoFactorError, setResetTwoFactorError] = useState<string | null>(null);
+
   const isSuperAdmin = admin?.admin_role === "super_admin";
 
   const { data, isLoading, isError, isFetching } = useGetAdminStaffQuery(
@@ -174,6 +179,7 @@ export default function StaffManagementPage() {
   const [deactivateAdminStaff, { isLoading: isDeactivating }] = useDeactivateAdminStaffMutation();
   const [reactivateAdminStaff, { isLoading: isReactivating }] = useReactivateAdminStaffMutation();
   const [removeAdminStaff, { isLoading: isRemoving }] = useRemoveAdminStaffMutation();
+  const [resetStaffTwoFactor, { isLoading: isResettingTwoFactor }] = useResetStaffTwoFactorMutation();
 
   const staffList = data?.staff ?? [];
   const meta = data?.meta;
@@ -268,6 +274,19 @@ export default function StaffManagementPage() {
     } catch (err: unknown) {
       const e = err as { status?: number; data?: { error?: string } };
       setRemoveError(e?.status === 422 ? (e?.data?.error ?? "Cannot remove") : "Failed to remove");
+    }
+  }
+
+  async function handleResetTwoFactor() {
+    if (!resettingTwoFactorStaff) return;
+    setResetTwoFactorError(null);
+    try {
+      await resetStaffTwoFactor(resettingTwoFactorStaff.id).unwrap();
+      toast.success(`Two-factor authentication reset for ${resettingTwoFactorStaff.first_name}`);
+      setResettingTwoFactorStaff(null);
+    } catch (err: unknown) {
+      const e = err as { status?: number; data?: { error?: string } };
+      setResetTwoFactorError(e?.status === 422 ? (e?.data?.error ?? "Cannot reset 2FA") : "Failed to reset 2FA");
     }
   }
 
@@ -374,9 +393,16 @@ export default function StaffManagementPage() {
                     </span>
                   </td>
                   <td className="py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${member.active ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
-                      {member.active ? "Active" : "Deactivated"}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${member.active ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
+                        {member.active ? "Active" : "Deactivated"}
+                      </span>
+                      {member.otp_required_for_login && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                          2FA
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-4 text-sm text-muted-foreground">
                     {member.last_sign_in_at ? formatDate(member.last_sign_in_at) : "Never"}
@@ -409,6 +435,9 @@ export default function StaffManagementPage() {
                                   Reactivate
                                 </button>
                               )}
+                              <button onClick={() => { setResettingTwoFactorStaff(member); setResetTwoFactorError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
+                                Reset 2FA
+                              </button>
                               <button onClick={() => { setRemovingStaff(member); setRemoveError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                 Remove from Platform
                               </button>
@@ -550,6 +579,26 @@ export default function StaffManagementPage() {
             <div className="flex gap-3">
               <button onClick={() => setRemovingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
               <button onClick={handleRemove} disabled={isRemoving} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">{isRemoving ? "Removing..." : "Remove Permanently"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reset 2FA Confirm ────────────────────────────────────────────── */}
+      {resettingTwoFactorStaff && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-2">Reset Two-Factor Authentication</h2>
+            <p className="text-muted-foreground mb-2">
+              You are about to reset two-factor authentication for <span className="font-semibold text-foreground">{resettingTwoFactorStaff.first_name} {resettingTwoFactorStaff.last_name}</span>.
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Their current authenticator app and recovery codes will stop working, any active session will be revoked, and they&apos;ll be required to set up a new authenticator on their next login.
+            </p>
+            {resetTwoFactorError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl mb-4">{resetTwoFactorError}</p>}
+            <div className="flex gap-3">
+              <button onClick={() => setResettingTwoFactorStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
+              <button onClick={handleResetTwoFactor} disabled={isResettingTwoFactor} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">{isResettingTwoFactor ? "Resetting..." : "Reset 2FA"}</button>
             </div>
           </div>
         </div>

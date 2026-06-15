@@ -10,6 +10,7 @@ export interface AdminStaff {
   title: string | null;
   active: boolean;
   permissions: AdminPermissions;
+  otp_required_for_login: boolean;
   last_sign_in_at: string | null;
   created_at: string;
 }

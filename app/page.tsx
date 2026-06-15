@@ -2,34 +2,44 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, type LoginResult } from "@/lib/auth-context";
 import { toast } from "sonner";
+import TwoFactorChallenge from "@/components/two-factor-challenge";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const [challenge, setChallenge] = useState<LoginResult | null>(null);
+  const { login, finalizeLogin } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const result = await login(email, password);
+
+      if (result.requires_2fa && result.challenge_token) {
+        setChallenge(result);
+        return;
+      }
 
       toast.success("Welcome back!", {
         description: "Authenticated with Shettar Cloud Protocol.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const e = error as { data?: { status?: { message?: string }; message?: string }; message?: string };
       toast.error("Access Denied", {
-        description: error?.data?.status?.message || error?.data?.message || error.message || "Invalid credentials provided.",
+        description: e?.data?.status?.message || e?.data?.message || e?.message || "Invalid credentials provided.",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isTwoFactor = challenge?.requires_2fa && challenge.challenge_token;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-indigo-50 via-white to-slate-100 dark:from-indigo-950 dark:via-black dark:to-slate-900 p-4 transition-colors duration-500">
@@ -55,12 +65,35 @@ export default function LoginPage() {
               </div>
             </Link>
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">Admin Portal</h1>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            {isTwoFactor
+              ? challenge?.stage === "enroll"
+                ? "Secure Your Account"
+                : "Two-Factor Verification"
+              : "Admin Portal"}
+          </h1>
           <p className="text-sm text-balance text-muted-foreground max-w-[280px] mx-auto">
-            Log in to manage configurations, payouts, and business identities.
+            {isTwoFactor
+              ? challenge?.stage === "enroll"
+                ? "Two-factor authentication is required. Set up your authenticator app to continue."
+                : "Enter the code from your authenticator app to finish signing in."
+              : "Log in to manage configurations, payouts, and business identities."}
           </p>
         </div>
 
+        {isTwoFactor ? (
+          <TwoFactorChallenge
+            stage={challenge!.stage === "enroll" ? "enroll" : "verify"}
+            challengeToken={challenge!.challenge_token!}
+            otpSecret={challenge!.otp_secret}
+            qrSvg={challenge!.qr_svg}
+            onComplete={(token, admin) => finalizeLogin(token, admin)}
+            onCancel={() => {
+              setChallenge(null);
+              setPassword("");
+            }}
+          />
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           <div className="space-y-4">
             <div className="form-group">
@@ -158,6 +191,7 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+        )}
 
         <div className="flex flex-col items-center pt-6 gap-4">
           <div className="h-px w-full bg-slate-100 dark:bg-slate-800" />

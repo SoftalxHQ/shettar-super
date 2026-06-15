@@ -21,9 +21,20 @@ import { persistor } from "./store/store";
 import { toast } from "sonner";
 import type { Admin } from "./store/slices/authSlice";
 
+export interface LoginResult {
+  requires_2fa?: boolean;
+  stage?: "enroll" | "verify";
+  challenge_token?: string;
+  otp_secret?: string;
+  otp_provisioning_uri?: string;
+  qr_svg?: string;
+  message?: string;
+}
+
 interface AuthContextType {
   admin: Admin | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  finalizeLogin: (token: string, adminData: Admin) => void;
   updateAdmin: (adminData: Admin) => void;
   logout: () => Promise<void>;
   isLoading: boolean;
@@ -47,6 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
+    // Recover from stale sessions where isAuthenticated was set without admin data
+    // (e.g. old frontend against mandatory-2FA API).
+    if (isAuthenticated && !admin) {
+      dispatch(logoutAction());
+      void persistor.purge();
+      router.replace("/");
+      return;
+    }
+
     const isPublicPath =
       pathname === "/" || pathname === "/auth/forgot-password";
 
@@ -55,24 +75,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (isAuthenticated && isPublicPath) {
       router.replace("/dashboard");
     }
-  }, [isLoading, pathname, router, isAuthenticated]);
+  }, [isLoading, pathname, router, isAuthenticated, admin, dispatch]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<LoginResult> => {
       const result = await loginMutation({
         admin: { email, password },
       }).unwrap();
 
-      dispatch(
-        loginAction({
-          token: result.token,
-          admin: result.data,
-        }),
-      );
+      // Mandatory 2FA: the backend never issues a token directly. It returns a
+      // challenge that must be completed via finalizeLogin after verification.
+      if (result.requires_2fa) {
+        return {
+          requires_2fa: true,
+          stage: result.stage,
+          challenge_token: result.challenge_token,
+          otp_secret: result.otp_secret,
+          otp_provisioning_uri: result.otp_provisioning_uri,
+          qr_svg: result.qr_svg,
+          message: result.message,
+        };
+      }
 
-      router.push("/dashboard");
+      // Fallback for the (currently unused) no-2FA path.
+      if (result.token && result.data) {
+        dispatch(loginAction({ token: result.token, admin: result.data }));
+        router.push("/dashboard");
+      }
+
+      return {};
     },
     [loginMutation, dispatch, router],
+  );
+
+  const finalizeLogin = useCallback(
+    (token: string, adminData: Admin) => {
+      dispatch(loginAction({ token, admin: adminData }));
+      router.push("/dashboard");
+    },
+    [dispatch, router],
   );
 
   const updateAdmin = useCallback(
@@ -110,12 +151,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       admin,
       login,
+      finalizeLogin,
       updateAdmin,
       logout,
       isLoading,
       isAuthenticated,
     }),
-    [admin, login, updateAdmin, logout, isLoading, isAuthenticated],
+    [admin, login, finalizeLogin, updateAdmin, logout, isLoading, isAuthenticated],
   );
 
   return (

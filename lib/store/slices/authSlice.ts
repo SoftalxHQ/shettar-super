@@ -33,6 +33,7 @@ export interface Admin {
   admin_role?: "super_admin" | "admin_staff";
   title?: string | null;
   permissions?: AdminPermissions;
+  otp_required_for_login?: boolean;
 }
 
 interface AuthState {
