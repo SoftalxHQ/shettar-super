@@ -750,14 +750,20 @@ const baseQueryWith401Handler = async (
 ) => {
   const result = await baseQueryWithAuth(args, api, extraOptions);
 
-  // Handle 401 Unauthorized
+  // Handle 401 Unauthorized — but not during login/2FA challenge flows where
+  // the caller shows inline errors (wrong password or invalid OTP code).
   if (result.error && result.error.status === 401) {
-    // Clear auth state
-    api.dispatch(logoutAction());
+    const url = typeof args === "string" ? args : args.url;
+    const isAuthChallengeRequest =
+      url.includes("/admins/sign_in") ||
+      url.includes("/admins/two_factor/verify");
 
-    // Redirect to login
-    if (typeof window !== "undefined") {
-      window.location.href = "/";
+    if (!isAuthChallengeRequest) {
+      api.dispatch(logoutAction());
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
     }
   }
 

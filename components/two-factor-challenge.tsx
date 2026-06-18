@@ -5,6 +5,21 @@ import { toast } from "sonner";
 import { useVerifyTwoFactorMutation } from "@/lib/store/services/api";
 import type { Admin } from "@/lib/store/slices/authSlice";
 
+function verificationErrorMessage(error: unknown): string {
+  const e = error as {
+    data?: { status?: { message?: string }; message?: string; error?: string };
+    message?: string;
+  };
+
+  return (
+    e?.data?.status?.message ||
+    e?.data?.message ||
+    e?.data?.error ||
+    e?.message ||
+    "Invalid code. Please try again."
+  );
+}
+
 interface TwoFactorChallengeProps {
   stage: "enroll" | "verify";
   challengeToken: string;
@@ -50,14 +65,10 @@ export default function TwoFactorChallenge({
 
       onComplete(result.token, result.data);
     } catch (error: unknown) {
-      const e = error as { data?: { status?: { message?: string }; message?: string }; message?: string };
       toast.error("Verification Failed", {
-        description:
-          e?.data?.status?.message ||
-          e?.data?.message ||
-          e?.message ||
-          "Invalid code. Please try again.",
+        description: verificationErrorMessage(error),
       });
+      setCode("");
     }
   };
 

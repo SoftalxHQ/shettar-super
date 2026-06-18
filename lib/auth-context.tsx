@@ -111,6 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const finalizeLogin = useCallback(
     (token: string, adminData: Admin) => {
       dispatch(loginAction({ token, admin: adminData }));
+      toast.success("Welcome back!", {
+        description: "Authenticated with Shettar Cloud Protocol.",
+      });
       router.push("/dashboard");
     },
     [dispatch, router],
