@@ -93,7 +93,8 @@ export default function BroadcastNotificationsPage() {
       <div>
         <h1 className="text-3xl font-bold">Push Notifications</h1>
         <p className="text-muted-foreground mt-2">
-          Send in-app and push notifications to customers, anonymous visitors, or everyone.
+          Signed-up customers receive in-app history and push. Anonymous visitors receive push only
+          (local device history where supported).
         </p>
       </div>
 
@@ -160,6 +161,14 @@ export default function BroadcastNotificationsPage() {
             ))}
           </div>
         </div>
+
+        {(targetType === "guests" || targetType === "all_devices") && (
+          <p className="text-sm text-muted-foreground bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3">
+            {targetType === "guests"
+              ? "Anonymous visitors receive push notifications only. They will not get server-side in-app history."
+              : "Accounts receive in-app history and push. Guest devices receive push only."}
+          </p>
+        )}
 
         {targetType === "segment" && (
           <div className="space-y-2">
