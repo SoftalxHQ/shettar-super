@@ -194,9 +194,19 @@ export default function TwoFactorChallenge({
           autoComplete="one-time-code"
           autoFocus
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setCode(
+              useRecovery
+                ? next.replace(/[^a-f0-9-]/gi, "").toLowerCase()
+                : next.replace(/\D/g, "").slice(0, 6),
+            );
+          }}
           placeholder={useRecovery ? "Enter a recovery code" : "6-digit code"}
-          maxLength={useRecovery ? 32 : 6}
+          maxLength={useRecovery ? 11 : 6}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
           className="input h-14 text-center text-xl font-bold tracking-[0.4em] transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
           required
         />
