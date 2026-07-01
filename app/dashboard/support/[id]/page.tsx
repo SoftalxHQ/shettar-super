@@ -7,8 +7,8 @@ import {
   useGetSupportTicketQuery,
   useReplyToSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
-  useAssignSupportTicketMutation,
 } from "@/lib/store/services/api";
+import AssignTicketDialog from "@/components/support/AssignTicketDialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
 import { useAuth } from "@/lib/auth-context";
@@ -32,10 +32,10 @@ export default function SupportTicketDetailPage({
 
   const { data, isLoading, isError, refetch } = useGetSupportTicketQuery(ticketId);
   const [replyMessage, setReplyMessage] = useState("");
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   const [replyToTicket, { isLoading: isReplying }] = useReplyToSupportTicketMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateSupportTicketStatusMutation();
-  const [assignTicket, { isLoading: isAssigning }] = useAssignSupportTicketMutation();
 
   const ticket = data?.ticket;
   const messages = data?.messages ?? [];
@@ -63,17 +63,6 @@ export default function SupportTicketDetailPage({
       refetch();
     } catch {
       toast.error("Failed to update status");
-    }
-  };
-
-  const handleAssignToMe = async () => {
-    if (!adminId) return;
-    try {
-      await assignTicket({ id: ticketId, admin_id: adminId }).unwrap();
-      toast.success("Ticket assigned to you");
-      refetch();
-    } catch {
-      toast.error("Failed to assign ticket");
     }
   };
 
@@ -151,14 +140,12 @@ export default function SupportTicketDetailPage({
           </div>
           )}
 
-          {/* Assign to me */}
-          {!ticket.assigned_to && can("support_tickets", "assign") && (
+          {ticket.status === "open" && can("support_tickets", "assign") && (
             <button
-              onClick={handleAssignToMe}
-              disabled={isAssigning}
-              className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold disabled:opacity-50"
+              onClick={() => setAssignDialogOpen(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold"
             >
-              {isAssigning ? "Assigning..." : "Assign to me"}
+              Assign
             </button>
           )}
         </div>
@@ -256,6 +243,15 @@ export default function SupportTicketDetailPage({
           </div>
         </div>
       </div>
+
+      <AssignTicketDialog
+        open={assignDialogOpen}
+        ticketId={ticketId}
+        ticketLabel={ticket.subject}
+        currentAdminId={adminId}
+        onClose={() => setAssignDialogOpen(false)}
+        onAssigned={() => refetch()}
+      />
     </div>
   );
 }

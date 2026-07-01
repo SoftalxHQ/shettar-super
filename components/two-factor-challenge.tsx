@@ -205,7 +205,7 @@ export default function TwoFactorChallenge({
           placeholder={useRecovery ? "Enter a recovery code" : "6-digit code"}
           maxLength={useRecovery ? 11 : 6}
           autoCapitalize="none"
-          autoCorrect={false}
+          autoCorrect="off"
           spellCheck={false}
           className="input h-14 text-center text-xl font-bold tracking-[0.4em] transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
           required

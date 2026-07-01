@@ -471,6 +471,14 @@ export interface SupportTicketStats {
   high_priority: number;
 }
 
+export interface AssignableAdmin {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  title: string | null;
+}
+
 interface GetSupportTicketsResponse {
   tickets: SupportTicket[];
   meta: AccountsMeta;
@@ -1015,6 +1023,9 @@ export const apiService = createApi({
       query: (id) => `/api/v1/admin/support_tickets/${id}`,
       providesTags: (_result, _err, id) => [{ type: "SupportTicket", id }],
     }),
+    getAssignableAdmins: builder.query<{ admins: AssignableAdmin[] }, void>({
+      query: () => "/api/v1/admin/support_tickets/assignable_admins",
+    }),
     assignSupportTicket: builder.mutation<{ message: string; ticket: SupportTicket }, { id: number | string; admin_id: number | string }>({
       query: ({ id, admin_id }) => ({
         url: `/api/v1/admin/support_tickets/${id}/assign`,
@@ -1433,6 +1444,7 @@ export const {
   useGetSupportTicketsQuery,
   useGetSupportTicketStatsQuery,
   useGetSupportTicketQuery,
+  useGetAssignableAdminsQuery,
   useAssignSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
   useReplyToSupportTicketMutation,

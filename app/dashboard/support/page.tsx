@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import {
   useGetSupportTicketsQuery,
   useGetSupportTicketStatsQuery,
-  useAssignSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
   type SupportTicket,
 } from "@/lib/store/services/api";
+import AssignTicketDialog from "@/components/support/AssignTicketDialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
 import { useAuth } from "@/lib/auth-context";
@@ -29,6 +29,7 @@ export default function SupportPage() {
   const [search, setSearch] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inFlightTicketId, setInFlightTicketId] = useState<number | null>(null);
+  const [assignDialogTicket, setAssignDialogTicket] = useState<SupportTicket | null>(null);
 
   // Debounce search input by 400ms
   useEffect(() => {
@@ -51,7 +52,6 @@ export default function SupportPage() {
 
   const { data: statsData, isLoading: statsLoading } = useGetSupportTicketStatsQuery();
 
-  const [assignTicket] = useAssignSupportTicketMutation();
   const [updateStatus] = useUpdateSupportTicketStatusMutation();
 
   const tickets = data?.tickets ?? [];
@@ -65,19 +65,6 @@ export default function SupportPage() {
   const handlePriorityChange = (value: string) => {
     setPriorityFilter(value);
     setPage(1);
-  };
-
-  const handleAssignTicket = async (id: number) => {
-    if (!adminId) return;
-    setInFlightTicketId(id);
-    try {
-      await assignTicket({ id, admin_id: adminId }).unwrap();
-      toast.success("Ticket assigned successfully");
-    } catch {
-      toast.error("Failed to assign ticket");
-    } finally {
-      setInFlightTicketId(null);
-    }
   };
 
   const handleResolveTicket = async (id: number) => {
@@ -257,13 +244,12 @@ export default function SupportPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 ml-4">
-                  {ticket.status !== "resolved" && ticket.status !== "closed" && !ticket.assigned_to && can("support_tickets", "assign") && (
+                  {ticket.status === "open" && can("support_tickets", "assign") && (
                     <button
-                      onClick={() => handleAssignTicket(ticket.id)}
-                      disabled={isInFlight}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold whitespace-nowrap disabled:opacity-50"
+                      onClick={() => setAssignDialogTicket(ticket)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold whitespace-nowrap"
                     >
-                      Assign to me
+                      Assign
                     </button>
                   )}
                   {ticket.status !== "resolved" && ticket.status !== "closed" && can("support_tickets", "update_status") && (
@@ -330,6 +316,13 @@ export default function SupportPage() {
           </div>
         </div>
       )}
+      <AssignTicketDialog
+        open={assignDialogTicket !== null}
+        ticketId={assignDialogTicket?.id ?? ""}
+        ticketLabel={assignDialogTicket?.subject}
+        currentAdminId={adminId}
+        onClose={() => setAssignDialogTicket(null)}
+      />
     </div>
   );
 }

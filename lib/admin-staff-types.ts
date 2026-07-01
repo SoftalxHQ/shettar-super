@@ -108,7 +108,7 @@ export const ADMIN_PERMISSION_LABELS = {
     actions: {
       view: "View Tickets",
       reply: "Reply to Tickets",
-      assign: "Assign Tickets",
+      assign: "Assign Tickets to Staff",
       update_status: "Update Status",
     },
   },

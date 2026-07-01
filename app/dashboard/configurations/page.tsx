@@ -12,6 +12,30 @@ import {
   type CommissionTier,
 } from "@/components/marketer-commission-tiers-editor";
 
+const DEFAULT_AD_SETTINGS = {
+  default_cpm_rate: 500,
+  default_cpc_rate: 50,
+  max_sponsored_ratio: 0.25,
+  min_campaign_budget: 1000,
+  attribution_window_hours: 168,
+  ads_system_enabled: true,
+  paystack_fee_passthrough: true,
+  auto_approve_verified_businesses: true,
+};
+
+type AdSettings = typeof DEFAULT_AD_SETTINGS;
+
+type PlatformConfig = {
+  withdrawal_commission_rate: number;
+  withdrawal_flat_fee: number;
+  minimum_withdrawal_amount: number;
+  cancellation_fee_percentage: number;
+  business_cancellation_credit_percentage: number;
+  marketer_commission_tiers: CommissionTier[];
+  agency_commission_tiers: CommissionTier[];
+  ad_settings: AdSettings;
+};
+
 export default function ConfigurationPage() {
   const { admin } = useAuth();
   const token = useAppSelector(selectToken);
@@ -19,8 +43,9 @@ export default function ConfigurationPage() {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
+  const canEdit = can("configurations", "edit");
 
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<PlatformConfig>({
     withdrawal_commission_rate: 0,
     withdrawal_flat_fee: 100,
     minimum_withdrawal_amount: 10000,
@@ -28,37 +53,48 @@ export default function ConfigurationPage() {
     business_cancellation_credit_percentage: 22.22,
     marketer_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
     agency_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
+    ad_settings: DEFAULT_AD_SETTINGS,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [adSettings, setAdSettings] = useState({
-    default_cpm_rate: 500,
-    default_cpc_rate: 50,
-    max_sponsored_ratio: 0.25,
-    min_campaign_budget: 1000,
-    attribution_window_hours: 168,
-    ads_system_enabled: true,
-  });
-  const [savingAds, setSavingAds] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  useEffect(() => {
-    const fetchAdSettings = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/admin/ad_settings`, {
-          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAdSettings((prev) => ({ ...prev, ...data.settings }));
-        }
-      } catch {
-        /* use defaults */
-      }
-    };
-    if (token) fetchAdSettings();
-  }, [API_URL, token]);
+  const applyConfiguration = (data: Record<string, unknown>) => {
+    const ad = (data.ad_settings as Record<string, unknown> | undefined) ?? {};
+    setConfig({
+      withdrawal_commission_rate:              Number(data.withdrawal_commission_rate ?? 0),
+      withdrawal_flat_fee:                     Number(data.withdrawal_flat_fee ?? 100),
+      minimum_withdrawal_amount:               Number(data.minimum_withdrawal_amount ?? 10000),
+      cancellation_fee_percentage:             Number(data.cancellation_fee_percentage ?? 10),
+      business_cancellation_credit_percentage: Number(data.business_cancellation_credit_percentage ?? 22.22),
+      marketer_commission_tiers:               (data.marketer_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
+        min_rooms: t.min_rooms ?? 0,
+        max_rooms: t.max_rooms ?? null,
+        amount: Number(t.amount) || 0,
+      })),
+      agency_commission_tiers:               (data.agency_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
+        min_rooms: t.min_rooms ?? 0,
+        max_rooms: t.max_rooms ?? null,
+        amount: Number(t.amount) || 0,
+      })),
+      ad_settings: {
+        default_cpm_rate: Number(ad.default_cpm_rate ?? DEFAULT_AD_SETTINGS.default_cpm_rate),
+        default_cpc_rate: Number(ad.default_cpc_rate ?? DEFAULT_AD_SETTINGS.default_cpc_rate),
+        max_sponsored_ratio: Number(ad.max_sponsored_ratio ?? DEFAULT_AD_SETTINGS.max_sponsored_ratio),
+        min_campaign_budget: Number(ad.min_campaign_budget ?? DEFAULT_AD_SETTINGS.min_campaign_budget),
+        attribution_window_hours: Number(ad.attribution_window_hours ?? DEFAULT_AD_SETTINGS.attribution_window_hours),
+        ads_system_enabled: ad.ads_system_enabled !== false,
+        paystack_fee_passthrough: ad.paystack_fee_passthrough !== false,
+        auto_approve_verified_businesses: ad.auto_approve_verified_businesses !== false,
+      },
+    });
+  };
+
+  const updateAdSettings = (patch: Partial<AdSettings>) => {
+    if (!canEdit) return;
+    setConfig((prev) => ({ ...prev, ad_settings: { ...prev.ad_settings, ...patch } }));
+  };
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -67,24 +103,7 @@ export default function ConfigurationPage() {
           headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
         });
         if (res.ok) {
-          const data = await res.json();
-          setConfig({
-            withdrawal_commission_rate:              data.withdrawal_commission_rate ?? 0,
-            withdrawal_flat_fee:                     data.withdrawal_flat_fee ?? 100,
-            minimum_withdrawal_amount:               data.minimum_withdrawal_amount ?? 10000,
-            cancellation_fee_percentage:             data.cancellation_fee_percentage ?? 10,
-            business_cancellation_credit_percentage: data.business_cancellation_credit_percentage ?? 22.22,
-            marketer_commission_tiers:               (data.marketer_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
-              min_rooms: t.min_rooms ?? 0,
-              max_rooms: t.max_rooms ?? null,
-              amount: Number(t.amount) || 0,
-            })),
-            agency_commission_tiers:               (data.agency_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
-              min_rooms: t.min_rooms ?? 0,
-              max_rooms: t.max_rooms ?? null,
-              amount: Number(t.amount) || 0,
-            })),
-          });
+          applyConfiguration(await res.json());
         }
       } catch {
         // silent — use defaults
@@ -109,6 +128,12 @@ export default function ConfigurationPage() {
         body: JSON.stringify({ configuration: config }),
       });
       if (res.ok) {
+        const refresh = await fetch(`${API_URL}/api/v1/configurations`, {
+          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+        });
+        if (refresh.ok) {
+          applyConfiguration(await refresh.json());
+        }
         toast.success("Configuration updated successfully");
       } else {
         toast.error("Failed to update configuration");
@@ -133,8 +158,6 @@ export default function ConfigurationPage() {
       </div>
     );
   }
-
-  const canEdit = can("configurations", "edit");
 
   if (loading) {
     return (
@@ -370,28 +393,58 @@ export default function ConfigurationPage() {
             <div className="glass p-6 rounded-3xl space-y-4">
               <div>
                 <h3 className="font-bold">Sponsored ads</h3>
-                <p className="text-xs text-muted-foreground">Default rates, search ad ratio, and attribution window</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Businesses can pay to promote listings in search and on the homepage. These defaults apply when a campaign does not set its own bid or budget rules.
+                </p>
               </div>
+
+              <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={config.ad_settings.ads_system_enabled}
+                  disabled={!canEdit}
+                  onChange={(e) => updateAdSettings({ ads_system_enabled: e.target.checked })}
+                  className="rounded border-border"
+                />
+                <span>
+                  <span className="font-semibold">Ads system enabled</span>
+                  <span className="block text-xs text-muted-foreground">When off, search/homepage fall back to organic listings only (no sponsored placements).</span>
+                </span>
+              </label>
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <label className="space-y-1 text-sm">
-                  <span className="text-muted-foreground">Default CPM (₦ / 1000 impressions)</span>
+                  <span className="text-muted-foreground">Default CPM (₦ / 1,000 impressions)</span>
                   <input
                     type="number"
-                    className="input w-full"
-                    value={adSettings.default_cpm_rate}
-                    onChange={(e) => setAdSettings({ ...adSettings, default_cpm_rate: parseFloat(e.target.value) || 0 })}
+                    className="input w-full read-only:opacity-70"
+                    value={config.ad_settings.default_cpm_rate}
+                    onChange={(e) => updateAdSettings({ default_cpm_rate: parseFloat(e.target.value) || 0 })}
                     readOnly={!canEdit}
                   />
+                  <span className="text-xs text-muted-foreground block">Charged per impression when a campaign uses CPM billing and has no custom max bid.</span>
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-muted-foreground">Default CPC (₦ / click)</span>
+                  <input
+                    type="number"
+                    className="input w-full read-only:opacity-70"
+                    value={config.ad_settings.default_cpc_rate}
+                    onChange={(e) => updateAdSettings({ default_cpc_rate: parseFloat(e.target.value) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                  <span className="text-xs text-muted-foreground block">Charged per ad click when a campaign uses CPC billing and has no custom max bid.</span>
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="text-muted-foreground">Min campaign budget (₦)</span>
                   <input
                     type="number"
-                    className="input w-full"
-                    value={adSettings.min_campaign_budget}
-                    onChange={(e) => setAdSettings({ ...adSettings, min_campaign_budget: parseFloat(e.target.value) || 0 })}
+                    className="input w-full read-only:opacity-70"
+                    value={config.ad_settings.min_campaign_budget}
+                    onChange={(e) => updateAdSettings({ min_campaign_budget: parseFloat(e.target.value) || 0 })}
                     readOnly={!canEdit}
                   />
+                  <span className="text-xs text-muted-foreground block">Minimum total budget a business must set when creating a paid campaign.</span>
                 </label>
                 <label className="space-y-1 text-sm">
                   <span className="text-muted-foreground">Max sponsored ratio in search</span>
@@ -399,52 +452,39 @@ export default function ConfigurationPage() {
                     type="number"
                     step="0.01"
                     max="1"
-                    className="input w-full"
-                    value={adSettings.max_sponsored_ratio}
-                    onChange={(e) => setAdSettings({ ...adSettings, max_sponsored_ratio: parseFloat(e.target.value) || 0 })}
+                    className="input w-full read-only:opacity-70"
+                    value={config.ad_settings.max_sponsored_ratio}
+                    onChange={(e) => updateAdSettings({ max_sponsored_ratio: parseFloat(e.target.value) || 0 })}
                     readOnly={!canEdit}
                   />
+                  <span className="text-xs text-muted-foreground block">Cap on sponsored slots vs organic results (0.25 = up to 25% of a search page can be ads).</span>
                 </label>
-                <label className="space-y-1 text-sm">
+                <label className="space-y-1 text-sm sm:col-span-2">
                   <span className="text-muted-foreground">Attribution window (hours)</span>
                   <input
                     type="number"
-                    className="input w-full"
-                    value={adSettings.attribution_window_hours}
-                    onChange={(e) => setAdSettings({ ...adSettings, attribution_window_hours: parseInt(e.target.value, 10) || 168 })}
+                    className="input w-full read-only:opacity-70"
+                    value={config.ad_settings.attribution_window_hours}
+                    onChange={(e) => updateAdSettings({ attribution_window_hours: parseInt(e.target.value, 10) || 168 })}
                     readOnly={!canEdit}
                   />
+                  <span className="text-xs text-muted-foreground block">How long after an ad click/view a booking can still be credited to that campaign (168h = 7 days).</span>
                 </label>
               </div>
-              {canEdit && (
-                <button
-                  type="button"
-                  disabled={savingAds}
-                  className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-                  onClick={async () => {
-                    setSavingAds(true);
-                    try {
-                      const res = await fetch(`${API_URL}/api/v1/admin/ad_settings`, {
-                        method: "PATCH",
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                          "Content-Type": "application/json",
-                          "X-Client-Platform": "web-super",
-                        },
-                        body: JSON.stringify({ settings: adSettings }),
-                      });
-                      if (!res.ok) throw new Error("Save failed");
-                      toast.success("Ad settings saved");
-                    } catch {
-                      toast.error("Failed to save ad settings");
-                    } finally {
-                      setSavingAds(false);
-                    }
-                  }}
-                >
-                  {savingAds ? "Saving…" : "Save ad settings"}
-                </button>
-              )}
+
+              <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={config.ad_settings.auto_approve_verified_businesses}
+                  disabled={!canEdit}
+                  onChange={(e) => updateAdSettings({ auto_approve_verified_businesses: e.target.checked })}
+                  className="rounded border-border"
+                />
+                <span>
+                  <span className="font-semibold">Auto-approve campaigns for verified businesses</span>
+                  <span className="block text-xs text-muted-foreground">Verified businesses with ad wallet balance can launch repeat campaigns without manual review.</span>
+                </span>
+              </label>
             </div>
 
             {canEdit && (
