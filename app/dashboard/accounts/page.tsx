@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useGetAccountsQuery } from "@/lib/store/services/api";
 import { formatDate } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
@@ -199,28 +200,13 @@ export default function UserAccountsPage() {
       </div>
 
       {/* Pagination */}
-      {meta && meta.total_pages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {meta.current_page} of {meta.total_pages} ({meta.total_count} total)
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={meta.current_page === 1}
-              className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(meta.total_pages, p + 1))}
-              disabled={meta.current_page === meta.total_pages}
-              className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+      {meta && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.total_pages}
+          totalCount={meta.total_count}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );

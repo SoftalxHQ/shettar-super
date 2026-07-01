@@ -101,6 +101,25 @@ export interface MarketerPerformance {
   unpaid_commission: number;
 }
 
+export interface MarketerTransaction {
+  id: number;
+  reference_code: string | null;
+  transaction_type: string;
+  amount: number;
+  description: string | null;
+  status: string;
+  payment_method: string | null;
+  created_at: string;
+}
+
+export interface CreateMarketerPayload {
+  full_name: string;
+  email: string;
+  phone_number?: string;
+  account_type?: "individual" | "agency";
+  agency_name?: string;
+}
+
 export interface PromoCode {
   id: number;
   code: string;
@@ -1319,7 +1338,7 @@ export const apiService = createApi({
     // ── Promo codes endpoints ───────────────────────────────────────────
     getPromoCodes: builder.query<{ 
       promo_codes: PromoCode[]; 
-      meta?: any;
+      meta?: AccountsMeta;
       stats?: {
         total_count: number;
         active_count: number;
@@ -1330,7 +1349,7 @@ export const apiService = createApi({
       query: ({ page = 1 } = {}) => `/api/v1/admin/promo_codes?page=${page}`,
       transformResponse: (response: {
         promo_codes?: PromoCode[];
-        meta?: unknown;
+        meta?: AccountsMeta;
         stats?: {
           total_count?: number;
           active_count?: number;
@@ -1345,7 +1364,14 @@ export const apiService = createApi({
           usage_limit: p.usage_limit != null ? Number(p.usage_limit) : null,
           per_customer_limit: p.per_customer_limit != null ? Number(p.per_customer_limit) : null,
         })),
-        meta: response.meta,
+        meta: response.meta
+          ? {
+              current_page: Number(response.meta.current_page ?? 1),
+              total_pages: Number(response.meta.total_pages ?? 1),
+              total_count: Number(response.meta.total_count ?? 0),
+              per_page: Number(response.meta.per_page ?? 0),
+            }
+          : undefined,
         stats: response.stats
           ? {
               total_count: Number(response.stats.total_count ?? 0),
@@ -1355,7 +1381,7 @@ export const apiService = createApi({
             }
           : undefined,
       }),
-      providesTags: ["PromoCode" as any],
+      providesTags: ["PromoCode"],
     }),
     createPromoCode: builder.mutation<{ promo_code: PromoCode }, Partial<PromoCode>>({
       query: (promo_code) => ({
@@ -1363,7 +1389,7 @@ export const apiService = createApi({
         method: "POST",
         body: { promo_code },
       }),
-      invalidatesTags: ["PromoCode" as any],
+      invalidatesTags: ["PromoCode"],
     }),
     updatePromoCode: builder.mutation<{ promo_code: PromoCode }, { id: number; promo_code: Partial<PromoCode> }>({
       query: ({ id, promo_code }) => ({
@@ -1371,30 +1397,38 @@ export const apiService = createApi({
         method: "PATCH",
         body: { promo_code },
       }),
-      invalidatesTags: ["PromoCode" as any],
+      invalidatesTags: ["PromoCode"],
     }),
 
     // ── Marketers endpoints ───────────────────────────────────────────────
-    getMarketers: builder.query<{ marketers: Marketer[] }, void>({
-      query: () => "/api/v1/admin/marketers",
-      providesTags: ["Marketer" as any],
+    getMarketers: builder.query<{ marketers: Marketer[]; meta: AccountsMeta }, { page?: number; search?: string; status?: string }>({
+      query: ({ page = 1, search, status } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        if (status && status !== "all") params.set("status", status);
+        return `/api/v1/admin/marketers?${params.toString()}`;
+      },
+      providesTags: ["Marketer"],
     }),
-    createMarketer: builder.mutation<{ marketer: Marketer }, any>({
+    createMarketer: builder.mutation<{ marketer: Marketer }, CreateMarketerPayload>({
       query: (marketer) => ({
         url: "/api/v1/admin/marketers",
         method: "POST",
         body: { marketer },
       }),
-      invalidatesTags: ["Marketer" as any],
+      invalidatesTags: ["Marketer"],
     }),
     getMarketer: builder.query<{ marketer: Marketer }, number | string>({
       query: (id) => `/api/v1/admin/marketers/${id}`,
-      providesTags: ["Marketer" as any],
+      providesTags: ["Marketer"],
     }),
     getMarketerPerformance: builder.query<MarketerPerformance, number | string>({
       query: (id) => `/api/v1/admin/marketers/${id}/performance`,
     }),
-    getMarketerTransactions: builder.query<{ transactions: any[]; meta: any }, { id: number | string; page?: number; transaction_type?: string }>({
+    getMarketerTransactions: builder.query<
+      { transactions: MarketerTransaction[]; meta: AccountsMeta },
+      { id: number | string; page?: number; transaction_type?: string }
+    >({
       query: ({ id, page = 1, transaction_type }) => {
         const params = new URLSearchParams({ page: String(page) });
         if (transaction_type && transaction_type !== "all") params.set("transaction_type", transaction_type);
@@ -1407,7 +1441,7 @@ export const apiService = createApi({
         method: "PATCH",
         body: { marketer, reason },
       }),
-      invalidatesTags: ["Marketer" as any],
+      invalidatesTags: ["Marketer"],
     }),
   }),
 });

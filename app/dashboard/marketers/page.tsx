@@ -4,13 +4,69 @@ import { useState } from "react";
 import { 
   useGetMarketersQuery, 
   useCreateMarketerMutation,
-  useUpdateMarketerMutation
+  useUpdateMarketerMutation,
+  type CreateMarketerPayload,
+  type Marketer,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import { Pagination } from "@/components/ui/pagination";
+
+type MarketerFormState = {
+  full_name: string;
+  email: string;
+  phone_number: string;
+  account_type: "individual" | "agency";
+  agency_name: string;
+};
+
+type ApiErrorBody = {
+  errors?: string[];
+  message?: string;
+  error?: string;
+};
+
+function mutationErrorMessage(err: unknown, fallback: string): string {
+  if (typeof err === "object" && err !== null && "data" in err) {
+    const data = (err as { data?: ApiErrorBody }).data;
+    if (data?.errors?.length) return data.errors.join(", ");
+    if (data?.message) return data.message;
+    if (data?.error) return data.error;
+  }
+  return fallback;
+}
+
+function buildCreatePayload(form: MarketerFormState): CreateMarketerPayload {
+  return {
+    full_name: form.full_name,
+    email: form.email,
+    phone_number: form.phone_number || undefined,
+    account_type: form.account_type,
+    ...(form.account_type === "agency" ? { agency_name: form.agency_name } : {}),
+  };
+}
+
+function buildUpdatePayload(
+  form: MarketerFormState,
+  marketer: Marketer
+): Partial<Marketer> {
+  const payload: Partial<Marketer> = {
+    full_name: form.full_name,
+    phone_number: form.phone_number || null,
+  };
+
+  if (marketer.account_type === "individual") {
+    payload.account_type = form.account_type;
+    payload.agency_name = form.account_type === "agency" ? form.agency_name : null;
+  } else if (marketer.account_type === "agency") {
+    payload.agency_name = form.agency_name;
+  }
+
+  return payload;
+}
 
 export default function MarketersPage() {
   const { admin } = useAuth();
@@ -19,14 +75,15 @@ export default function MarketersPage() {
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
 
-  const { data, isLoading } = useGetMarketersQuery(undefined, { skip: !can("marketers", "view") });
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching } = useGetMarketersQuery({ page }, { skip: !can("marketers", "view") });
   const [createMarketer, { isLoading: isCreating }] = useCreateMarketerMutation();
   const [updateMarketer, { isLoading: isUpdating }] = useUpdateMarketerMutation();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMarketer, setEditingMarketer] = useState<any>(null);
+  const [editingMarketer, setEditingMarketer] = useState<Marketer | null>(null);
   
-  const [form, setForm] = useState({ 
+  const [form, setForm] = useState<MarketerFormState>({ 
     full_name: "", 
     email: "", 
     phone_number: "",
@@ -35,6 +92,7 @@ export default function MarketersPage() {
   });
 
   const marketers = data?.marketers || [];
+  const meta = data?.meta;
   const portalUrl = (process.env.NEXT_PUBLIC_MARKETER_PORTAL_URL || "http://localhost:3005").replace(/\/$/, "");
 
   const accountTypeLabel = (type?: string) => {
@@ -49,7 +107,7 @@ export default function MarketersPage() {
     return "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300";
   };
 
-  const handleOpenModal = (marketer: any = null) => {
+  const handleOpenModal = (marketer: Marketer | null = null) => {
     if (marketer) {
       setEditingMarketer(marketer);
       setForm({
@@ -82,45 +140,27 @@ export default function MarketersPage() {
     
     try {
       if (editingMarketer) {
-        const payload: Record<string, string> = {
-          full_name: form.full_name,
-          phone_number: form.phone_number,
-        };
-        if (editingMarketer.account_type === "individual") {
-          payload.account_type = form.account_type;
-          if (form.account_type === "agency") {
-            payload.agency_name = form.agency_name;
-          }
-        } else if (editingMarketer.account_type === "agency") {
-          payload.agency_name = form.agency_name;
-        }
-        await updateMarketer({ id: editingMarketer.id, marketer: payload }).unwrap();
+        await updateMarketer({
+          id: editingMarketer.id,
+          marketer: buildUpdatePayload(form, editingMarketer),
+        }).unwrap();
         toast.success("Marketer updated successfully");
       } else {
-        const payload: Record<string, string> = {
-          full_name: form.full_name,
-          email: form.email,
-          phone_number: form.phone_number,
-          account_type: form.account_type,
-        };
-        if (form.account_type === "agency") {
-          payload.agency_name = form.agency_name;
-        }
-        await createMarketer(payload).unwrap();
+        await createMarketer(buildCreatePayload(form)).unwrap();
         toast.success("Marketer invited! An email with their login credentials has been sent.");
       }
       handleCloseModal();
-    } catch (err: any) {
-      toast.error(err?.data?.errors?.join?.(", ") || err?.data?.message || err?.data?.error || "Failed to save marketer");
+    } catch (err: unknown) {
+      toast.error(mutationErrorMessage(err, "Failed to save marketer"));
     }
   };
 
-  const toggleStatus = async (marketer: any) => {
+  const toggleStatus = async (marketer: Marketer) => {
     const newStatus = marketer.status === "active" ? "inactive" : "active";
     try {
       await updateMarketer({ id: marketer.id, marketer: { status: newStatus } }).unwrap();
       toast.success(`Marketer ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
-    } catch (err: any) {
+    } catch {
       toast.error("Failed to update status");
     }
   };
@@ -134,7 +174,7 @@ export default function MarketersPage() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && !data) {
     return (
       <div className="p-8 flex justify-center py-20">
         <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -176,7 +216,7 @@ export default function MarketersPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Total Marketers", value: marketers.length, icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+          { label: "Total Marketers", value: meta?.total_count ?? marketers.length, icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
           { label: "Active", value: marketers.filter(m => m.status === 'active').length, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-green-600" },
           { label: "Referrals (MTD)", value: "—", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
           { label: "Payouts Pending", value: "—", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-blue-600" },
@@ -277,7 +317,7 @@ export default function MarketersPage() {
               ))}
               {marketers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="p-20 text-center">
+                  <td colSpan={6} className="p-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-30">
                       <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -290,7 +330,19 @@ export default function MarketersPage() {
             </tbody>
           </table>
         </div>
+        {isFetching && (
+          <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">Loading page…</div>
+        )}
       </div>
+
+      {meta && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.total_pages}
+          totalCount={meta.total_count}
+          onPageChange={setPage}
+        />
+      )}
 
       {/* Form Modal */}
       {isModalOpen && (

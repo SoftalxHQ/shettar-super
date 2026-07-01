@@ -5,6 +5,7 @@ import { useAppSelector } from "@/lib/store/hooks";
 import { selectToken } from "@/lib/store/slices/authSlice";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
+import { Pagination } from "@/components/ui/pagination";
 
 type GeoTarget = { country?: string; state?: string; city?: string };
 
@@ -27,6 +28,13 @@ type Campaign = {
 };
 
 type StatusFilter = "pending_review" | "active" | "paused" | "rejected" | "all";
+
+type CampaignsMeta = {
+  current_page: number;
+  total_pages: number;
+  total_count: number;
+  per_page: number;
+};
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
   { id: "pending_review", label: "Pending review" },
@@ -73,29 +81,34 @@ export default function AdCampaignsAdminPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending_review");
+  const [page, setPage] = useState(1);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [meta, setMeta] = useState<CampaignsMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<Campaign | null>(null);
   const [rejectReason, setRejectReason] = useState("Does not meet advertising guidelines");
   const [reviewingId, setReviewingId] = useState<number | null>(null);
 
-  const loadCampaigns = useCallback(async (status: StatusFilter, silent = false) => {
+  const loadCampaigns = useCallback(async (status: StatusFilter, pageNum: number, silent = false) => {
     if (!token) return;
     if (silent) setRefreshing(true);
     else setLoading(true);
 
     try {
-      const query = status === "all" ? "" : `?status=${status}`;
-      const res = await fetch(`${API_URL}/api/v1/admin/ad_campaigns${query}`, {
+      const params = new URLSearchParams({ page: String(pageNum) });
+      if (status !== "all") params.set("status", status);
+      const res = await fetch(`${API_URL}/api/v1/admin/ad_campaigns?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load campaigns");
       setCampaigns(data.campaigns || []);
+      setMeta(data.meta || null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to load campaigns");
       setCampaigns([]);
+      setMeta(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -103,20 +116,20 @@ export default function AdCampaignsAdminPage() {
   }, [API_URL, token]);
 
   useEffect(() => {
-    loadCampaigns(statusFilter);
-  }, [loadCampaigns, statusFilter]);
+    loadCampaigns(statusFilter, page);
+  }, [loadCampaigns, statusFilter, page]);
 
   const stats = useMemo(() => {
     const pending = campaigns.filter((c) => c.status === "pending_review").length;
     const active = campaigns.filter((c) => c.status === "active").length;
     const spend = campaigns.reduce((sum, c) => sum + (c.spent_amount || 0), 0);
     return {
-      total: campaigns.length,
+      total: meta?.total_count ?? campaigns.length,
       pending,
       active,
       spend,
     };
-  }, [campaigns]);
+  }, [campaigns, meta?.total_count]);
 
   const review = async (id: number, decision: "approve" | "reject", reason?: string) => {
     setReviewingId(id);
@@ -137,7 +150,7 @@ export default function AdCampaignsAdminPage() {
       }
       toast.success(data.message || "Campaign updated");
       setRejectTarget(null);
-      await loadCampaigns(statusFilter, true);
+      await loadCampaigns(statusFilter, page, true);
     } catch {
       toast.error("Review failed");
     } finally {
@@ -165,7 +178,7 @@ export default function AdCampaignsAdminPage() {
         </div>
         <button
           type="button"
-          onClick={() => loadCampaigns(statusFilter, true)}
+          onClick={() => loadCampaigns(statusFilter, page, true)}
           className="btn-secondary w-fit px-5 py-2.5 text-sm font-semibold"
         >
           Refresh
@@ -191,7 +204,10 @@ export default function AdCampaignsAdminPage() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => setStatusFilter(tab.id)}
+            onClick={() => {
+              setStatusFilter(tab.id);
+              setPage(1);
+            }}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
               statusFilter === tab.id
                 ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
@@ -327,6 +343,15 @@ export default function AdCampaignsAdminPage() {
             );
           })}
         </div>
+      )}
+
+      {meta && !loading && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.total_pages}
+          totalCount={meta.total_count}
+          onPageChange={setPage}
+        />
       )}
 
       {rejectTarget && (
