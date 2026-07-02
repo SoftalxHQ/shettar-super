@@ -173,6 +173,44 @@ export interface PushNotificationSuggestion {
   message: string;
 }
 
+export interface PushDevicePlatformStats {
+  total: number;
+  ios: number;
+  android: number;
+  web: number;
+}
+
+export interface PushDeviceStats {
+  active: {
+    total: number;
+    account: PushDevicePlatformStats;
+    guest: PushDevicePlatformStats;
+    web: number;
+  };
+  disabled: {
+    total: number;
+  };
+}
+
+export interface AdminPushDevice {
+  id: number;
+  kind: "account" | "guest";
+  platform: "ios" | "android" | "web";
+  status: "active" | "disabled";
+  token_preview: string;
+  guest_id: string | null;
+  device_id: string | null;
+  account: {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+  last_seen_at: string | null;
+  disabled_at: string | null;
+  created_at: string;
+}
+
 export interface Account {
   id: number;
   account_unique_id: string;
@@ -842,7 +880,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -952,6 +990,19 @@ export const apiService = createApi({
         method: "POST",
         body,
       }),
+    }),
+    getPushDevices: builder.query<
+      { stats: PushDeviceStats; devices: AdminPushDevice[]; meta: AccountsMeta },
+      { page?: number; kind?: "all" | "account" | "guest"; platform?: "all" | "ios" | "android" | "web"; status?: "all" | "active" | "disabled" }
+    >({
+      query: ({ page = 1, kind = "all", platform = "all", status = "all" } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (kind !== "all") params.set("kind", kind);
+        if (platform !== "all") params.set("platform", platform);
+        if (status !== "all") params.set("status", status);
+        return `/api/v1/admin/push_devices?${params.toString()}`;
+      },
+      providesTags: ["PushDevice"],
     }),
     getAccountReservations: builder.query<{ reservations: AccountReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
       query: ({ id, page = 1, status }) => {
@@ -1589,6 +1640,7 @@ export const {
   useActivateAccountMutation,
   useSendAccountNotificationMutation,
   useGeneratePushNotificationSuggestionsMutation,
+  useGetPushDevicesQuery,
   useGetAccountReservationsQuery,
   useGetAccountTransactionsQuery,
   useGetBusinessesQuery,
