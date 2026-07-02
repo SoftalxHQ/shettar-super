@@ -60,6 +60,18 @@ export default function ConfigurationPage() {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+  const normalizeCommissionTiers = (raw: unknown): CommissionTier[] => {
+    const tiers = Array.isArray(raw) ? raw : DEFAULT_MARKETER_TIERS;
+    return tiers.map((t) => {
+      const tier = t as CommissionTier;
+      return {
+        min_rooms: tier.min_rooms ?? 0,
+        max_rooms: tier.max_rooms ?? null,
+        amount: Number(tier.amount) || 0,
+      };
+    });
+  };
+
   const applyConfiguration = (data: Record<string, unknown>) => {
     const ad = (data.ad_settings as Record<string, unknown> | undefined) ?? {};
     setConfig({
@@ -68,16 +80,8 @@ export default function ConfigurationPage() {
       minimum_withdrawal_amount:               Number(data.minimum_withdrawal_amount ?? 10000),
       cancellation_fee_percentage:             Number(data.cancellation_fee_percentage ?? 10),
       business_cancellation_credit_percentage: Number(data.business_cancellation_credit_percentage ?? 22.22),
-      marketer_commission_tiers:               (data.marketer_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
-        min_rooms: t.min_rooms ?? 0,
-        max_rooms: t.max_rooms ?? null,
-        amount: Number(t.amount) || 0,
-      })),
-      agency_commission_tiers:               (data.agency_commission_tiers ?? DEFAULT_MARKETER_TIERS).map((t: CommissionTier) => ({
-        min_rooms: t.min_rooms ?? 0,
-        max_rooms: t.max_rooms ?? null,
-        amount: Number(t.amount) || 0,
-      })),
+      marketer_commission_tiers: normalizeCommissionTiers(data.marketer_commission_tiers),
+      agency_commission_tiers: normalizeCommissionTiers(data.agency_commission_tiers),
       ad_settings: {
         default_cpm_rate: Number(ad.default_cpm_rate ?? DEFAULT_AD_SETTINGS.default_cpm_rate),
         default_cpc_rate: Number(ad.default_cpc_rate ?? DEFAULT_AD_SETTINGS.default_cpc_rate),
