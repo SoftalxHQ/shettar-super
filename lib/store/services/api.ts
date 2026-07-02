@@ -168,6 +168,11 @@ export interface NewsletterPayload {
   metadata?: { cta_url?: string; cta_label?: string };
 }
 
+export interface PushNotificationSuggestion {
+  title: string;
+  message: string;
+}
+
 export interface Account {
   id: number;
   account_unique_id: string;
@@ -931,6 +936,23 @@ export const apiService = createApi({
         body,
       }),
     }),
+    generatePushNotificationSuggestions: builder.mutation<
+      { suggestions: PushNotificationSuggestion[] },
+      {
+        prompt: string;
+        context?: {
+          target_type?: string;
+          segment?: string | null;
+          audience_label?: string;
+        };
+      }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/push_notification_suggestions",
+        method: "POST",
+        body,
+      }),
+    }),
     getAccountReservations: builder.query<{ reservations: AccountReservation[]; meta: AccountsMeta }, { id: number | string; page?: number; status?: string }>({
       query: ({ id, page = 1, status }) => {
         const params = new URLSearchParams({ page: String(page) });
@@ -1566,6 +1588,7 @@ export const {
   useSuspendAccountMutation,
   useActivateAccountMutation,
   useSendAccountNotificationMutation,
+  useGeneratePushNotificationSuggestionsMutation,
   useGetAccountReservationsQuery,
   useGetAccountTransactionsQuery,
   useGetBusinessesQuery,

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { PushNotificationAiModal } from "@/components/push-notification-ai-modal";
 import {
   useGetAccountsQuery,
   useSendAccountNotificationMutation,
+  type PushNotificationSuggestion,
 } from "@/lib/store/services/api";
 
 const SEGMENTS = [
@@ -14,6 +16,14 @@ const SEGMENTS = [
   { value: "unverified", label: "Unverified customers" },
   { value: "has_booking", label: "Customers with bookings" },
   { value: "suspended", label: "Suspended customers" },
+] as const;
+
+const AUDIENCE_OPTIONS = [
+  { value: "all", label: "All customers" },
+  { value: "segment", label: "Segment" },
+  { value: "account_id", label: "Single customer" },
+  { value: "guests", label: "Anonymous (not signed up)" },
+  { value: "all_devices", label: "Everyone (accounts + guests)" },
 ] as const;
 
 export default function BroadcastNotificationsPage() {
@@ -27,12 +37,36 @@ export default function BroadcastNotificationsPage() {
   const [segment, setSegment] = useState<string>("verified");
   const [accountSearch, setAccountSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const [sendNotification, { isLoading }] = useSendAccountNotificationMutation();
   const { data: searchResults } = useGetAccountsQuery(
     { page: 1, search: accountSearch },
     { skip: targetType !== "account_id" || accountSearch.length < 2 }
   );
+
+  const audienceLabel = useMemo(() => {
+    if (targetType === "segment") {
+      const match = SEGMENTS.find((s) => s.value === segment);
+      return match ? `Segment · ${match.label}` : "Segment";
+    }
+    const match = AUDIENCE_OPTIONS.find((o) => o.value === targetType);
+    return match?.label ?? targetType;
+  }, [targetType, segment]);
+
+  const aiContext = useMemo(
+    () => ({
+      target_type: targetType,
+      segment: targetType === "segment" ? segment : null,
+      audience_label: audienceLabel,
+    }),
+    [targetType, segment, audienceLabel]
+  );
+
+  const handleInsertSuggestion = (suggestion: PushNotificationSuggestion) => {
+    setTitle(suggestion.title);
+    setMessage(suggestion.message);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,12 +124,30 @@ export default function BroadcastNotificationsPage() {
 
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Push Notifications</h1>
-        <p className="text-muted-foreground mt-2">
-          Signed-up customers receive in-app history and push. Anonymous visitors receive push only
-          (local device history where supported).
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Push Notifications</h1>
+          <p className="text-muted-foreground mt-2">
+            Signed-up customers receive in-app history and push. Anonymous visitors receive push only
+            (local device history where supported).
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAiModalOpen(true)}
+          className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-bold"
+          title="Generate with AI"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.847-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+            />
+          </svg>
+          AI
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="glass rounded-3xl p-8 space-y-6">
@@ -137,15 +189,7 @@ export default function BroadcastNotificationsPage() {
         <div className="space-y-3">
           <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Audience</label>
           <div className="flex flex-wrap gap-2">
-            {(
-              [
-                { value: "all", label: "All customers" },
-                { value: "segment", label: "Segment" },
-                { value: "account_id", label: "Single customer" },
-                { value: "guests", label: "Anonymous (not signed up)" },
-                { value: "all_devices", label: "Everyone (accounts + guests)" },
-              ] as const
-            ).map(({ value, label }) => (
+            {AUDIENCE_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
@@ -235,6 +279,14 @@ export default function BroadcastNotificationsPage() {
               : "Queue broadcast"}
         </button>
       </form>
+
+      <PushNotificationAiModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        audienceLabel={audienceLabel}
+        context={aiContext}
+        onInsert={handleInsertSuggestion}
+      />
     </div>
   );
 }
