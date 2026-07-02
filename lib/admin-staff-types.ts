@@ -31,6 +31,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       analytics: { view: true },
       marketers: { view: true, manage: true },
       promos: { view: true, create: true, edit: true },
+      newsletters: { view: true, create: true, send: true },
     } as AdminPermissions,
   },
   support_agent: {
@@ -74,6 +75,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       analytics: { view: true },
       marketers: { view: true },
       promos: { view: true },
+      newsletters: { view: true },
     } as AdminPermissions,
   },
   custom: {
@@ -167,6 +169,14 @@ export const ADMIN_PERMISSION_LABELS = {
       view: "View Promo Codes",
       create: "Create Promo Codes",
       edit: "Edit Promo Codes",
+    },
+  },
+  newsletters: {
+    title: "Email Newsletters",
+    actions: {
+      view: "View Newsletters",
+      create: "Compose & Save Drafts",
+      send: "Send & Test Newsletters",
     },
   },
 } as const;

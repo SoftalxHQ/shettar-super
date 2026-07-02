@@ -134,6 +134,40 @@ export interface PromoCode {
   created_at: string;
 }
 
+export interface Newsletter {
+  id: number;
+  subject: string;
+  preview_text: string | null;
+  html_body?: string;
+  audience: "customers" | "businesses";
+  target_type: "all" | "segment" | "single";
+  target_value: string | null;
+  status: "draft" | "queued" | "sending" | "sent" | "failed";
+  sent_count: number;
+  failed_count: number;
+  metadata: Record<string, unknown>;
+  recipient_estimate: number;
+  editable?: boolean;
+  resendable?: boolean;
+  retryable?: boolean;
+  deletable?: boolean;
+  cta_url?: string | null;
+  cta_label?: string | null;
+  admin?: { id: number; name?: string; email?: string };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsletterPayload {
+  subject: string;
+  preview_text?: string;
+  html_body: string;
+  audience: "customers" | "businesses";
+  target_type: "all" | "segment" | "single";
+  target_value?: string;
+  metadata?: { cta_url?: string; cta_label?: string };
+}
+
 export interface Account {
   id: number;
   account_unique_id: string;
@@ -755,11 +789,14 @@ export interface PlatformWithdrawal {
 // Custom base query with auth header injection and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers, { getState }) => {
+  prepareHeaders: (headers, { getState, endpoint }) => {
     const token = (getState() as RootState).auth.token;
 
-    headers.set("Content-Type", "application/json");
     headers.set("X-Client-Platform", "web-super");
+
+    if (endpoint !== "uploadNewsletterAsset") {
+      headers.set("Content-Type", "application/json");
+    }
 
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
@@ -800,7 +837,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -1400,6 +1437,77 @@ export const apiService = createApi({
       invalidatesTags: ["PromoCode"],
     }),
 
+    // ── Newsletter endpoints ────────────────────────────────────────────────
+    getNewsletters: builder.query<{ newsletters: Newsletter[]; meta: AccountsMeta }, { page?: number }>({
+      query: ({ page = 1 } = {}) => `/api/v1/admin/newsletters?page=${page}`,
+      providesTags: ["Newsletter"],
+    }),
+    getNewsletter: builder.query<{ newsletter: Newsletter }, number | string>({
+      query: (id) => `/api/v1/admin/newsletters/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "Newsletter", id }],
+    }),
+    createNewsletter: builder.mutation<{ newsletter: Newsletter }, NewsletterPayload>({
+      query: (newsletter) => ({
+        url: "/api/v1/admin/newsletters",
+        method: "POST",
+        body: { newsletter },
+      }),
+      invalidatesTags: ["Newsletter"],
+    }),
+    updateNewsletter: builder.mutation<{ newsletter: Newsletter }, { id: number | string; newsletter: Partial<NewsletterPayload> }>({
+      query: ({ id, newsletter }) => ({
+        url: `/api/v1/admin/newsletters/${id}`,
+        method: "PATCH",
+        body: { newsletter },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Newsletter", { type: "Newsletter", id }],
+    }),
+    sendNewsletter: builder.mutation<{ message: string; newsletter: Newsletter }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletters/${id}/send`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _err, id) => ["Newsletter", { type: "Newsletter", id }],
+    }),
+    testNewsletter: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletters/${id}/test`,
+        method: "POST",
+      }),
+    }),
+    deleteNewsletter: builder.mutation<{ message: string }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletters/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Newsletter"],
+    }),
+    resendNewsletter: builder.mutation<{ message: string; newsletter: Newsletter }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletters/${id}/resend`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Newsletter"],
+    }),
+    retryNewsletterDelivery: builder.mutation<{ message: string; newsletter: Newsletter }, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletters/${id}/retry`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Newsletter"],
+    }),
+    uploadNewsletterAsset: builder.mutation<{ url: string; asset_id: number }, File>({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: "/api/v1/admin/newsletter_assets",
+          method: "POST",
+          body: formData,
+        };
+      },
+    }),
+
     // ── Marketers endpoints ───────────────────────────────────────────────
     getMarketers: builder.query<{ marketers: Marketer[]; meta: AccountsMeta }, { page?: number; search?: string; status?: string }>({
       query: ({ page = 1, search, status } = {}) => {
@@ -1527,4 +1635,14 @@ export const {
   useUpdateMarketerMutation,
   useGetMarketerPerformanceQuery,
   useGetMarketerTransactionsQuery,
+  useGetNewslettersQuery,
+  useGetNewsletterQuery,
+  useCreateNewsletterMutation,
+  useUpdateNewsletterMutation,
+  useSendNewsletterMutation,
+  useTestNewsletterMutation,
+  useDeleteNewsletterMutation,
+  useResendNewsletterMutation,
+  useRetryNewsletterDeliveryMutation,
+  useUploadNewsletterAssetMutation,
 } = apiService;

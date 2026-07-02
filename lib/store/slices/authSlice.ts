@@ -13,6 +13,7 @@ export interface AdminPermissions {
   analytics?: { view?: boolean };
   marketers?: { view?: boolean; manage?: boolean };
   promos?: { view?: boolean; create?: boolean; edit?: boolean };
+  newsletters?: { view?: boolean; create?: boolean; send?: boolean };
 }
 
 export interface Admin {
