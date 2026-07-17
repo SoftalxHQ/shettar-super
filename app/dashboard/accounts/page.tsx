@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useGetAccountsQuery } from "@/lib/store/services/api";
 import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
-import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import { normalizeApiMediaUrl } from "@/lib/media-url";
 
 export default function UserAccountsPage() {
   const { admin } = useAuth();
@@ -146,9 +146,19 @@ export default function UserAccountsPage() {
                 <tr key={account.id} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                   <td className="py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
-                        {account.first_name[0]}{account.last_name[0]}
-                      </div>
+                      {account.avatar_url ? (
+                        <img
+                          src={normalizeApiMediaUrl(account.avatar_url)}
+                          alt={`${account.first_name} ${account.last_name}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-12 h-12 rounded-full object-cover bg-slate-100 dark:bg-zinc-800"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                          {account.first_name[0]}{account.last_name[0]}
+                        </div>
+                      )}
                       <div>
                         <p className="font-semibold">{account.first_name} {account.last_name}</p>
                         <p className="text-xs text-muted-foreground">{account.email}</p>

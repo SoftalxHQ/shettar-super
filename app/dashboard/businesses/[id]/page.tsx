@@ -22,6 +22,8 @@ import { useGetBusinessQuery,
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import ImageLightbox from "@/components/ImageLightbox";
+import { normalizeApiMediaUrl, normalizeApiMediaUrls } from "@/lib/media-url";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -51,6 +53,7 @@ export default function BusinessDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number; alt: string } | null>(null);
 
   // Transactions tab state
   const [transactionTypeFilter, setTransactionTypeFilter] = useState("all");
@@ -300,6 +303,17 @@ export default function BusinessDetailPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>
+            {business.logo_url ? (
+              <img
+                src={normalizeApiMediaUrl(business.logo_url)}
+                alt={`${business.name} logo`}
+                className="w-12 h-12 rounded-xl object-cover bg-slate-100 dark:bg-zinc-800"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
+                {business.name.charAt(0)}
+              </div>
+            )}
             <h1 className="text-3xl font-bold">{business.name}</h1>
             {isVerified && (
               <svg className="w-7 h-7 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
@@ -465,6 +479,45 @@ export default function BusinessDetailPage() {
                   <p className="text-xs font-medium text-muted-foreground">Description</p>
                   <p className="text-sm mt-1">{business.description}</p>
                 </div>
+              )}
+            </div>
+
+            {/* Photo gallery */}
+            <div className="glass p-6 rounded-3xl space-y-4">
+              <h3 className="text-xl font-bold">Photos</h3>
+              {(business.images_url?.length ?? 0) > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {(business.images_thumb_url?.length
+                    ? business.images_thumb_url
+                    : business.images_url!
+                  ).map((thumb, i) => {
+                    const fullImages = normalizeApiMediaUrls(business.images_url);
+                    return (
+                      <button
+                        key={`${thumb}-${i}`}
+                        type="button"
+                        onClick={() =>
+                          setLightbox({
+                            images: fullImages,
+                            index: i,
+                            alt: `${business.name} photo`,
+                          })
+                        }
+                        className="block aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-zinc-800 group text-left"
+                      >
+                        <img
+                          src={normalizeApiMediaUrl(thumb)}
+                          alt={`${business.name} photo ${i + 1}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No gallery photos uploaded</p>
               )}
             </div>
 
@@ -1118,35 +1171,137 @@ export default function BusinessDetailPage() {
               <p className="text-muted-foreground">No room types configured yet</p>
             </div>
           ) : (
-            business.room_types.map((rt) => (
-              <div key={rt.id} className="glass p-6 rounded-3xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold">{rt.name}</h3>
-                    <p className="text-sm text-muted-foreground">{formatCurrency(rt.price)} / night · {rt.rooms_count} room{rt.rooms_count !== 1 ? "s" : ""}</p>
+            business.room_types.map((rt) => {
+              const thumbs = normalizeApiMediaUrls(
+                rt.images_thumb_url?.length ? rt.images_thumb_url : rt.images_url
+              );
+              const fullImages = normalizeApiMediaUrls(rt.images_url);
+              const openPhoto = (index: number) =>
+                setLightbox({
+                  images: fullImages,
+                  index,
+                  alt: `${rt.name} photo`,
+                });
+              const sideThumbs = thumbs.slice(1, 5);
+              const extraCount = Math.max(0, thumbs.length - 5);
+
+              return (
+                <div key={rt.id} className="glass overflow-hidden rounded-3xl">
+                  <div className="flex flex-wrap items-end justify-between gap-3 px-6 pt-6 pb-4">
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight">{rt.name}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">{formatCurrency(rt.price)}</span>
+                        <span className="mx-1.5 text-muted-foreground/50">·</span>
+                        per night
+                        <span className="mx-1.5 text-muted-foreground/50">·</span>
+                        {rt.rooms_count} room{rt.rooms_count !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    {thumbs.length > 0 && (
+                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        {thumbs.length} photo{thumbs.length !== 1 ? "s" : ""}
+                      </p>
+                    )}
                   </div>
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">
-                    {rt.rooms_count} rooms
-                  </span>
-                </div>
-                {rt.rooms.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                    {rt.rooms.map((room) => (
+
+                  {thumbs.length > 0 ? (
+                    <div className="px-6">
                       <div
-                        key={room.id}
-                        className={`p-3 rounded-xl text-center text-xs font-semibold border ${room.status === "available"
-                            ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
-                            : "bg-slate-50 border-slate-200 text-slate-500 dark:bg-zinc-800/50 dark:border-zinc-700"
-                          }`}
+                        className={`grid max-w-2xl gap-2 ${
+                          thumbs.length === 1
+                            ? "grid-cols-1"
+                            : "grid-cols-1 sm:grid-cols-[1.6fr_1fr]"
+                        }`}
                       >
-                        <p className="text-base font-bold">#{room.number}</p>
-                        <p className="capitalize mt-0.5">{room.status}</p>
+                        <button
+                          type="button"
+                          onClick={() => openPhoto(0)}
+                          className="group relative aspect-[16/10] overflow-hidden rounded-2xl bg-slate-100 text-left dark:bg-zinc-800"
+                        >
+                          <img
+                            src={thumbs[0]}
+                            alt={`${rt.name} featured photo`}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                          />
+                          <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/40" />
+                        </button>
+
+                        {sideThumbs.length > 0 && (
+                          <div
+                            className={`grid h-full gap-2 ${
+                              sideThumbs.length === 1
+                                ? "grid-cols-1 grid-rows-1"
+                                : sideThumbs.length === 2
+                                  ? "grid-cols-2 sm:grid-cols-1 sm:grid-rows-2"
+                                  : "grid-cols-2 sm:grid-rows-2"
+                            }`}
+                          >
+                            {sideThumbs.map((url, i) => {
+                              const index = i + 1;
+                              const isLast = i === sideThumbs.length - 1 && extraCount > 0;
+                              return (
+                                <button
+                                  key={`${url}-${index}`}
+                                  type="button"
+                                  onClick={() => openPhoto(index)}
+                                  className="group relative aspect-[4/3] min-h-0 overflow-hidden rounded-2xl bg-slate-100 text-left dark:bg-zinc-800 sm:aspect-auto sm:h-full"
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`${rt.name} photo ${index + 1}`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/40" />
+                                  {isLast && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+                                      <span className="text-lg font-semibold text-white">
+                                        +{extraCount + 1}
+                                      </span>
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))
+                    </div>
+                  ) : (
+                    <div className="mx-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-border/70 bg-slate-50/70 dark:bg-zinc-900/40">
+                      <p className="text-sm text-muted-foreground">No photos uploaded for this room type</p>
+                    </div>
+                  )}
+
+                  {rt.rooms.length > 0 && (
+                    <div className="mt-5 border-t border-border/60 px-6 py-5">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        Inventory
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
+                        {rt.rooms.map((room) => (
+                          <div
+                            key={room.id}
+                            className={`rounded-xl p-3 text-center text-xs font-semibold border ${
+                              room.status === "available"
+                                ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400"
+                                : "border-slate-200 bg-slate-50 text-slate-500 dark:border-zinc-700 dark:bg-zinc-800/50"
+                            }`}
+                          >
+                            <p className="text-base font-bold">#{room.number}</p>
+                            <p className="mt-0.5 capitalize">{room.status}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}
@@ -1484,6 +1639,16 @@ export default function BusinessDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {lightbox && (
+        <ImageLightbox
+          images={lightbox.images}
+          index={lightbox.index}
+          alt={lightbox.alt}
+          onClose={() => setLightbox(null)}
+          onIndexChange={(index) => setLightbox((prev) => (prev ? { ...prev, index } : prev))}
+        />
       )}
     </div>
   );

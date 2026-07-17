@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import SupportTicketsCableListener from "@/components/support/SupportTicketsCableListener";
 
 export default function DashboardLayout({
   children,
@@ -158,6 +159,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-zinc-950">
+      <SupportTicketsCableListener />
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
         <SidebarContent />

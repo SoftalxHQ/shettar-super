@@ -24,6 +24,7 @@ export default function SupportPage() {
   };
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -47,6 +48,7 @@ export default function SupportPage() {
     page,
     status: statusFilter,
     priority: priorityFilter,
+    category: categoryFilter,
     search: search || undefined,
   });
 
@@ -64,6 +66,11 @@ export default function SupportPage() {
 
   const handlePriorityChange = (value: string) => {
     setPriorityFilter(value);
+    setPage(1);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryFilter(value);
     setPage(1);
   };
 
@@ -127,7 +134,7 @@ export default function SupportPage() {
 
       {/* Filters + Search */}
       <div className="glass p-6 rounded-3xl space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <label className="label">Search</label>
@@ -170,6 +177,20 @@ export default function SupportPage() {
               <option value="low">Low</option>
             </select>
           </div>
+
+          {/* Category Filter */}
+          <div>
+            <label className="label">Category</label>
+            <select
+              className="input"
+              value={categoryFilter}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              <option value="business_verification">Business verification</option>
+              <option value="general">General</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -209,6 +230,11 @@ export default function SupportPage() {
                       }`}>
                       {ticket.status.replace("_", " ").toUpperCase()}
                     </span>
+                    {ticket.category === "business_verification" && (
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                        VERIFICATION
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-lg font-bold mb-2">{ticket.subject}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>

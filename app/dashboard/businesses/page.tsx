@@ -6,6 +6,7 @@ import { useGetBusinessesQuery, type Business } from "@/lib/store/services/api";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import { Pagination } from "@/components/ui/pagination";
+import { normalizeApiMediaUrl } from "@/lib/media-url";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-NG", {
@@ -191,9 +192,19 @@ export default function BusinessesPage() {
                 <tr key={business.id} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                   <td className="py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold">
-                        {business.name.charAt(0)}
-                      </div>
+                      {business.logo_url ? (
+                        <img
+                          src={normalizeApiMediaUrl(business.logo_url)}
+                          alt={`${business.name} logo`}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-12 h-12 rounded-xl object-cover bg-slate-100 dark:bg-zinc-800"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold">
+                          {business.name.charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <Link
                           href={`/dashboard/businesses/${business.id}`}

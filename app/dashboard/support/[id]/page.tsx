@@ -115,9 +115,22 @@ export default function SupportTicketDetailPage({
               }`}>
               {ticket.status.replace("_", " ").toUpperCase()}
             </span>
+            {ticket.category === "business_verification" && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                VERIFICATION
+              </span>
+            )}
           </div>
           <h1 className="text-2xl font-bold">{ticket.subject}</h1>
           <p className="text-muted-foreground mt-2">{ticket.description}</p>
+          {ticket.category === "business_verification" && ticket.business?.business_unique_id && (
+            <Link
+              href={`/dashboard/businesses/${ticket.business.business_unique_id}`}
+              className="inline-flex mt-4 text-sm font-semibold text-primary hover:underline"
+            >
+              Review business profile →
+            </Link>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 min-w-[180px]">

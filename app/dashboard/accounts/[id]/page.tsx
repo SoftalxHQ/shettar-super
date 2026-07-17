@@ -11,10 +11,14 @@ import {
   useSuspendAccountMutation,
   useActivateAccountMutation,
   useSendAccountNotificationMutation,
+  type PushNotificationSuggestion,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import ImageLightbox from "@/components/ImageLightbox";
+import { PushNotificationAiModal } from "@/components/push-notification-ai-modal";
+import { normalizeApiMediaUrl } from "@/lib/media-url";
 
 export default function AccountDetailPage() {
   const params = useParams();
@@ -29,6 +33,7 @@ export default function AccountDetailPage() {
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [reservationPage, setReservationPage] = useState(1);
   const [transactionPage, setTransactionPage] = useState(1);
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
 
   const { data, isLoading, isError } = useGetAccountQuery(id);
   const [suspendAccount, { isLoading: isSuspending }] = useSuspendAccountMutation();
@@ -48,6 +53,7 @@ export default function AccountDetailPage() {
   const [notifyTitle, setNotifyTitle] = useState("");
   const [notifyMessage, setNotifyMessage] = useState("");
   const [notifyRoute, setNotifyRoute] = useState("");
+  const [aiModalOpen, setAiModalOpen] = useState(false);
 
   const [sendNotification, { isLoading: isSendingNotification }] = useSendAccountNotificationMutation();
 
@@ -111,6 +117,11 @@ export default function AccountDetailPage() {
     }
   };
 
+  const handleInsertSuggestion = (suggestion: PushNotificationSuggestion) => {
+    setNotifyTitle(suggestion.title);
+    setNotifyMessage(suggestion.message);
+  };
+
   const tabs = [
     { id: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
     { id: "bookings", label: "Bookings", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
@@ -151,6 +162,24 @@ export default function AccountDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
+          {account.avatar_url ? (
+            <button
+              type="button"
+              onClick={() => setAvatarPreviewOpen(true)}
+              className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Preview customer avatar"
+            >
+              <img
+                src={normalizeApiMediaUrl(account.avatar_url)}
+                alt={`${account.first_name} ${account.last_name}`}
+                className="w-14 h-14 rounded-full object-cover bg-slate-100 dark:bg-zinc-800 hover:opacity-90 transition-opacity cursor-zoom-in"
+              />
+            </button>
+          ) : (
+            <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
+              {account.first_name[0]}{account.last_name[0]}
+            </div>
+          )}
           <div>
             <h1 className="text-3xl font-bold">{account.first_name} {account.last_name}</h1>
             <p className="text-muted-foreground mt-1">Account ID: {account.account_unique_id}</p>
@@ -586,10 +615,30 @@ export default function AccountDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 border-b border-border">
-              <h3 className="text-xl font-bold">Send notification</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Deliver an in-app and push notification to {account.first_name} {account.last_name}.
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold">Send notification</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Deliver an in-app and push notification to {account.first_name} {account.last_name}.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAiModalOpen(true)}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-bold"
+                  title="Generate with AI"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.847-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                    />
+                  </svg>
+                  AI
+                </button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2">
@@ -640,6 +689,26 @@ export default function AccountDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      <PushNotificationAiModal
+        open={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        audienceLabel={`${account.first_name} ${account.last_name}`}
+        context={{
+          target_type: "account_id",
+          audience_label: `${account.first_name} ${account.last_name}`,
+        }}
+        onInsert={handleInsertSuggestion}
+      />
+
+      {avatarPreviewOpen && (account.avatar_full_url || account.avatar_url) && (
+        <ImageLightbox
+          images={[normalizeApiMediaUrl(account.avatar_full_url || account.avatar_url)]}
+          index={0}
+          alt={`${account.first_name} ${account.last_name}`}
+          onClose={() => setAvatarPreviewOpen(false)}
+        />
       )}
     </div>
   );

@@ -230,6 +230,8 @@ export interface Account {
   created_at: string;
   total_bookings: number;
   status: "active" | "pending" | "suspended";
+  avatar_url?: string | null;
+  avatar_full_url?: string | null;
 }
 
 export interface AccountDetail extends Account {
@@ -355,6 +357,7 @@ export interface Business {
   owner_email: string | null;
   commission_rate?: number | null;
   is_featured?: boolean;
+  logo_url?: string | null;
 }
 
 export interface BankAccount {
@@ -388,6 +391,8 @@ export interface RoomType {
   name: string;
   price: number;
   rooms_count: number;
+  images_url?: string[];
+  images_thumb_url?: string[];
   rooms: { id: number; number: number; status: string }[];
 }
 
@@ -411,6 +416,8 @@ export interface BusinessDetail extends Business {
   pos_balance: number;
   onsite_payment_balance: number;
   amenities: Record<string, boolean>;
+  images_url?: string[];
+  images_thumb_url?: string[];
   room_types: RoomType[];
   owners: BusinessOwner[];
   bank_accounts: BankAccount[];
@@ -517,6 +524,7 @@ export interface SupportTicket {
   description: string;
   priority: string;
   status: string;
+  category?: string;
   created_at: string;
   user?: {
     id: number;
@@ -527,6 +535,7 @@ export interface SupportTicket {
   business?: {
     id: number;
     name: string;
+    business_unique_id?: string;
   };
   assigned_to?: {
     id: number;
@@ -555,6 +564,7 @@ export interface GetSupportTicketsParams {
   page?: number;
   status?: string;
   priority?: string;
+  category?: string;
   business_id?: number | string;
   search?: string;
 }
@@ -1134,10 +1144,11 @@ export const apiService = createApi({
 
     // ── Support Tickets endpoints ───────────────────────────────────────────
     getSupportTickets: builder.query<GetSupportTicketsResponse, GetSupportTicketsParams>({
-      query: ({ page = 1, status, priority, business_id, search } = {}) => {
+      query: ({ page = 1, status, priority, category, business_id, search } = {}) => {
         const params = new URLSearchParams({ page: String(page) });
         if (status && status !== "all") params.set("status", status);
         if (priority && priority !== "all") params.set("priority", priority);
+        if (category && category !== "all") params.set("category", category);
         if (business_id) params.set("business_id", String(business_id));
         if (search) params.set("search", search);
         return `/api/v1/admin/support_tickets?${params.toString()}`;
