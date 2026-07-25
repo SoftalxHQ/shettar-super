@@ -14,6 +14,11 @@ import {
   type SupportTicketCableEvent,
   type SupportTicketChannelHandle,
 } from "@/lib/support-tickets-cable";
+import {
+  hydrateNotificationSoundEnabled,
+  isNotificationSoundEnabled,
+  playNotificationTone,
+} from "@/lib/notification-sound";
 import AssignTicketDialog from "@/components/support/AssignTicketDialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
@@ -72,10 +77,15 @@ export default function SupportTicketDetailPage({
     const cableTicketId = ticket?.ticket_id;
     if (!token || !cableTicketId) return;
 
+    hydrateNotificationSoundEnabled();
+
     const handle = subscribeSupportTicketChannel(token, cableTicketId, {
       received: (event: SupportTicketCableEvent) => {
         if (event.type === "new_message" && event.message) {
-          if (event.message.sender_type === "User") setUserTyping(null);
+          if (event.message.sender_type === "User") {
+            setUserTyping(null);
+            if (isNotificationSoundEnabled()) void playNotificationTone();
+          }
           setLiveMessages((prev) =>
             prev.some((m) => m.id === event.message.id) ? prev : [...prev, event.message]
           );

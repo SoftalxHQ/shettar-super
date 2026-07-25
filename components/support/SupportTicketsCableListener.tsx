@@ -16,6 +16,11 @@ import {
   subscribeSupportAdminChannel,
   type SupportAdminCableEvent,
 } from "@/lib/support-tickets-cable";
+import {
+  hydrateNotificationSoundEnabled,
+  isNotificationSoundEnabled,
+  playNotificationTone,
+} from "@/lib/notification-sound";
 
 function canViewSupport(admin: {
   admin_role?: string;
@@ -60,6 +65,8 @@ export default function SupportTicketsCableListener() {
   useEffect(() => {
     if (!token || !canView) return;
 
+    hydrateNotificationSoundEnabled();
+
     let consumer: Consumer | null = null;
     let subscription: Subscription | null = null;
 
@@ -78,12 +85,17 @@ export default function SupportTicketsCableListener() {
       return pathnameRef.current === ticketPath(numericId);
     };
 
+    const playNoticeSound = () => {
+      if (isNotificationSoundEnabled()) void playNotificationTone();
+    };
+
     const handleEvent = (data: SupportAdminCableEvent) => {
       switch (data.type) {
         case "ticket_created": {
           invalidateSupport(data.ticket.id);
           if (isViewingTicket(data.ticket.id)) break;
 
+          playNoticeSound();
           toast("New support ticket", {
             description: `${ticketLabel(data.ticket)} — ${data.ticket.subject}`,
             action: {
@@ -98,6 +110,7 @@ export default function SupportTicketsCableListener() {
           invalidateSupport(data.ticket.id);
           if (isViewingTicket(data.ticket.id)) break;
 
+          playNoticeSound();
           toast.info("Support ticket updated", {
             description: `${ticketLabel(data.ticket)} is now ${data.ticket.status?.replace("_", " ")}`,
             action: {
@@ -117,6 +130,7 @@ export default function SupportTicketsCableListener() {
             data.message?.sender_id === adminIdRef.current;
           if (fromSelf || isViewingTicket(numericId)) break;
 
+          playNoticeSound();
           toast("New support message", {
             description: data.ticket_id
               ? `Ticket ${data.ticket_id}`
