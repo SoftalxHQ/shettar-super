@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import SupportTicketsCableListener from "@/components/support/SupportTicketsCableListener";
+import SupportUnreadBadge from "@/components/support/SupportUnreadBadge";
 
 export default function DashboardLayout({
   children,
@@ -135,6 +136,7 @@ export default function DashboardLayout({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                     </svg>
                     <span className="font-medium text-sm">{item.label}</span>
+                    {item.id === "support" && <SupportUnreadBadge />}
                   </Link>
                 ))}
               </div>

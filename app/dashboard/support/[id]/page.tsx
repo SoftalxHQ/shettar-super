@@ -1,13 +1,19 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import {
   useGetSupportTicketQuery,
   useReplyToSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
+  type SupportMessage,
 } from "@/lib/store/services/api";
+import {
+  subscribeSupportTicketChannel,
+  type SupportTicketCableEvent,
+  type SupportTicketChannelHandle,
+} from "@/lib/support-tickets-cable";
 import AssignTicketDialog from "@/components/support/AssignTicketDialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/lib/store/store";
@@ -15,6 +21,14 @@ import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
 const STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
+
+/** Chat-style timestamp: time only for today's messages, date + time otherwise. */
+function formatMessageTime(dateString: string): string {
+  const date = new Date(dateString);
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (date.toDateString() === new Date().toDateString()) return time;
+  return `${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${time}`;
+}
 
 export default function SupportTicketDetailPage({
   params,
@@ -33,14 +47,66 @@ export default function SupportTicketDetailPage({
   const { data, isLoading, isError, refetch } = useGetSupportTicketQuery(ticketId);
   const [replyMessage, setReplyMessage] = useState("");
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [liveMessages, setLiveMessages] = useState<SupportMessage[]>([]);
+  const [userTyping, setUserTyping] = useState<string | null>(null);
+
+  const token = useSelector((state: RootState) => state.auth.token);
+  const channelRef = useRef<SupportTicketChannelHandle | null>(null);
+  const typingClearTimer = useRef<number | null>(null);
+  const lastTypingSentAt = useRef(0);
 
   const [replyToTicket, { isLoading: isReplying }] = useReplyToSupportTicketMutation();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateSupportTicketStatusMutation();
 
   const ticket = data?.ticket;
-  const messages = data?.messages ?? [];
+  const fetchedMessages = data?.messages;
+
+  const messages = useMemo(() => {
+    const base = fetchedMessages ?? [];
+    const seen = new Set(base.map((m) => m.id));
+    return [...base, ...liveMessages.filter((m) => !seen.has(m.id))];
+  }, [fetchedMessages, liveMessages]);
+
+  // Live per-ticket room: new messages, status/assignment changes, typing.
+  useEffect(() => {
+    const cableTicketId = ticket?.ticket_id;
+    if (!token || !cableTicketId) return;
+
+    const handle = subscribeSupportTicketChannel(token, cableTicketId, {
+      received: (event: SupportTicketCableEvent) => {
+        if (event.type === "new_message" && event.message) {
+          if (event.message.sender_type === "User") setUserTyping(null);
+          setLiveMessages((prev) =>
+            prev.some((m) => m.id === event.message.id) ? prev : [...prev, event.message]
+          );
+        } else if (event.type === "status_changed" || event.type === "assigned") {
+          refetch();
+        } else if (event.type === "typing" && event.sender_role === "business") {
+          setUserTyping(event.sender_name || "User");
+          if (typingClearTimer.current) window.clearTimeout(typingClearTimer.current);
+          typingClearTimer.current = window.setTimeout(() => setUserTyping(null), 3000);
+        }
+      },
+    });
+    channelRef.current = handle;
+
+    return () => {
+      handle.unsubscribe();
+      channelRef.current = null;
+      if (typingClearTimer.current) window.clearTimeout(typingClearTimer.current);
+    };
+  }, [token, ticket?.ticket_id, refetch]);
 
   const isClosedOrResolved = ticket?.status === "resolved" || ticket?.status === "closed";
+
+  const handleReplyChange = (value: string) => {
+    setReplyMessage(value);
+    const now = Date.now();
+    if (value.trim() && now - lastTypingSentAt.current > 2000) {
+      lastTypingSentAt.current = now;
+      channelRef.current?.sendTyping();
+    }
+  };
 
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +248,7 @@ export default function SupportTicketDetailPage({
                         <div className="flex items-center gap-2 mb-1 opacity-80 text-xs">
                           <span className="font-bold">{msg.sender?.first_name || "System"}</span>
                           <span>•</span>
-                          <span>{new Date(msg.created_at).toLocaleString()}</span>
+                          <span>{formatMessageTime(msg.created_at)}</span>
                         </div>
                         <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
                       </div>
@@ -192,12 +258,23 @@ export default function SupportTicketDetailPage({
               </div>
             )}
 
+            {userTyping && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
+                </span>
+                {userTyping} is typing…
+              </div>
+            )}
+
             {/* Reply block */}
             {can("support_tickets", "reply") && (
             <form onSubmit={handleReplySubmit} className="mt-6 border-t border-border pt-6">
               <textarea
                 value={replyMessage}
-                onChange={(e) => setReplyMessage(e.target.value)}
+                onChange={(e) => handleReplyChange(e.target.value)}
                 placeholder={isClosedOrResolved ? "Replies are not available for resolved or closed tickets." : "Type your reply to the user..."}
                 className="w-full input min-h-[100px] resize-y mb-3"
                 disabled={isReplying || isClosedOrResolved}

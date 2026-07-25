@@ -235,6 +235,12 @@ export default function SupportPage() {
                         VERIFICATION
                       </span>
                     )}
+                    {ticket.unread && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-red-600 uppercase tracking-wider">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                        Unread
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-lg font-bold mb-2">{ticket.subject}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{ticket.description}</p>

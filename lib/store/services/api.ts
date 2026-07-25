@@ -526,6 +526,7 @@ export interface SupportTicket {
   status: string;
   category?: string;
   created_at: string;
+  unread?: boolean;
   user?: {
     id: number;
     first_name: string;
@@ -575,6 +576,7 @@ export interface SupportTicketStats {
   resolved: number;
   closed: number;
   high_priority: number;
+  unread: number;
 }
 
 export interface AssignableAdmin {
