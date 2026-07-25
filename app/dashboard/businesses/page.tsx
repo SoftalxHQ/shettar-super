@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useGetBusinessesQuery, type Business } from "@/lib/store/services/api";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
@@ -193,11 +194,12 @@ export default function BusinessesPage() {
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       {business.logo_url ? (
-                        <img
+                        <Image
                           src={normalizeApiMediaUrl(business.logo_url)}
                           alt={`${business.name} logo`}
-                          loading="lazy"
-                          decoding="async"
+                          width={48}
+                          height={48}
+                          unoptimized
                           className="w-12 h-12 rounded-xl object-cover bg-slate-100 dark:bg-zinc-800"
                         />
                       ) : (
@@ -207,7 +209,7 @@ export default function BusinessesPage() {
                       )}
                       <div>
                         <Link
-                          href={`/dashboard/businesses/${business.id}`}
+                          href={`/dashboard/businesses/${encodeURIComponent(business.business_unique_id)}`}
                           className="font-semibold hover:text-primary transition-colors"
                         >
                           {business.name}
@@ -263,7 +265,7 @@ export default function BusinessesPage() {
                   </td>
                   <td className="py-4 text-right">
                     <Link
-                      href={`/dashboard/businesses/${business.id}`}
+                      href={`/dashboard/businesses/${encodeURIComponent(business.business_unique_id)}`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold"
                     >
                       View Details

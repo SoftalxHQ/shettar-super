@@ -99,7 +99,7 @@ export default function DashboardPage() {
               {recentBusinesses.map((business) => (
                 <Link
                   key={business.id}
-                  href={`/dashboard/businesses/${business.id}`}
+                  href={`/dashboard/businesses/${encodeURIComponent(business.business_unique_id)}`}
                   className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div className="flex items-center gap-3">

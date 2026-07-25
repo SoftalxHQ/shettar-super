@@ -123,9 +123,9 @@ export default function SupportTicketDetailPage({
           </div>
           <h1 className="text-2xl font-bold">{ticket.subject}</h1>
           <p className="text-muted-foreground mt-2">{ticket.description}</p>
-          {ticket.category === "business_verification" && ticket.business?.business_unique_id && (
+          {ticket.category === "business_verification" && (ticket.business?.business_unique_id || ticket.business?.id) && (
             <Link
-              href={`/dashboard/businesses/${ticket.business.business_unique_id}`}
+              href={`/dashboard/businesses/${ticket.business.business_unique_id || ticket.business.id}`}
               className="inline-flex mt-4 text-sm font-semibold text-primary hover:underline"
             >
               Review business profile →
