@@ -134,6 +134,25 @@ export interface PromoCode {
   created_at: string;
 }
 
+export interface DesktopRelease {
+  id: number;
+  version: string;
+  channel: "staging" | "production" | string;
+  notes: string | null;
+  active: boolean;
+  published_at: string | null;
+  windows_installer_url?: string | null;
+  macos_x64_installer_url?: string | null;
+  macos_arm_installer_url?: string | null;
+  linux_installer_url?: string | null;
+  windows_updater_url?: string | null;
+  macos_x64_updater_url?: string | null;
+  macos_arm_updater_url?: string | null;
+  linux_updater_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Newsletter {
   id: number;
   subject: string;
@@ -892,7 +911,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice"],
+  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -1523,6 +1542,30 @@ export const apiService = createApi({
       invalidatesTags: ["PromoCode"],
     }),
 
+    // ── Desktop releases (Shettar Business) ─────────────────────────────────
+    getDesktopReleases: builder.query<
+      { releases: DesktopRelease[]; meta?: AccountsMeta },
+      { page?: number; channel?: string }
+    >({
+      query: ({ page = 1, channel } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (channel) params.set("channel", channel);
+        return `/api/v1/admin/desktop_releases?${params.toString()}`;
+      },
+      providesTags: ["DesktopRelease"],
+    }),
+    updateDesktopRelease: builder.mutation<
+      { release: DesktopRelease; message?: string },
+      { id: number; desktop_release: Partial<Pick<DesktopRelease, "notes" | "active">> }
+    >({
+      query: ({ id, desktop_release }) => ({
+        url: `/api/v1/admin/desktop_releases/${id}`,
+        method: "PATCH",
+        body: { desktop_release },
+      }),
+      invalidatesTags: ["DesktopRelease"],
+    }),
+
     // ── Newsletter endpoints ────────────────────────────────────────────────
     getNewsletters: builder.query<{ newsletters: Newsletter[]; meta: AccountsMeta }, { page?: number }>({
       query: ({ page = 1 } = {}) => `/api/v1/admin/newsletters?page=${page}`,
@@ -1717,6 +1760,8 @@ export const {
   useGetPromoCodesQuery,
   useCreatePromoCodeMutation,
   useUpdatePromoCodeMutation,
+  useGetDesktopReleasesQuery,
+  useUpdateDesktopReleaseMutation,
   useGetMarketersQuery,
   useGetMarketerQuery,
   useCreateMarketerMutation,

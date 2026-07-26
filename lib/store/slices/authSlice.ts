@@ -14,6 +14,7 @@ export interface AdminPermissions {
   marketers?: { view?: boolean; manage?: boolean };
   promos?: { view?: boolean; create?: boolean; edit?: boolean };
   newsletters?: { view?: boolean; create?: boolean; send?: boolean };
+  desktop_releases?: { view?: boolean; edit?: boolean };
 }
 
 export interface Admin {

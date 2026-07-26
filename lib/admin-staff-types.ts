@@ -32,6 +32,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       marketers: { view: true, manage: true },
       promos: { view: true, create: true, edit: true },
       newsletters: { view: true, create: true, send: true },
+      desktop_releases: { view: true, edit: true },
     } as AdminPermissions,
   },
   support_agent: {
@@ -76,6 +77,7 @@ export const ADMIN_PERMISSION_PRESETS = {
       marketers: { view: true },
       promos: { view: true },
       newsletters: { view: true },
+      desktop_releases: { view: true },
     } as AdminPermissions,
   },
   custom: {
@@ -177,6 +179,13 @@ export const ADMIN_PERMISSION_LABELS = {
       view: "View Newsletters",
       create: "Compose & Save Drafts",
       send: "Send & Test Newsletters",
+    },
+  },
+  desktop_releases: {
+    title: "Desktop Releases",
+    actions: {
+      view: "View Desktop Releases",
+      edit: "Activate / Deactivate & Edit Notes",
     },
   },
 } as const;
