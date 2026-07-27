@@ -54,8 +54,8 @@ export default function LoginPage() {
         <div className="text-center space-y-3">
           <div className="flex justify-center mb-6">
             <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 duration-300">
-              <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30">
-                <img src="/logo.svg" alt="Shettar Logo" className="w-9 h-9 invert" />
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 border border-border/40">
+                <img src="/brand-icon.png" alt="Shettar" className="w-9 h-9 object-contain" />
               </div>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-2xl font-black tracking-tighter uppercase italic">

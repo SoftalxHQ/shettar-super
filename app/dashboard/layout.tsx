@@ -96,8 +96,8 @@ function SidebarContent({
     <>
       <div className="p-6 shrink-0">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <Image src="/logo.svg" alt="Shettar Logo" width={24} height={24} className="invert" />
+          <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-xl flex items-center justify-center shadow-lg shadow-primary/10 border border-border/60">
+            <Image src="/brand-icon.png" alt="Shettar" width={28} height={28} className="object-contain" />
           </div>
           <span className="text-xl font-black tracking-tighter uppercase italic">
             Shettar<span className="text-primary">Super</span>
