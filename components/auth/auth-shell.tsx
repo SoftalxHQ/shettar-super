@@ -1,21 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Manrope, Syne } from "next/font/google";
 import { AuthBrandMark } from "@/components/auth/auth-brand-mark";
 import { cn } from "@/lib/utils";
-
-const syne = Syne({
-  subsets: ["latin"],
-  variable: "--font-auth-display",
-  display: "swap",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-auth-sans",
-  display: "swap",
-});
 
 type AuthShellProps = {
   children: ReactNode;
@@ -35,8 +22,6 @@ export function AuthShell({
   return (
     <div
       className={cn(
-        syne.variable,
-        manrope.variable,
         "auth-shell relative flex min-h-screen w-full font-[family-name:var(--font-auth-sans)] text-slate-800 antialiased",
         className,
       )}

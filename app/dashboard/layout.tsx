@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -9,6 +8,8 @@ import type { Admin, AdminPermissions } from "@/lib/store/slices/authSlice";
 import SupportTicketsCableListener from "@/components/support/SupportTicketsCableListener";
 import SupportUnreadBadge from "@/components/support/SupportUnreadBadge";
 import NotificationSoundToggle from "@/components/support/NotificationSoundToggle";
+import { AuthBrandMark } from "@/components/auth/auth-brand-mark";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   id: string;
@@ -94,59 +95,78 @@ function SidebarContent({
 
   return (
     <>
-      <div className="p-6 shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white dark:bg-zinc-900 rounded-xl flex items-center justify-center shadow-lg shadow-primary/10 border border-border/60">
-            <Image src="/brand-icon.png" alt="Shettar" width={28} height={28} className="object-contain" />
-          </div>
-          <span className="text-xl font-black tracking-tighter uppercase italic">
-            Shettar<span className="text-primary">Super</span>
-          </span>
-        </Link>
+      <div className="px-5 pt-6 pb-5 shrink-0 border-b border-white/[0.06]">
+        <AuthBrandMark variant="compact" href="/dashboard" />
+        <p className="mt-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          Platform control
+        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800">
+      <div className="flex-1 overflow-y-auto px-3 py-5 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
         {NAV_GROUPS.map((group) => {
           const visibleItems = filterNavItems(group.items, admin);
           if (visibleItems.length === 0) return null;
 
           return (
             <div key={group.title} className="space-y-1">
-              <h3 className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
+              <h3 className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {group.title}
               </h3>
-              <div className="space-y-1">
-                {visibleItems.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${isActive(item.href)
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                      : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
-                      }`}
-                  >
-                    <svg className={`w-5 h-5 ${isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary transition-colors"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                    </svg>
-                    <span className="font-medium text-sm">{item.label}</span>
-                    {item.id === "support" && <SupportUnreadBadge />}
-                  </Link>
-                ))}
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={cn(
+                        "relative w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors duration-150 group",
+                        active
+                          ? "bg-indigo-500/15 text-white"
+                          : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200",
+                      )}
+                    >
+                      {active && (
+                        <span
+                          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-indigo-400"
+                          aria-hidden
+                        />
+                      )}
+                      <svg
+                        className={cn(
+                          "w-[18px] h-[18px] shrink-0 transition-colors",
+                          active ? "text-indigo-300" : "text-slate-500 group-hover:text-slate-300",
+                        )}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={item.icon} />
+                      </svg>
+                      <span className="font-medium text-[13px] tracking-tight">{item.label}</span>
+                      {item.id === "support" && <SupportUnreadBadge />}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           );
         })}
       </div>
 
-      <div className="p-4 mt-auto border-t border-border shrink-0">
+      <div className="p-3 mt-auto border-t border-white/[0.06] shrink-0">
+        <div className="px-3 py-2 mb-1">
+          <p className="text-[13px] font-medium text-slate-200 truncate">{admin.name || "Platform Admin"}</p>
+          <p className="text-[11px] text-slate-500 truncate mt-0.5">{admin.email}</p>
+        </div>
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors group"
+          className="w-full flex items-center gap-3 px-3 py-2 text-red-400/90 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors"
         >
-          <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span className="font-medium text-sm">Logout</span>
+          <span className="font-medium text-[13px]">Logout</span>
         </button>
       </div>
     </>
@@ -163,7 +183,6 @@ export default function DashboardLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { admin, logout, isLoading } = useAuth();
 
-  // Close mobile menu when pathname changes (adjust state during render, not in an effect)
   const [lastPathname, setLastPathname] = useState(pathname);
   if (pathname !== lastPathname) {
     setLastPathname(pathname);
@@ -176,78 +195,90 @@ export default function DashboardLayout({
 
   if (isLoading || !admin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-zinc-950">
+      <div className="dash-shell min-h-screen flex items-center justify-center bg-[#F7F8FB]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm font-bold text-muted-foreground animate-pulse">Initializing Portal...</p>
+          <div className="w-10 h-10 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+          <p className="text-sm font-medium text-slate-500">Loading…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 dark:bg-zinc-950">
+    <div className="dash-shell flex min-h-screen bg-[#F7F8FB] text-slate-800 antialiased">
       <SupportTicketsCableListener />
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white dark:bg-zinc-900 border-r border-border hidden md:flex flex-col sticky top-0 h-screen">
+
+      <aside className="w-[15.5rem] bg-[#0B0F19] hidden md:flex flex-col sticky top-0 h-screen shrink-0">
         <SidebarContent admin={admin} pathname={pathname} onLogout={logout} />
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
-      {/* Mobile Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 w-72 bg-white dark:bg-zinc-900 z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 w-72 bg-[#0B0F19] z-50 transform transition-transform duration-300 ease-in-out md:hidden flex flex-col",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
         <SidebarContent admin={admin} pathname={pathname} onLogout={logout} />
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 border-b border-border h-16 shrink-0">
-          <div className="flex items-center justify-between px-4 md:px-8 h-full">
-            <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200/90 h-14 shrink-0">
+          <div className="flex items-center justify-between px-4 md:px-7 h-full">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl md:hidden transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-lg md:hidden transition-colors"
+                aria-label="Open menu"
               >
-                <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div className="hidden md:block">
-                {/* Space for title or breadcrumbs if needed */}
-              </div>
+              <p className="hidden sm:block text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+                Admin console
+              </p>
             </div>
 
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1.5 md:gap-2">
               <NotificationSoundToggle />
-              <button className="relative p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
-                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              <button
+                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                aria-label="Notifications"
+              >
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-zinc-900"></span>
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full" />
               </button>
 
-              <div className="relative pl-2 md:pl-4 border-l border-border">
+              <div className="relative pl-2 md:pl-3 ml-0.5 border-l border-slate-200">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 md:gap-3 hover:bg-slate-50 dark:hover:bg-zinc-800/50 rounded-xl p-1.5 md:p-2 pr-2 md:pr-3 transition-colors"
+                  className="flex items-center gap-2.5 hover:bg-slate-50 rounded-lg p-1.5 pr-2 transition-colors"
                 >
                   <div className="text-right hidden lg:block">
-                    <p className="text-sm font-bold truncate max-w-[120px]">{admin?.name || "Platform Admin"}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{roleLabel}</p>
+                    <p className="text-sm font-semibold tracking-tight truncate max-w-[140px] text-slate-800">
+                      {admin?.name || "Platform Admin"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-[0.12em] font-medium">
+                      {roleLabel}
+                    </p>
                   </div>
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-indigo-500 rounded-full overflow-hidden border-2 border-primary/20 flex items-center justify-center text-white font-black text-xs md:text-sm shadow-sm">
+                  <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                     {admin?.name?.[0] || admin?.email?.[0]?.toUpperCase() || "A"}
                   </div>
                   <svg
-                    className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
+                    className={cn(
+                      "w-3.5 h-3.5 text-slate-400 transition-transform duration-200 hidden sm:block",
+                      isDropdownOpen && "rotate-180",
+                    )}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -256,31 +287,30 @@ export default function DashboardLayout({
                   </svg>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <>
                     <div
                       className="fixed inset-0 z-40"
                       onClick={() => setIsDropdownOpen(false)}
-                    ></div>
+                    />
 
-                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-border overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="p-4 border-b border-border bg-slate-50 dark:bg-zinc-800/50">
-                        <p className="text-sm font-bold text-foreground">{admin?.name || "Platform Admin"}</p>
-                        <p className="text-xs text-muted-foreground truncate">{admin?.email}</p>
-                        <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg shadow-slate-900/10 border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="p-4 border-b border-slate-100 bg-slate-50/80">
+                        <p className="text-sm font-semibold text-slate-900">{admin?.name || "Platform Admin"}</p>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">{admin?.email}</p>
+                        <div className="mt-2 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-600 uppercase tracking-wider">
                           {roleLabel}
                         </div>
                       </div>
 
-                      <div className="p-2">
+                      <div className="p-1.5">
                         <Link
                           href="/dashboard/profile"
                           onClick={() => setIsDropdownOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                         >
-                          <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          <svg className="w-[18px] h-[18px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                           <span className="font-medium">Account Settings</span>
                         </Link>
@@ -289,26 +319,26 @@ export default function DashboardLayout({
                           <Link
                             href="/dashboard/configurations"
                             onClick={() => setIsDropdownOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+                            className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
                           >
-                            <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <svg className="w-[18px] h-[18px] text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             </svg>
                             <span className="font-medium">System Configuration</span>
                           </Link>
                         )}
                       </div>
 
-                      <div className="border-t border-border p-2">
+                      <div className="border-t border-slate-100 p-1.5">
                         <button
                           onClick={() => {
                             setIsDropdownOpen(false);
                             logout();
                           }}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
                           <span className="font-medium">Sign Out</span>
                         </button>
@@ -321,8 +351,7 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-[#F7F8FB]">
           {children}
         </main>
       </div>
