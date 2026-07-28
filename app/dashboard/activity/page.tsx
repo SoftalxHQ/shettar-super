@@ -8,7 +8,6 @@ import type { AdminActivityItem } from "@/lib/store/services/api";
 import { useAppSelector } from "@/lib/store/hooks";
 import { selectToken } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
-import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
@@ -43,7 +42,8 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const date = new Date(dateStr);
+  const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
@@ -51,12 +51,23 @@ function formatTimeAgo(dateStr: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return formatDate(dateStr);
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function ActivityRow({ activity }: { activity: AdminActivityItem }) {
-  const isToday = new Date(activity.occurred_at).toDateString() === new Date().toDateString();
-  const timeLabel = isToday ? formatTimeAgo(activity.occurred_at) : formatDate(activity.occurred_at);
+  const timeLabel = formatTimeAgo(activity.occurred_at);
+  const fullTime = new Date(activity.occurred_at).toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
   return (
     <div className="flex items-start gap-4 py-3.5 pr-2 hover:bg-slate-50/90 rounded-xl transition-colors">
@@ -75,7 +86,7 @@ function ActivityRow({ activity }: { activity: AdminActivityItem }) {
             </span>
           )}
           <span className="text-xs text-slate-300">•</span>
-          <span className="text-xs text-slate-500">{timeLabel}</span>
+          <span className="text-xs text-slate-500" title={fullTime}>{timeLabel}</span>
         </div>
       </div>
       <span
@@ -347,7 +358,7 @@ export default function ActivityPage() {
 
         {!isLoading && !isFetching && !isError && activities.length > 0 && (
           <div className="relative">
-            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+            <div className="absolute left-4 top-3 bottom-3 w-px bg-slate-200 z-[1]" aria-hidden />
             <div className="space-y-2">
               {grouped.map((group) => (
                 <div key={group.date}>
