@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import Image from "next/image";
+import { useParams, useSearchParams } from "next/navigation";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { useGetBusinessQuery,
   useGetBusinessTransactionsQuery,
@@ -18,6 +19,7 @@ import { useGetBusinessQuery,
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
+  type BankAccount,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -40,9 +42,21 @@ import {
   Legend,
 } from "recharts";
 
+const BUSINESS_TABS = new Set([
+  "overview",
+  "financials",
+  "transactions",
+  "analytics",
+  "rooms",
+  "bookings",
+  "verification",
+]);
+
 export default function BusinessDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const initialTab = searchParams.get("tab") ?? "overview";
 
   const { admin } = useAuth();
   const can = (section: keyof AdminPermissions, action: string): boolean => {
@@ -50,7 +64,9 @@ export default function BusinessDetailPage() {
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(
+    BUSINESS_TABS.has(initialTab) ? initialTab : "overview"
+  );
   const [showMapModal, setShowMapModal] = useState(false);
   const [mapLoading, setMapLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number; alt: string } | null>(null);
@@ -291,6 +307,84 @@ export default function BusinessDetailPage() {
 
   const isVerified = business.verification_status === "approved";
   const isMutationLoading = isSuspending || isActivating || isVerifying || isVerifyingBank;
+  const bankAccounts = business.bank_accounts ?? [];
+
+  const renderBankAccountCard = (bank: BankAccount) => (
+    <div key={bank.id} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl space-y-2">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="font-semibold">{bank.bank_name}</p>
+          <p className="text-sm text-muted-foreground">{bank.account_number}</p>
+          <p className="text-xs text-muted-foreground">{bank.account_name}</p>
+          {bank.currency && (
+            <p className="text-xs text-muted-foreground mt-1">{bank.currency}</p>
+          )}
+        </div>
+        {bank.status === "verified" ? (
+          <div className="flex flex-col items-end gap-1">
+            <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Verified
+            </span>
+            {can("businesses", "verify") && (
+              <button
+                onClick={() => { setBanningBankId(bank.id); setBanReason(""); }}
+                disabled={isBanningBank || isMutationLoading}
+                className="px-3 py-1 bg-slate-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+              >
+                Ban
+              </button>
+            )}
+          </div>
+        ) : bank.status === "banned" ? (
+          <div className="flex flex-col items-end gap-1">
+            <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-bold">Banned</span>
+            {can("businesses", "verify") && (
+              <button
+                onClick={() => { setUnbanningBankId(bank.id); setUnbanReason(""); }}
+                disabled={isUnbanningBank || isMutationLoading}
+                className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+              >
+                Unban
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-end gap-1">
+            <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold capitalize">
+              {bank.status || "pending"}
+            </span>
+            {can("businesses", "verify") && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleVerifyBank(bank.id)}
+                  disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
+                  className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                >
+                  {isVerifyingBank ? "..." : "Approve"}
+                </button>
+                <button
+                  onClick={() => { setRejectingBankId(bank.id); setRejectReason(""); }}
+                  disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
+                  className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {bank.status === "banned" && bank.ban_reason && (
+        <p className="text-xs text-slate-500 mt-1">Ban reason: {bank.ban_reason}</p>
+      )}
+      {bank.status === "rejected" && bank.rejection_reason && (
+        <p className="text-xs text-red-500 mt-1">Rejection reason: {bank.rejection_reason}</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="p-8 space-y-6">
@@ -304,9 +398,12 @@ export default function BusinessDetailPage() {
               </svg>
             </Link>
             {business.logo_url ? (
-              <img
+              <Image
                 src={normalizeApiMediaUrl(business.logo_url)}
                 alt={`${business.name} logo`}
+                width={48}
+                height={48}
+                unoptimized
                 className="w-12 h-12 rounded-xl object-cover bg-slate-100 dark:bg-zinc-800"
               />
             ) : (
@@ -503,14 +600,15 @@ export default function BusinessDetailPage() {
                             alt: `${business.name} photo`,
                           })
                         }
-                        className="block aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-zinc-800 group text-left"
+                        className="relative block aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 dark:bg-zinc-800 group text-left"
                       >
-                        <img
+                        <Image
                           src={normalizeApiMediaUrl(thumb)}
                           alt={`${business.name} photo ${i + 1}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          fill
+                          unoptimized
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                          className="object-cover transition-transform group-hover:scale-105"
                         />
                       </button>
                     );
@@ -615,77 +713,10 @@ export default function BusinessDetailPage() {
           {/* Bank Accounts */}
           <div className="glass p-6 rounded-3xl space-y-4">
             <h3 className="text-xl font-bold">Bank Accounts</h3>
-            {business.bank_accounts.length === 0 && (
+            {bankAccounts.length === 0 && (
               <p className="text-sm text-muted-foreground">No bank accounts registered.</p>
             )}
-            {business.bank_accounts.map((bank) => (
-              <div key={bank.id} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">{bank.bank_name}</p>
-                    <p className="text-sm text-muted-foreground">{bank.account_number}</p>
-                    <p className="text-xs text-muted-foreground">{bank.account_name}</p>
-                  </div>
-                  {bank.status === "verified" ? (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        Verified
-                      </span>
-                      {can("businesses", "verify") && (
-                      <button
-                        onClick={() => { setBanningBankId(bank.id); setBanReason(""); }}
-                        disabled={isBanningBank || isMutationLoading}
-                        className="px-3 py-1 bg-slate-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                      >
-                        Ban
-                      </button>
-                      )}
-                    </div>
-                  ) : bank.status === "banned" ? (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-bold">Banned</span>
-                      {can("businesses", "verify") && (
-                      <button
-                        onClick={() => { setUnbanningBankId(bank.id); setUnbanReason(""); }}
-                        disabled={isUnbanningBank || isMutationLoading}
-                        className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                      >
-                        Unban
-                      </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">Pending</span>
-                      {can("businesses", "verify") && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleVerifyBank(bank.id)}
-                          disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
-                          className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                        >
-                          {isVerifyingBank ? "..." : "Verify"}
-                        </button>
-                        <button
-                          onClick={() => { setRejectingBankId(bank.id); setRejectReason(""); }}
-                          disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
-                          className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {bank.status === "banned" && bank.ban_reason && (
-                  <p className="text-xs text-slate-500 mt-1">Ban reason: {bank.ban_reason}</p>
-                )}
-              </div>
-            ))}
+            {bankAccounts.map(renderBankAccountCard)}
           </div>
 
           {/* Featured listing */}
@@ -1219,12 +1250,13 @@ export default function BusinessDetailPage() {
                           onClick={() => openPhoto(0)}
                           className="group relative aspect-[16/10] overflow-hidden rounded-2xl bg-slate-100 text-left dark:bg-zinc-800"
                         >
-                          <img
+                          <Image
                             src={thumbs[0]}
                             alt={`${rt.name} featured photo`}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                            fill
+                            unoptimized
+                            sizes="(max-width: 640px) 100vw, 60vw"
+                            className="object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
                           />
                           <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/40" />
                         </button>
@@ -1249,12 +1281,13 @@ export default function BusinessDetailPage() {
                                   onClick={() => openPhoto(index)}
                                   className="group relative aspect-[4/3] min-h-0 overflow-hidden rounded-2xl bg-slate-100 text-left dark:bg-zinc-800 sm:aspect-auto sm:h-full"
                                 >
-                                  <img
+                                  <Image
                                     src={url}
                                     alt={`${rt.name} photo ${index + 1}`}
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="h-full w-full object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
+                                    fill
+                                    unoptimized
+                                    sizes="(max-width: 640px) 50vw, 25vw"
+                                    className="object-cover transition duration-500 ease-out group-hover:scale-[1.04]"
                                   />
                                   <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/40" />
                                   {isLast && (
@@ -1428,26 +1461,8 @@ export default function BusinessDetailPage() {
                 </span>
               </div>
 
-              {/* Bank accounts verification */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                <div>
-                  <p className="font-semibold">Bank Verification</p>
-                  <p className="text-xs text-muted-foreground">Bank account verification status</p>
-                </div>
-                {business.bank_accounts.some((b) => b.status === "verified") ? (
-                  <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Verified
-                  </span>
-                ) : (
-                  <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold">Pending</span>
-                )}
-              </div>
-
-              {/* Verify / Reject actions */}
-              {business.verification_status === "pending" && (
+              {/* Verify / Reject business actions */}
+              {business.verification_status === "pending" && can("businesses", "verify") && (
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => {
@@ -1475,6 +1490,22 @@ export default function BusinessDetailPage() {
           </div>
 
           <div className="glass p-6 rounded-3xl space-y-4">
+            <div>
+              <h3 className="text-xl font-bold">Bank Account Verification</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Approve or reject payout bank accounts submitted by this business.
+              </p>
+            </div>
+            {bankAccounts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No bank accounts registered.</p>
+            ) : (
+              <div className="space-y-3">
+                {bankAccounts.map(renderBankAccountCard)}
+              </div>
+            )}
+          </div>
+
+          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
             <h3 className="text-xl font-bold">Verification Details</h3>
             <div className="space-y-3">
               {business.verified_at && (

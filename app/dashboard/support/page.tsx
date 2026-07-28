@@ -188,6 +188,7 @@ export default function SupportPage() {
             >
               <option value="all">All Categories</option>
               <option value="business_verification">Business verification</option>
+              <option value="bank_account_verification">Bank account verification</option>
               <option value="general">General</option>
             </select>
           </div>
@@ -230,7 +231,7 @@ export default function SupportPage() {
                       }`}>
                       {ticket.status.replace("_", " ").toUpperCase()}
                     </span>
-                    {ticket.category === "business_verification" && (
+                    {(ticket.category === "business_verification" || ticket.category === "bank_account_verification") && (
                       <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
                         VERIFICATION
                       </span>

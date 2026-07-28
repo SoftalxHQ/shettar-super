@@ -191,7 +191,7 @@ export default function SupportTicketDetailPage({
               }`}>
               {ticket.status.replace("_", " ").toUpperCase()}
             </span>
-            {ticket.category === "business_verification" && (
+            {(ticket.category === "business_verification" || ticket.category === "bank_account_verification") && (
               <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
                 VERIFICATION
               </span>
@@ -199,12 +199,12 @@ export default function SupportTicketDetailPage({
           </div>
           <h1 className="text-2xl font-bold">{ticket.subject}</h1>
           <p className="text-muted-foreground mt-2">{ticket.description}</p>
-          {ticket.category === "business_verification" && (ticket.business?.business_unique_id || ticket.business?.id) && (
+          {(ticket.category === "business_verification" || ticket.category === "bank_account_verification") && (ticket.business?.business_unique_id || ticket.business?.id) && (
             <Link
-              href={`/dashboard/businesses/${ticket.business.business_unique_id || ticket.business.id}`}
+              href={`/dashboard/businesses/${ticket.business.business_unique_id || ticket.business.id}?tab=verification`}
               className="inline-flex mt-4 text-sm font-semibold text-primary hover:underline"
             >
-              Review business profile →
+              {ticket.category === "bank_account_verification" ? "Review bank account →" : "Review business profile →"}
             </Link>
           )}
         </div>
