@@ -246,8 +246,8 @@ export default function SupportPage() {
                       </span>
                     )}
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{ticket.subject}</h3>
-                  <p className="text-sm text-slate-500 mb-3">{ticket.description}</p>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2 line-clamp-1">{ticket.subject}</h3>
+                  <p className="text-sm text-slate-500 mb-3 line-clamp-2">{ticket.description}</p>
                   <div className="flex items-center gap-6 text-xs text-slate-500 flex-wrap">
                     <div className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

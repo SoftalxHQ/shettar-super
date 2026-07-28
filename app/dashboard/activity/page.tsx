@@ -12,6 +12,9 @@ import { formatDate } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
 const ACTION_LABELS: Record<string, string> = {
   "": "All Activity",
   account_suspended: "Account Suspended",
@@ -56,25 +59,27 @@ function ActivityRow({ activity }: { activity: AdminActivityItem }) {
   const timeLabel = isToday ? formatTimeAgo(activity.occurred_at) : formatDate(activity.occurred_at);
 
   return (
-    <div className="flex items-start gap-4 py-4 px-2 hover:bg-slate-50 dark:hover:bg-zinc-800/30 rounded-xl transition-colors">
-      <div
-        className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ring-2 ring-white dark:ring-zinc-900"
-        style={{ backgroundColor: activity.color }}
-      />
+    <div className="flex items-start gap-4 py-3.5 pr-2 hover:bg-slate-50/90 rounded-xl transition-colors">
+      <div className="relative z-10 w-8 flex justify-center flex-shrink-0 pt-1.5">
+        <div
+          className="w-2.5 h-2.5 rounded-full ring-2 ring-white"
+          style={{ backgroundColor: activity.color }}
+        />
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-foreground">{activity.description}</p>
+        <p className="text-sm text-slate-800">{activity.description}</p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {activity.actor && (
-            <span className="text-xs text-muted-foreground">
-              by <span className="font-medium text-foreground">{activity.actor.name}</span>
+            <span className="text-xs text-slate-500">
+              by <span className="font-medium text-slate-700">{activity.actor.name}</span>
             </span>
           )}
-          <span className="text-xs text-muted-foreground/50">•</span>
-          <span className="text-xs text-muted-foreground">{timeLabel}</span>
+          <span className="text-xs text-slate-300">•</span>
+          <span className="text-xs text-slate-500">{timeLabel}</span>
         </div>
       </div>
       <span
-        className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 hidden sm:inline-flex"
+        className="text-[11px] px-2 py-0.5 rounded-md font-semibold flex-shrink-0 hidden sm:inline-flex capitalize"
         style={{ color: activity.color, backgroundColor: activity.color + "18" }}
       >
         {activity.action_type.replace(/_/g, " ")}
@@ -128,13 +133,13 @@ export default function ActivityPage() {
 
   if (!can("activities", "view")) {
     return (
-      <div className="p-8">
-        <div className="glass p-12 rounded-3xl text-center">
-          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <div className="dash-page">
+        <div className={`${panelClass} p-12 text-center`}>
+          <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">You don&apos;t have permission to access this section.</p>
+          <h2 className="font-display text-xl font-semibold mt-4 text-slate-900">Access Denied</h2>
+          <p className="text-sm text-slate-500 mt-2">You don&apos;t have permission to access this section.</p>
         </div>
       </div>
     );
@@ -207,7 +212,7 @@ export default function ActivityPage() {
   };
 
   return (
-    <div className="p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="dash-page space-y-6 max-w-5xl mx-auto">
       <style>{`
         .flatpickr-day.selected,
         .flatpickr-day.startRange,
@@ -250,14 +255,14 @@ export default function ActivityPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Activity Log</h1>
-          <p className="text-muted-foreground mt-1">Real-time record of all admin operations</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">Activity Log</h1>
+          <p className="text-sm text-slate-500 mt-2">Real-time record of all admin operations</p>
         </div>
       <div className="flex items-center gap-2">
         <button
           onClick={handleExport}
           disabled={isExporting}
-          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -267,7 +272,7 @@ export default function ActivityPage() {
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 flex items-center gap-2"
         >
           <svg className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -278,18 +283,18 @@ export default function ActivityPage() {
       </div>
 
       {/* Filters */}
-      <div className="glass p-6 rounded-3xl">
+      <div className={`${panelClass} p-5`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="label">Activity Type</label>
-            <select className="input" value={actionType} onChange={(e) => handleFilterChange("action_type", e.target.value)}>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Activity Type</label>
+            <select className="input rounded-xl border-slate-200 mt-1.5" value={actionType} onChange={(e) => handleFilterChange("action_type", e.target.value)}>
               {Object.entries(ACTION_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="label">Date Range</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date Range</label>
             <Flatpickr
               options={flatpickrOptions}
               onChange={(dates) => {
@@ -306,14 +311,14 @@ export default function ActivityPage() {
                 }
               }}
               placeholder="Select date range..."
-              className="input"
+              className="input rounded-xl border-slate-200 mt-1.5"
             />
           </div>
         </div>
         {(actionType || dateRange.length > 0) && (
           <button
             onClick={() => { setActionType(""); setDateRange([]); setPage(1); }}
-            className="mt-3 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="mt-3 text-xs text-slate-500 hover:text-slate-800 transition-colors"
           >
             Clear filters
           </button>
@@ -321,38 +326,38 @@ export default function ActivityPage() {
       </div>
 
       {/* Timeline */}
-      <div className="glass p-6 rounded-3xl">
-        {isError && <p className="text-center py-12 text-red-500">Failed to load activity. Please try again.</p>}
+      <div className={`${panelClass} p-5`}>
+        {isError && <p className="text-center py-12 text-red-600 text-sm font-medium">Failed to load activity. Please try again.</p>}
 
         {(isLoading || isFetching) && !isError && (
           <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground mt-4">Loading activity...</p>
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-500 mt-4">Loading activity...</p>
           </div>
         )}
 
         {!isLoading && !isFetching && !isError && activities.length === 0 && (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            <svg className="w-12 h-12 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            <p className="text-muted-foreground">No activity found</p>
+            <p className="text-sm text-slate-500">No activity found</p>
           </div>
         )}
 
         {!isLoading && !isFetching && !isError && activities.length > 0 && (
           <div className="relative">
-            <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border" />
+            <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
             <div className="space-y-2">
               {grouped.map((group) => (
                 <div key={group.date}>
                   <div className="flex items-center gap-3 py-3 pl-10">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.12em]">
                       {formatGroupDate(group.date)}
                     </span>
-                    <div className="flex-1 h-px bg-border" />
+                    <div className="flex-1 h-px bg-slate-100" />
                   </div>
-                  <div className="pl-6">
+                  <div>
                     {group.items.map((activity) => (
                       <ActivityRow key={activity.id} activity={activity} />
                     ))}

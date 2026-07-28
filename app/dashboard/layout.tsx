@@ -93,6 +93,19 @@ function SidebarContent({
     return pathname.startsWith(path);
   };
 
+  const roleLabel =
+    admin.admin_role === "super_admin"
+      ? "Super Admin"
+      : admin.admin_role === "admin_staff"
+        ? "Admin Staff"
+        : "Administrator";
+
+  const initials =
+    admin.name?.[0]?.toUpperCase() ||
+    admin.first_name?.[0]?.toUpperCase() ||
+    admin.email?.[0]?.toUpperCase() ||
+    "A";
+
   return (
     <>
       <div className="px-5 pt-6 pb-5 shrink-0 border-b border-white/[0.06]">
@@ -155,19 +168,31 @@ function SidebarContent({
       </div>
 
       <div className="p-3 mt-auto border-t border-white/[0.06] shrink-0">
-        <div className="px-3 py-2 mb-1">
-          <p className="text-[13px] font-medium text-slate-200 truncate">{admin.name || "Platform Admin"}</p>
-          <p className="text-[11px] text-slate-500 truncate mt-0.5">{admin.email}</p>
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
+          <div className="flex items-center gap-2.5 px-0.5">
+            <div className="w-8 h-8 rounded-full bg-indigo-500/90 text-white text-xs font-semibold flex items-center justify-center shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] font-semibold text-slate-100 truncate tracking-tight">
+                {admin.name || "Platform Admin"}
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500 mt-0.5 truncate">
+                {roleLabel}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onLogout}
+            className="mt-2.5 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/[0.08] bg-white/[0.03] text-slate-300 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-300 transition-colors"
+          >
+            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="font-semibold text-[12px] tracking-tight">Sign out</span>
+          </button>
         </div>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 text-red-400/90 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors"
-        >
-          <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span className="font-medium text-[13px]">Logout</span>
-        </button>
       </div>
     </>
   );
