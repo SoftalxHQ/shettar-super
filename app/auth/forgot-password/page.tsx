@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,22 +13,25 @@ export default function ForgotPasswordPage() {
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleRequestRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       await api.post("/admins/password", {
-        admin: { email }
+        admin: { email },
       });
       setStep("reset");
-      toast.success("Security Code Dispatched", {
-        description: `Transmitted a 6-digit access token to ${email}.`,
+      toast.success("Code sent", {
+        description: `A 6-digit recovery code was sent to ${email}.`,
       });
-    } catch (error: any) {
-      toast.error("Transmission Failed", {
-        description: error.message || "Could not process recovery request.",
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error("Request failed", {
+        description: err.message || "Could not process recovery request.",
       });
     } finally {
       setIsLoading(false);
@@ -37,8 +41,8 @@ export default function ForgotPasswordPage() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error("Security Mismatch", {
-        description: "Password confirmation does not match.",
+      toast.error("Passwords do not match", {
+        description: "Confirm your new password and try again.",
       });
       return;
     }
@@ -51,22 +55,22 @@ export default function ForgotPasswordPage() {
           admin: {
             reset_password_token: otp,
             password: password,
-            password_confirmation: confirmPassword
-          }
-        })
+            password_confirmation: confirmPassword,
+          },
+        }),
       });
-      
-      toast.success("Identity Reactivated", {
-        description: "Your portal access has been restored with the new credentials.",
+
+      toast.success("Password updated", {
+        description: "You can sign in with your new credentials.",
       });
-      
-      // Short delay before redirect
+
       setTimeout(() => {
         window.location.href = "/";
-      }, 2000);
-    } catch (error: any) {
-      toast.error("Reset Failed", {
-        description: error.message || "Invalid or expired security code.",
+      }, 1600);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error("Reset failed", {
+        description: err.message || "Invalid or expired recovery code.",
       });
     } finally {
       setIsLoading(false);
@@ -74,163 +78,265 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-white to-indigo-50 dark:from-slate-900 dark:via-black dark:to-indigo-950 p-4 transition-colors duration-500">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-1/4 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      <div className="auth-card relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border-white/40">
-        <div className="text-center space-y-3">
-          <div className="flex justify-center mb-6">
-            <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 duration-300">
-              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20 border border-border/40">
-                <img src="/brand-icon.png" alt="Shettar" className="w-9 h-9 object-contain" />
+    <AuthShell
+      title={step === "request" ? "Forgot password?" : "Reset password"}
+      description={
+        step === "request"
+          ? "Enter your admin email and we’ll send a 6-digit recovery code."
+          : `Enter the code sent to ${email}, then choose a new password.`
+      }
+    >
+      {step === "request" ? (
+        <form onSubmit={handleRequestRecovery} className="space-y-5">
+          <div className="form-group">
+            <label htmlFor="recovery-email" className="label">
+              Admin email
+            </label>
+            <div className="relative group">
+              <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.75}
+                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                  />
+                </svg>
               </div>
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-2xl font-black tracking-tighter uppercase italic">
-                  Shettar<span className="text-primary font-bold">Super</span>
-                </span>
-              </div>
-            </Link>
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-foreground">
-            {step === "request" ? "Forgot Key?" : "Reset Access"}
-          </h1>
-          <p className="text-sm text-balance text-muted-foreground max-w-[300px] mx-auto leading-relaxed">
-            {step === "request" 
-              ? "Provide your register admin email and we'll transmit a secure recovery link to your inbox."
-              : `Enter the 6-digit code sent to ${email} and your new credentials.`}
-          </p>
-        </div>
-
-        {step === "request" ? (
-          <form onSubmit={handleRequestRecovery} className="space-y-6 mt-4">
-            <div className="form-group">
-              <label className="label ml-1">Admin Email</label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                  </svg>
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@shettar.com"
-                  className="input pl-12 h-14 text-sm font-medium transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <button
-                type="submit"
-                disabled={isLoading || !email}
-                className="btn-primary group relative overflow-hidden h-14 rounded-2xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-              >
-                <span className={`transition-all duration-300 ${isLoading ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
-                  Submit Transmission
-                </span>
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center animate-in fade-in duration-300">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
-                    </div>
-                  </div>
-                )}
-              </button>
-
-              <div className="text-center">
-                <Link
-                  href="/"
-                  className="text-xs font-bold text-muted-foreground hover:text-primary transition-all flex items-center justify-center gap-2 group/back px-4 py-2"
-                >
-                  <svg className="w-4 h-4 group-hover/back:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-                  Nevermind, I remember now
-                </Link>
-              </div>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handleResetPassword} className="space-y-4 mt-4 animate-in fade-in slide-in-from-right-4 duration-500">
-            <div className="form-group">
-              <label className="label ml-1">Security Code</label>
               <input
-                type="text"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="6-digit code"
-                maxLength={6}
-                className="input h-14 text-center text-xl font-bold tracking-[0.5em] transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
+                id="recovery-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@shettar.com"
+                autoComplete="email"
+                className="input h-12 pl-12 text-sm font-medium"
                 required
               />
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="label ml-1">New Access Key</label>
+          <button
+            type="submit"
+            disabled={isLoading || !email}
+            className="btn-primary relative h-12 overflow-hidden disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+          >
+            <span
+              className={`transition-all duration-300 ${
+                isLoading ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
+              }`}
+            >
+              Send recovery code
+            </span>
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              </div>
+            )}
+          </button>
+
+          <div className="text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              Back to sign in
+            </Link>
+          </div>
+        </form>
+      ) : (
+        <form
+          onSubmit={handleResetPassword}
+          className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500"
+        >
+          <div className="form-group">
+            <label htmlFor="otp" className="label">
+              Recovery code
+            </label>
+            <input
+              id="otp"
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              maxLength={6}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className="input h-12 text-center text-lg font-semibold tracking-[0.35em]"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="new-password" className="label">
+              New password
+            </label>
+            <div className="relative">
               <input
-                type="password"
+                id="new-password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter new password"
-                className="input h-14 text-sm font-medium transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
+                autoComplete="new-password"
+                className="input h-12 pr-12 text-sm font-medium"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                )}
+              </button>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="label ml-1">Confirm Access Key</label>
+          <div className="form-group">
+            <label htmlFor="confirm-password" className="label">
+              Confirm password
+            </label>
+            <div className="relative">
               <input
-                type="password"
+                id="confirm-password"
+                type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="input h-14 text-sm font-medium transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
+                autoComplete="new-password"
+                className="input h-12 pr-12 text-sm font-medium"
                 required
               />
-            </div>
-
-            <div className="space-y-4 pt-2">
               <button
-                type="submit"
-                disabled={isLoading || !otp || !password}
-                className="btn-primary group relative overflow-hidden h-14 rounded-2xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300"
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700"
+                aria-label={showConfirm ? "Hide password" : "Show password"}
               >
-                <span className={`transition-all duration-300 ${isLoading ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
-                  Reactivate Portal Access
-                </span>
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center animate-in fade-in duration-300">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"></div>
-                    </div>
-                  </div>
+                {showConfirm ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.75}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
                 )}
               </button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setStep("request")}
-                  className="text-xs font-bold text-muted-foreground hover:text-primary transition-all px-4 py-2"
-                >
-                  Resend Security Code
-                </button>
-              </div>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
+          </div>
+
+          <div className="space-y-4 pt-1">
+            <button
+              type="submit"
+              disabled={isLoading || !otp || !password}
+              className="btn-primary relative h-12 overflow-hidden disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            >
+              <span
+                className={`transition-all duration-300 ${
+                  isLoading ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
+                }`}
+              >
+                Update password
+              </span>
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                </div>
+              )}
+            </button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setStep("request")}
+                className="text-xs font-semibold text-slate-400 hover:text-primary transition-colors"
+              >
+                Resend recovery code
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+    </AuthShell>
   );
 }

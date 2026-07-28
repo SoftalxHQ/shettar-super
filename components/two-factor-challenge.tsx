@@ -56,7 +56,6 @@ export default function TwoFactorChallenge({
         throw new Error("Verification did not return an access token.");
       }
 
-      // On enrollment, show recovery codes before completing login.
       if (result.backup_codes && result.backup_codes.length > 0) {
         setBackupCodes(result.backup_codes);
         setPendingAuth({ token: result.token, admin: result.data });
@@ -65,7 +64,7 @@ export default function TwoFactorChallenge({
 
       onComplete(result.token, result.data);
     } catch (error: unknown) {
-      toast.error("Verification Failed", {
+      toast.error("Verification failed", {
         description: verificationErrorMessage(error),
       });
       setCode("");
@@ -101,17 +100,16 @@ export default function TwoFactorChallenge({
     URL.revokeObjectURL(url);
   };
 
-  // ── Recovery codes view (post-enrollment) ─────────────────────────────────
   if (backupCodes && pendingAuth) {
     return (
-      <div className="space-y-6 mt-4 animate-in fade-in slide-in-from-right-4 duration-500">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-4">
-          <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1">
+      <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50 px-4 py-3.5">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
             Save your recovery codes
           </p>
-          <p className="text-xs text-amber-700/80 dark:text-amber-400/80 leading-relaxed">
-            Store these somewhere safe. Each code works once and lets you sign in if you lose your
-            authenticator. They will not be shown again.
+          <p className="text-xs leading-relaxed text-amber-800/80">
+            Store these somewhere safe. Each code works once if you lose your authenticator. They
+            will not be shown again.
           </p>
         </div>
 
@@ -119,7 +117,7 @@ export default function TwoFactorChallenge({
           {backupCodes.map((bc) => (
             <code
               key={bc}
-              className="text-center font-mono text-sm font-bold tracking-wider rounded-lg bg-slate-100 dark:bg-slate-800 py-2 px-2 select-all"
+              className="select-all rounded-lg bg-slate-100 px-2 py-2.5 text-center font-mono text-sm font-semibold tracking-wider text-slate-800"
             >
               {bc}
             </code>
@@ -130,14 +128,14 @@ export default function TwoFactorChallenge({
           <button
             type="button"
             onClick={copyBackupCodes}
-            className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="h-11 flex-1 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             Copy
           </button>
           <button
             type="button"
             onClick={downloadBackupCodes}
-            className="flex-1 h-11 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            className="h-11 flex-1 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
           >
             Download
           </button>
@@ -146,48 +144,46 @@ export default function TwoFactorChallenge({
         <button
           type="button"
           onClick={() => onComplete(pendingAuth.token, pendingAuth.admin)}
-          className="btn-primary h-14 rounded-2xl w-full shadow-primary/20 hover:shadow-primary/40 transition-all duration-300"
+          className="btn-primary h-12 w-full"
         >
-          I&apos;ve saved my codes, continue
+          I&apos;ve saved my codes — continue
         </button>
       </div>
     );
   }
 
-  // ── Challenge view (enroll setup + code entry, or verify) ──────────────────
   return (
-    <form onSubmit={handleVerify} className="space-y-6 mt-4 animate-in fade-in slide-in-from-right-4 duration-500">
+    <form
+      onSubmit={handleVerify}
+      className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500"
+    >
       {stage === "enroll" && (
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
-              Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password),
-              then enter the 6-digit code it shows.
-            </p>
-            {qrSvg && (
-              <div
-                className="mx-auto w-44 h-44 [&>svg]:w-full [&>svg]:h-full bg-white rounded-xl p-2"
-                dangerouslySetInnerHTML={{ __html: qrSvg }}
-              />
-            )}
-            {otpSecret && (
-              <div className="text-center">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
-                  Or enter this key manually
-                </p>
-                <code className="font-mono text-xs font-bold tracking-wider break-all select-all">
-                  {otpSecret}
-                </code>
-              </div>
-            )}
-          </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <p className="text-xs leading-relaxed text-slate-500">
+            Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password),
+            then enter the 6-digit code it shows.
+          </p>
+          {qrSvg && (
+            <div
+              className="mx-auto h-44 w-44 rounded-xl bg-white p-2 [&>svg]:h-full [&>svg]:w-full"
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+            />
+          )}
+          {otpSecret && (
+            <div className="text-center">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                Or enter this key manually
+              </p>
+              <code className="break-all font-mono text-xs font-semibold tracking-wider text-slate-700 select-all">
+                {otpSecret}
+              </code>
+            </div>
+          )}
         </div>
       )}
 
       <div className="form-group">
-        <label className="label ml-1">
-          {useRecovery ? "Recovery Code" : "Authentication Code"}
-        </label>
+        <label className="label">{useRecovery ? "Recovery code" : "Authentication code"}</label>
         <input
           type="text"
           inputMode={useRecovery ? "text" : "numeric"}
@@ -202,12 +198,12 @@ export default function TwoFactorChallenge({
                 : next.replace(/\D/g, "").slice(0, 6),
             );
           }}
-          placeholder={useRecovery ? "Enter a recovery code" : "6-digit code"}
+          placeholder={useRecovery ? "Enter a recovery code" : "000000"}
           maxLength={useRecovery ? 11 : 6}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          className="input h-14 text-center text-xl font-bold tracking-[0.4em] transition-all focus:ring-4 focus:ring-primary/5 border-slate-200"
+          className="input h-12 text-center text-lg font-semibold tracking-[0.35em]"
           required
         />
       </div>
@@ -215,22 +211,38 @@ export default function TwoFactorChallenge({
       <button
         type="submit"
         disabled={isLoading || !code.trim()}
-        className="btn-primary group relative overflow-hidden h-14 rounded-2xl w-full shadow-primary/20 hover:shadow-primary/40 active:shadow-none transition-all duration-300 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+        className="btn-primary group relative h-12 w-full overflow-hidden disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
       >
-        <span className={`transition-all duration-300 ${isLoading ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"}`}>
-          {stage === "enroll" ? "Activate & Continue" : "Verify & Enter"}
+        <span
+          className={`transition-all duration-300 ${
+            isLoading ? "translate-y-3 opacity-0" : "translate-y-0 opacity-100"
+          }`}
+        >
+          {stage === "enroll" ? "Activate & continue" : "Verify & continue"}
         </span>
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center animate-in fade-in duration-300">
-            <svg className="animate-spin h-6 w-6 text-white" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
             </svg>
           </div>
         )}
       </button>
 
-      <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-3 pt-1">
         {stage === "verify" && (
           <button
             type="button"
@@ -238,7 +250,7 @@ export default function TwoFactorChallenge({
               setUseRecovery((v) => !v);
               setCode("");
             }}
-            className="text-xs font-bold text-primary hover:underline transition-all"
+            className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
           >
             {useRecovery ? "Use authenticator code instead" : "Use a recovery code instead"}
           </button>
@@ -246,12 +258,17 @@ export default function TwoFactorChallenge({
         <button
           type="button"
           onClick={onCancel}
-          className="text-xs font-bold text-muted-foreground hover:text-primary transition-all flex items-center justify-center gap-2"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-700 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
-          Back to login
+          Back to sign in
         </button>
       </div>
     </form>

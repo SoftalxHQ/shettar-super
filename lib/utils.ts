@@ -1,3 +1,9 @@
+import { clsx, type ClassValue } from "clsx";
+
+export function cn(...inputs: ClassValue[]) {
+  return clsx(inputs);
+}
+
 // Utility function to format dates consistently on server and client
 // This prevents hydration errors caused by locale differences
 export const formatDate = (dateString: string): string => {
