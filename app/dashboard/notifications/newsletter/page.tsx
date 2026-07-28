@@ -31,6 +31,25 @@ const BUSINESS_SEGMENTS = [
   { value: "suspended", label: "Suspended businesses" },
 ] as const;
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
+const STATUS_STYLES: Record<string, string> = {
+  draft: "bg-slate-100 text-slate-700",
+  queued: "bg-amber-50 text-amber-700",
+  sending: "bg-sky-50 text-sky-700",
+  sent: "bg-emerald-50 text-emerald-700",
+  failed: "bg-red-50 text-red-600",
+};
+
+function chipClass(active: boolean) {
+  return `px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-60 ${
+    active
+      ? "bg-indigo-50 text-indigo-700"
+      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 bg-slate-100/80"
+  }`;
+}
+
 function mutationErrorMessage(err: unknown, fallback: string) {
   const e = err as { data?: { error?: string; errors?: string[] } };
   if (e?.data?.error) return e.data.error;
@@ -215,11 +234,13 @@ export default function NewsletterComposerPage() {
 
   if (!canView) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Access denied</p>
-          <p className="text-sm text-muted-foreground mt-2">You need the &quot;View Newsletters&quot; permission.</p>
-          <Link href="/dashboard" className="text-sm text-primary mt-4 inline-block">Back to dashboard</Link>
+          <p className="font-display text-base font-semibold text-red-600">Access denied</p>
+          <p className="text-sm text-slate-500 mt-2">You need the &quot;View Newsletters&quot; permission.</p>
+          <Link href="/dashboard" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
+            Back to dashboard
+          </Link>
         </div>
       </div>
     );
@@ -227,67 +248,75 @@ export default function NewsletterComposerPage() {
 
   const saving = creating || updating;
   const queueing = sending || resending;
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm disabled:opacity-60";
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="dash-page space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Email Newsletters</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Email Newsletters
+          </h1>
+          <p className="text-sm text-slate-500 mt-2 max-w-2xl">
             Compose rich HTML email campaigns for customer segments or business owners.
           </p>
           {newsletterStatus && newsletterStatus !== "draft" && (
-            <span className="inline-flex mt-3 px-3 py-1 rounded-lg text-xs font-bold capitalize bg-slate-100 dark:bg-zinc-800">
-              Status: {newsletterStatus}
+            <span
+              className={`inline-flex mt-3 px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${
+                STATUS_STYLES[newsletterStatus] || "bg-slate-100 text-slate-700"
+              }`}
+            >
+              {newsletterStatus}
             </span>
           )}
         </div>
         <Link
           href="/dashboard/notifications/newsletter/history"
-          className="text-sm font-semibold text-primary hover:underline"
+          className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
         >
           View history →
         </Link>
       </div>
 
       {isInProgress && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-5 py-4 text-sm text-amber-900 dark:text-amber-100">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           This newsletter is currently {newsletterStatus}. Editing is disabled until delivery completes.
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8">
-        <div className="glass rounded-3xl p-8 space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
+        <div className={`${panelClass} p-6 space-y-5`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Subject</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Subject</label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 disabled={!isEditable}
-                className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 text-sm disabled:opacity-60"
+                className={inputClass}
                 placeholder="Email subject"
                 maxLength={200}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Preview text</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Preview text</label>
               <input
                 type="text"
                 value={previewText}
                 onChange={(e) => setPreviewText(e.target.value)}
                 disabled={!isEditable}
-                className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 text-sm disabled:opacity-60"
+                className={inputClass}
                 placeholder="Inbox preheader (optional)"
                 maxLength={200}
               />
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Audience</label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-2.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Audience</label>
+            <div className="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/80 p-1">
               {(
                 [
                   { value: "customers", label: "Customers" },
@@ -303,10 +332,10 @@ export default function NewsletterComposerPage() {
                     setTargetType("all");
                     setSegment(value === "customers" ? "verified" : "all");
                   }}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
+                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-60 ${
                     audience === value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   {label}
@@ -315,9 +344,9 @@ export default function NewsletterComposerPage() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Targeting</label>
-            <div className="flex flex-wrap gap-2">
+          <div className="space-y-2.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Targeting</label>
+            <div className="inline-flex flex-wrap gap-1 rounded-xl bg-slate-100/80 p-1">
               {(
                 [
                   { value: "all", label: audience === "customers" ? "All customers" : "All businesses" },
@@ -329,10 +358,10 @@ export default function NewsletterComposerPage() {
                   type="button"
                   disabled={!isEditable}
                   onClick={() => setTargetType(value)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 ${
+                  className={`px-3.5 py-1.5 rounded-lg text-[13px] font-semibold transition-colors disabled:opacity-60 ${
                     targetType === value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   {label}
@@ -342,18 +371,14 @@ export default function NewsletterComposerPage() {
           </div>
 
           {targetType === "segment" && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {segments.map((s) => (
                 <button
                   key={s.value}
                   type="button"
                   disabled={!isEditable}
                   onClick={() => setSegment(s.value)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors disabled:opacity-60 ${
-                    segment === s.value
-                      ? "bg-primary/15 text-primary border border-primary/30"
-                      : "bg-slate-100 dark:bg-zinc-800"
-                  }`}
+                  className={chipClass(segment === s.value)}
                 >
                   {s.label}
                 </button>
@@ -362,32 +387,32 @@ export default function NewsletterComposerPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Button URL (optional)</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Button URL (optional)</label>
               <input
                 type="url"
                 value={ctaUrl}
                 onChange={(e) => setCtaUrl(e.target.value)}
                 disabled={!isEditable}
-                className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 text-sm disabled:opacity-60"
+                className={inputClass}
                 placeholder="https://shettar.com/..."
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Button label</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Button label</label>
               <input
                 type="text"
                 value={ctaLabel}
                 onChange={(e) => setCtaLabel(e.target.value)}
                 disabled={!isEditable}
-                className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 text-sm disabled:opacity-60"
+                className={inputClass}
                 placeholder="Learn more"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Email body</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Email body</label>
             {draftReady ? (
               <NewsletterEditor
                 editorKey={editorKey}
@@ -397,19 +422,19 @@ export default function NewsletterComposerPage() {
                 disabled={!canCreate || !isEditable}
               />
             ) : (
-              <div className="rounded-2xl border border-border/50 px-5 py-8 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-slate-200 px-5 py-8 text-sm text-slate-500">
                 Loading draft…
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-3 pt-1">
             {canCreate && isEditable && (
               <button
                 type="button"
                 onClick={() => void saveDraft()}
                 disabled={saving}
-                className="px-6 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-semibold bg-slate-100 text-slate-800 hover:bg-slate-200 disabled:opacity-50 transition-colors"
               >
                 {saving ? "Saving…" : isDraft ? "Save draft" : "Save changes"}
               </button>
@@ -419,7 +444,7 @@ export default function NewsletterComposerPage() {
                 type="button"
                 onClick={() => void handleTestSend()}
                 disabled={testing || saving}
-                className="px-6 py-3 rounded-2xl font-bold border border-primary text-primary hover:bg-primary/5 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-semibold border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
               >
                 {testing ? "Sending…" : "Send test to me"}
               </button>
@@ -429,7 +454,7 @@ export default function NewsletterComposerPage() {
                 type="button"
                 onClick={() => void openSendModal("send")}
                 disabled={queueing || saving}
-                className="px-6 py-3 rounded-2xl font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {sending ? "Queueing…" : "Send campaign"}
               </button>
@@ -439,7 +464,7 @@ export default function NewsletterComposerPage() {
                 type="button"
                 onClick={() => void openSendModal("resend")}
                 disabled={queueing || saving}
-                className="px-6 py-3 rounded-2xl font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {resending ? "Queueing…" : "Resend campaign"}
               </button>
@@ -456,7 +481,7 @@ export default function NewsletterComposerPage() {
             ctaLabel={ctaLabel}
           />
           {typeof recipientEstimate === "number" && (
-            <p className="text-xs text-muted-foreground mt-3 text-center">
+            <p className="text-xs text-slate-500 mt-3 text-center">
               Estimated recipients: {recipientEstimate.toLocaleString()}
             </p>
           )}
@@ -464,15 +489,15 @@ export default function NewsletterComposerPage() {
       </div>
 
       {sendModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="p-6 space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black">
+                  <h2 className="font-display text-base font-semibold text-slate-900">
                     {sendModalMode === "resend" ? "Resend campaign" : "Send campaign"}
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-slate-500 mt-1">
                     {sendModalMode === "resend"
                       ? "A new delivery will be queued using the current content and audience."
                       : "This will queue the newsletter for delivery."}
@@ -482,19 +507,19 @@ export default function NewsletterComposerPage() {
                   type="button"
                   onClick={() => setSendModalOpen(false)}
                   disabled={queueing}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors disabled:opacity-50"
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 disabled:opacity-50"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-border/50 px-5 py-4 space-y-2">
-                <p className="text-sm font-semibold">{subject || "(No subject)"}</p>
-                <p className="text-sm text-muted-foreground">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3.5 space-y-1.5">
+                <p className="text-sm font-semibold text-slate-900">{subject || "(No subject)"}</p>
+                <p className="text-sm text-slate-500">
                   {sendModalMode === "resend" ? "Resend to" : "Send to"} approximately{" "}
-                  <span className="font-bold text-foreground">
+                  <span className="font-semibold text-slate-900">
                     {pendingEstimate !== null ? pendingEstimate.toLocaleString() : "an unknown number of"}
                   </span>{" "}
                   recipients.
@@ -506,7 +531,7 @@ export default function NewsletterComposerPage() {
                   type="button"
                   onClick={() => setSendModalOpen(false)}
                   disabled={queueing}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -514,7 +539,7 @@ export default function NewsletterComposerPage() {
                   type="button"
                   onClick={() => void handleConfirmSend()}
                   disabled={queueing}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                 >
                   {queueing ? "Queueing…" : sendModalMode === "resend" ? "Resend" : "Send"}
                 </button>

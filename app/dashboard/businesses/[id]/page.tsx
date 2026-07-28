@@ -52,6 +52,9 @@ const BUSINESS_TABS = new Set([
   "verification",
 ]);
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 export default function BusinessDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -282,10 +285,10 @@ export default function BusinessDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading business...</p>
+          <p className="text-sm text-slate-500">Loading business...</p>
         </div>
       </div>
     );
@@ -294,9 +297,9 @@ export default function BusinessDetailPage() {
   // Error state
   if (isError || !business) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Business not found</p>
+          <p className="text-red-600 font-semibold">Business not found</p>
           <Link href="/dashboard/businesses" className="text-sm text-primary mt-2 inline-block">
             Back to businesses
           </Link>
@@ -310,7 +313,7 @@ export default function BusinessDetailPage() {
   const bankAccounts = business.bank_accounts ?? [];
 
   const renderBankAccountCard = (bank: BankAccount) => (
-    <div key={bank.id} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl space-y-2">
+    <div key={bank.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-semibold">{bank.bank_name}</p>
@@ -322,7 +325,7 @@ export default function BusinessDetailPage() {
         </div>
         {bank.status === "verified" ? (
           <div className="flex flex-col items-end gap-1">
-            <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-xs font-bold flex items-center gap-1">
+            <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-md text-xs font-semibold inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
@@ -332,7 +335,7 @@ export default function BusinessDetailPage() {
               <button
                 onClick={() => { setBanningBankId(bank.id); setBanReason(""); }}
                 disabled={isBanningBank || isMutationLoading}
-                className="px-3 py-1 bg-slate-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                className="px-2.5 py-1 bg-slate-500 text-white rounded-xl text-xs font-semibold hover:opacity-90 disabled:opacity-50"
               >
                 Ban
               </button>
@@ -340,12 +343,12 @@ export default function BusinessDetailPage() {
           </div>
         ) : bank.status === "banned" ? (
           <div className="flex flex-col items-end gap-1">
-            <span className="px-3 py-1 bg-slate-200 text-slate-600 rounded-full text-xs font-bold">Banned</span>
+            <span className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded-md text-xs font-semibold">Banned</span>
             {can("businesses", "verify") && (
               <button
                 onClick={() => { setUnbanningBankId(bank.id); setUnbanReason(""); }}
                 disabled={isUnbanningBank || isMutationLoading}
-                className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                className="px-2.5 py-1 bg-green-500 text-white rounded-xl text-xs font-semibold hover:opacity-90 disabled:opacity-50"
               >
                 Unban
               </button>
@@ -353,7 +356,7 @@ export default function BusinessDetailPage() {
           </div>
         ) : (
           <div className="flex flex-col items-end gap-1">
-            <span className="px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs font-bold capitalize">
+            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-md text-xs font-semibold capitalize">
               {bank.status || "pending"}
             </span>
             {can("businesses", "verify") && (
@@ -361,14 +364,14 @@ export default function BusinessDetailPage() {
                 <button
                   onClick={() => handleVerifyBank(bank.id)}
                   disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
-                  className="px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                  className="px-2.5 py-1 bg-green-500 text-white rounded-xl text-xs font-semibold hover:opacity-90 disabled:opacity-50"
                 >
                   {isVerifyingBank ? "..." : "Approve"}
                 </button>
                 <button
                   onClick={() => { setRejectingBankId(bank.id); setRejectReason(""); }}
                   disabled={isVerifyingBank || isRejectingBank || isMutationLoading}
-                  className="px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold hover:opacity-90 disabled:opacity-50"
+                  className="px-2.5 py-1 bg-red-500 text-white rounded-xl text-xs font-semibold hover:opacity-90 disabled:opacity-50"
                 >
                   Reject
                 </button>
@@ -387,12 +390,12 @@ export default function BusinessDetailPage() {
   );
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Link href="/dashboard/businesses" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/dashboard/businesses" className="text-slate-400 hover:text-slate-700 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
@@ -407,18 +410,18 @@ export default function BusinessDetailPage() {
                 className="w-12 h-12 rounded-xl object-cover bg-slate-100 dark:bg-zinc-800"
               />
             ) : (
-              <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-semibold text-lg">
                 {business.name.charAt(0)}
               </div>
             )}
-            <h1 className="text-3xl font-bold">{business.name}</h1>
+            <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900">{business.name}</h1>
             {isVerified && (
               <svg className="w-7 h-7 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
             )}
           </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 text-sm text-slate-500">
             <span>{business.business_unique_id}</span>
             <span>•</span>
             <span>{business.city}, {business.state}</span>
@@ -503,7 +506,11 @@ export default function BusinessDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="glass p-2 rounded-2xl flex gap-2 overflow-x-auto">
+      <div
+        className="inline-flex flex-wrap gap-1 p-1 rounded-2xl border border-slate-200/90 bg-slate-100/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]"
+        role="tablist"
+        aria-label="Business sections"
+      >
         {[
           { id: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
           { id: "financials", label: "Financials", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" },
@@ -515,14 +522,17 @@ export default function BusinessDetailPage() {
         ].map((tab) => (
           <button
             key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === tab.id
-                ? "bg-primary text-primary-foreground shadow-lg"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-zinc-800"
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12px] font-semibold tracking-tight transition-all duration-150 whitespace-nowrap ${activeTab === tab.id
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
+                : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
               }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={tab.icon} />
             </svg>
             {tab.label}
           </button>
@@ -535,27 +545,29 @@ export default function BusinessDetailPage() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Performance Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: "Total Revenue", value: formatCurrency(business.total_revenue ?? 0), icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z", color: "text-primary" },
-                { label: "Reservations", value: business.reservations_count, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z", color: "text-blue-600" },
-                { label: "Total Rooms", value: business.rooms_count, icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", color: "text-green-600" },
+                { label: "Total Revenue", value: formatCurrency(business.total_revenue ?? 0), icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z" },
+                { label: "Reservations", value: business.reservations_count, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+                { label: "Total Rooms", value: business.rooms_count, icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
               ].map((stat, i) => (
-                <div key={i} className="glass p-6 rounded-3xl">
-                  <div className={`p-3 bg-primary/10 rounded-2xl w-fit mb-3 ${stat.color}`}>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
-                    </svg>
+                <div key={i} className={`${panelClass} px-5 py-4`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">{stat.label}</p>
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={stat.icon} />
+                      </svg>
+                    </div>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                  <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">{stat.value}</p>
                 </div>
               ))}
             </div>
 
             {/* Business Information */}
-            <div className="glass p-6 rounded-3xl space-y-4">
-              <h3 className="text-xl font-bold">Business Information</h3>
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   { label: "Category", value: business.category || "—" },
@@ -580,8 +592,8 @@ export default function BusinessDetailPage() {
             </div>
 
             {/* Photo gallery */}
-            <div className="glass p-6 rounded-3xl space-y-4">
-              <h3 className="text-xl font-bold">Photos</h3>
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Photos</h3>
               {(business.images_url?.length ?? 0) > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {(business.images_thumb_url?.length
@@ -615,14 +627,14 @@ export default function BusinessDetailPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No gallery photos uploaded</p>
+                <p className="text-sm text-slate-500">No gallery photos uploaded</p>
               )}
             </div>
 
             {/* Amenities */}
             {business.amenities && Object.keys(business.amenities).length > 0 && (
-              <div className="glass p-6 rounded-3xl">
-                <h3 className="text-xl font-bold mb-4">Amenities</h3>
+              <div className={`${panelClass} p-5`}>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Amenities</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {Object.entries(business.amenities)
                     .filter(([, value]) => value)
@@ -642,24 +654,24 @@ export default function BusinessDetailPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Owners */}
-            <div className="glass p-6 rounded-3xl space-y-4">
+            <div className={`${panelClass} p-5 space-y-4`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Business Owners</h3>
-                <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-bold">
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Owners</h3>
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">
                   {business.owners.length} Owner{business.owners.length !== 1 ? "s" : ""}
                 </span>
               </div>
               <div className="space-y-3">
                 {business.owners.map((owner) => (
-                  <div key={owner.id} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                    <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center text-white font-black text-sm shadow-lg flex-shrink-0">
+                  <div key={owner.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white font-semibold text-sm shrink-0">
                       {owner.first_name[0]}{owner.last_name[0]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm truncate">{owner.first_name} {owner.last_name}</p>
                         {owner.is_primary && (
-                          <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded text-xs font-bold">Primary</span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-xs font-semibold">Primary</span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{owner.email}</p>
@@ -670,8 +682,8 @@ export default function BusinessDetailPage() {
               </div>
             </div>
 
-            <div className="glass p-6 rounded-3xl space-y-3">
-              <h3 className="text-lg font-bold">Quick Actions</h3>
+            <div className={`${panelClass} p-5 space-y-3`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Quick Actions</h3>
               <button
                 onClick={() => setActiveTab("transactions")}
                 className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold"
@@ -693,8 +705,8 @@ export default function BusinessDetailPage() {
       {activeTab === "financials" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Balances */}
-          <div className="glass p-6 rounded-3xl space-y-4">
-            <h3 className="text-xl font-bold">Account Balances</h3>
+          <div className={`${panelClass} p-5 space-y-4`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Account Balances</h3>
             {[
               { label: "Withdrawable Balance", amount: business.withdrawable_balance, color: "text-green-600" },
               { label: "Pending Balance", amount: business.pending_balance, color: "text-orange-600" },
@@ -703,16 +715,16 @@ export default function BusinessDetailPage() {
               { label: "POS Balance", amount: business.pos_balance, color: "text-indigo-600" },
               { label: "Onsite Payment Balance", amount: business.onsite_payment_balance, color: "text-pink-600" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+              <div key={i} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <span className="text-sm font-medium">{item.label}</span>
-                <span className={`text-lg font-bold ${item.color}`}>{formatCurrency(item.amount)}</span>
+                <span className={`text-lg font-semibold tabular-nums ${item.color}`}>{formatCurrency(item.amount)}</span>
               </div>
             ))}
           </div>
 
           {/* Bank Accounts */}
-          <div className="glass p-6 rounded-3xl space-y-4">
-            <h3 className="text-xl font-bold">Bank Accounts</h3>
+          <div className={`${panelClass} p-5 space-y-4`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Bank Accounts</h3>
             {bankAccounts.length === 0 && (
               <p className="text-sm text-muted-foreground">No bank accounts registered.</p>
             )}
@@ -720,11 +732,11 @@ export default function BusinessDetailPage() {
           </div>
 
           {/* Featured listing */}
-          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+          <div className={`${panelClass} p-5 space-y-4 lg:col-span-2`}>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-xl font-bold">Featured on homepage</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Featured on homepage</h3>
+                <p className="text-sm text-slate-500 mt-1">
                   Featured properties appear first in discovery lists (within date and availability filters).
                 </p>
               </div>
@@ -750,11 +762,11 @@ export default function BusinessDetailPage() {
           </div>
 
           {/* Commission Rate */}
-          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+          <div className={`${panelClass} p-5 space-y-4 lg:col-span-2`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">Withdrawal Commission Rate</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Withdrawal Commission Rate</h3>
+                <p className="text-sm text-slate-500 mt-1">
                   Override the global commission rate for this business. Leave blank to use the platform default.
                 </p>
               </div>
@@ -764,18 +776,18 @@ export default function BusinessDetailPage() {
                     setCommissionInput(business.commission_rate != null ? String(business.commission_rate) : "");
                     setShowCommissionForm(true);
                   }}
-                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors"
                 >
                   {business.commission_rate != null ? "Edit Rate" : "Set Custom Rate"}
                 </button>
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-between">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
               <span className="text-sm font-medium">Current Rate</span>
               {business.commission_rate != null ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-indigo-600">{business.commission_rate}%</span>
+                  <span className="text-lg font-semibold tabular-nums text-indigo-600">{business.commission_rate}%</span>
                   <span className="text-xs text-muted-foreground">(custom)</span>
                 </div>
               ) : (
@@ -803,14 +815,14 @@ export default function BusinessDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setShowCommissionForm(false); setCommissionInput(""); }}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSettingCommission}
-                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {isSettingCommission ? "Saving..." : "Save Rate"}
                   </button>
@@ -820,11 +832,11 @@ export default function BusinessDetailPage() {
           </div>
 
           {/* Cancellation Fee */}
-          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
+          <div className={`${panelClass} p-5 space-y-4 lg:col-span-2`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">Cancellation Fee</h3>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Cancellation Fee</h3>
+                <p className="text-sm text-slate-500 mt-1">
                   Override the global cancellation fee for this business. Leave blank to use the global rate.
                 </p>
               </div>
@@ -834,18 +846,18 @@ export default function BusinessDetailPage() {
                     setCancellationFeeInput(business.cancellation_fee_percentage != null ? String(business.cancellation_fee_percentage) : "");
                     setShowCancellationFeeForm(true);
                   }}
-                  className="px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors"
                 >
                   {business.cancellation_fee_percentage != null ? "Edit Rate" : "Set Custom Rate"}
                 </button>
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl flex items-center justify-between">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between">
               <span className="text-sm font-medium">Current Rate</span>
               {business.cancellation_fee_percentage != null ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-indigo-600">{business.cancellation_fee_percentage}%</span>
+                  <span className="text-lg font-semibold tabular-nums text-indigo-600">{business.cancellation_fee_percentage}%</span>
                   <span className="text-xs text-muted-foreground">(custom)</span>
                 </div>
               ) : (
@@ -873,14 +885,14 @@ export default function BusinessDetailPage() {
                   <button
                     type="button"
                     onClick={() => { setShowCancellationFeeForm(false); setCancellationFeeInput(""); }}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSettingCancellationFee}
-                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                    className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {isSettingCancellationFee ? "Saving..." : "Save Rate"}
                   </button>
@@ -893,10 +905,10 @@ export default function BusinessDetailPage() {
 
       {/* ── Bank Account Reject Modal ── */}
       {rejectingBankId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Reject Bank Account</h2>
-            <p className="text-muted-foreground text-sm mb-4">Provide a reason for rejection. This will be emailed to the business owner.</p>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Reject Bank Account</h2>
+            <p className="text-slate-500 text-sm mb-4">Provide a reason for rejection. This will be emailed to the business owner.</p>
             <textarea
               className="input w-full h-24 resize-none"
               placeholder="e.g. Account number does not match the provided account name..."
@@ -904,8 +916,8 @@ export default function BusinessDetailPage() {
               onChange={(e) => setRejectReason(e.target.value)}
             />
             <div className="flex gap-3 mt-4">
-              <button onClick={() => { setRejectingBankId(null); setRejectReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleRejectBank} disabled={!rejectReason.trim() || isRejectingBank} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
+              <button onClick={() => { setRejectingBankId(null); setRejectReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleRejectBank} disabled={!rejectReason.trim() || isRejectingBank} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors">
                 {isRejectingBank ? "Rejecting..." : "Confirm Reject"}
               </button>
             </div>
@@ -915,10 +927,10 @@ export default function BusinessDetailPage() {
 
       {/* ── Bank Account Ban Modal ── */}
       {banningBankId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Ban Bank Account</h2>
-            <p className="text-muted-foreground text-sm mb-4">This will deactivate the bank account. Provide a reason.</p>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Ban Bank Account</h2>
+            <p className="text-slate-500 text-sm mb-4">This will deactivate the bank account. Provide a reason.</p>
             <textarea
               className="input w-full h-24 resize-none"
               placeholder="e.g. Suspicious activity detected..."
@@ -926,8 +938,8 @@ export default function BusinessDetailPage() {
               onChange={(e) => setBanReason(e.target.value)}
             />
             <div className="flex gap-3 mt-4">
-              <button onClick={() => { setBanningBankId(null); setBanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleBanBank} disabled={!banReason.trim() || isBanningBank} className="flex-1 px-4 py-2.5 bg-slate-700 text-white rounded-xl text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors">
+              <button onClick={() => { setBanningBankId(null); setBanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleBanBank} disabled={!banReason.trim() || isBanningBank} className="flex-1 px-4 py-2.5 bg-slate-700 text-white rounded-xl text-sm font-semibold hover:bg-slate-800 disabled:opacity-50 transition-colors">
                 {isBanningBank ? "Banning..." : "Confirm Ban"}
               </button>
             </div>
@@ -937,10 +949,10 @@ export default function BusinessDetailPage() {
 
       {/* ── Bank Account Unban Modal ── */}
       {unbanningBankId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Unban Bank Account</h2>
-            <p className="text-muted-foreground text-sm mb-4">This will reactivate the bank account. Provide a reason.</p>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Unban Bank Account</h2>
+            <p className="text-slate-500 text-sm mb-4">This will reactivate the bank account. Provide a reason.</p>
             <textarea
               className="input w-full h-24 resize-none"
               placeholder="e.g. Issue resolved, account cleared..."
@@ -948,8 +960,8 @@ export default function BusinessDetailPage() {
               onChange={(e) => setUnbanReason(e.target.value)}
             />
             <div className="flex gap-3 mt-4">
-              <button onClick={() => { setUnbanningBankId(null); setUnbanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleUnbanBank} disabled={!unbanReason.trim() || isUnbanningBank} className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
+              <button onClick={() => { setUnbanningBankId(null); setUnbanReason(""); }} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleUnbanBank} disabled={!unbanReason.trim() || isUnbanningBank} className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors">
                 {isUnbanningBank ? "Unbanning..." : "Confirm Unban"}
               </button>
             </div>
@@ -961,7 +973,7 @@ export default function BusinessDetailPage() {
       {activeTab === "transactions" && (
         <div className="space-y-6">
           {/* Filters */}
-          <div className="glass p-6 rounded-3xl">
+          <div className={`${panelClass} p-5`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label">Transaction Type</label>
@@ -981,13 +993,13 @@ export default function BusinessDetailPage() {
           </div>
 
           {/* Table */}
-          <div className="glass p-6 rounded-3xl overflow-x-auto">
+          <div className={`${panelClass} p-5 overflow-x-auto`}>
             {transactionsLoading ? (
               <div className="text-center py-12">
                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
               </div>
             ) : transactions.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+              <div className="text-center py-12 text-slate-500">
                 <svg className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
@@ -997,7 +1009,7 @@ export default function BusinessDetailPage() {
               <>
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-sm text-muted-foreground border-b border-border">
+                    <tr className="text-left text-sm text-slate-500 border-b border-slate-200">
                       <th className="pb-4 font-medium">ID</th>
                       <th className="pb-4 font-medium">Type</th>
                       <th className="pb-4 font-medium">Description</th>
@@ -1007,11 +1019,11 @@ export default function BusinessDetailPage() {
                       <th className="pb-4 font-medium">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-slate-100">
                     {transactions.map((txn) => {
                       const isCredit = ["income", "refund"].includes(txn.transaction_type);
                       return (
-                        <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr key={txn.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-4 font-mono text-sm font-semibold">#{txn.id}</td>
                           <td className="py-4">
                             <div className="flex items-center gap-2">
@@ -1029,20 +1041,20 @@ export default function BusinessDetailPage() {
                           </td>
                           <td className="py-4 text-sm max-w-xs truncate">{txn.description || "—"}</td>
                           <td className="py-4">
-                            <span className={`font-bold text-sm ${isCredit ? "text-green-600" : "text-red-600"}`}>
+                            <span className={`font-semibold tabular-nums text-sm ${isCredit ? "text-green-600" : "text-red-600"}`}>
                               {isCredit ? "+" : "-"}{formatCurrency(Math.abs(txn.amount))}
                             </span>
                           </td>
                           <td className="py-4">
-                            <span className="text-xs bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded capitalize">
+                            <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold capitalize">
                               {txn.payment_method || "—"}
                             </span>
                           </td>
                           <td className="py-4 text-sm text-muted-foreground">{formatDate(txn.created_at)}</td>
                           <td className="py-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${txn.status === "completed" ? "bg-green-100 text-green-600" :
-                                txn.status === "pending" ? "bg-orange-100 text-orange-600" :
-                                  "bg-red-100 text-red-600"
+                            <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${txn.status === "completed" ? "bg-green-100 text-green-700" :
+                                txn.status === "pending" ? "bg-orange-100 text-orange-700" :
+                                  "bg-red-100 text-red-700"
                               }`}>
                               {txn.status}
                             </span>
@@ -1058,8 +1070,8 @@ export default function BusinessDetailPage() {
                       Page {transactionsMeta.current_page} of {transactionsMeta.total_pages} ({transactionsMeta.total_count} total)
                     </p>
                     <div className="flex gap-2">
-                      <button onClick={() => setTransactionPage((p) => Math.max(1, p - 1))} disabled={transactionsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-                      <button onClick={() => setTransactionPage((p) => Math.min(transactionsMeta.total_pages, p + 1))} disabled={transactionsMeta.current_page === transactionsMeta.total_pages} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
+                      <button onClick={() => setTransactionPage((p) => Math.max(1, p - 1))} disabled={transactionsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors">Previous</button>
+                      <button onClick={() => setTransactionPage((p) => Math.min(transactionsMeta.total_pages, p + 1))} disabled={transactionsMeta.current_page === transactionsMeta.total_pages} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors">Next</button>
                     </div>
                   </div>
                 )}
@@ -1073,32 +1085,37 @@ export default function BusinessDetailPage() {
       {activeTab === "analytics" && (
         <div className="space-y-6">
           {analyticsLoading ? (
-            <div className="glass p-12 rounded-3xl flex items-center justify-center">
+            <div className={`${panelClass} p-12 flex items-center justify-center`}>
               <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
             </div>
           ) : analyticsData ? (
             <>
               {/* KPI cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
-                  { label: "Total Revenue", value: formatCurrency(analyticsData.total_revenue), sub: "all time", color: "text-green-600", bg: "bg-green-100 dark:bg-green-900/30" },
-                  { label: "Total Bookings", value: analyticsData.total_bookings, sub: `${analyticsData.cancelled_bookings} cancelled`, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-900/30" },
-                  { label: "Avg Booking Value", value: formatCurrency(analyticsData.avg_booking_value), sub: "per booking", color: "text-purple-600", bg: "bg-purple-100 dark:bg-purple-900/30" },
-                  { label: "Cancellation Rate", value: analyticsData.total_bookings > 0 ? `${((analyticsData.cancelled_bookings / analyticsData.total_bookings) * 100).toFixed(1)}%` : "0%", sub: `${analyticsData.cancelled_bookings} of ${analyticsData.total_bookings}`, color: "text-orange-600", bg: "bg-orange-100 dark:bg-orange-900/30" },
+                  { label: "Total Revenue", value: formatCurrency(analyticsData.total_revenue), sub: "all time", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" },
+                  { label: "Total Bookings", value: analyticsData.total_bookings, sub: `${analyticsData.cancelled_bookings} cancelled`, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+                  { label: "Avg Booking Value", value: formatCurrency(analyticsData.avg_booking_value), sub: "per booking", icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" },
+                  { label: "Cancellation Rate", value: analyticsData.total_bookings > 0 ? `${((analyticsData.cancelled_bookings / analyticsData.total_bookings) * 100).toFixed(1)}%` : "0%", sub: `${analyticsData.cancelled_bookings} of ${analyticsData.total_bookings}`, icon: "M6 18L18 6M6 6l12 12" },
                 ].map((stat, i) => (
-                  <div key={i} className="glass p-6 rounded-3xl">
-                    <div className={`inline-flex px-3 py-1 rounded-full text-xs font-bold mb-3 ${stat.bg} ${stat.color}`}>
-                      {stat.label}
+                  <div key={i} className={`${panelClass} px-5 py-4`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">{stat.label}</p>
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={stat.icon} />
+                        </svg>
+                      </div>
                     </div>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
+                    <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">{stat.value}</p>
+                    <p className="text-xs text-slate-500 mt-2">{stat.sub}</p>
                   </div>
                 ))}
               </div>
 
               {/* Revenue & Bookings area chart */}
-              <div className="glass p-6 rounded-3xl">
-                <h3 className="text-xl font-bold mb-6">Revenue & Bookings — Last 6 Months</h3>
+              <div className={`${panelClass} p-5`}>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Revenue & Bookings — Last 6 Months</h3>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={analyticsData.monthly_data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <defs>
@@ -1130,10 +1147,10 @@ export default function BusinessDetailPage() {
                 </ResponsiveContainer>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Payment method pie chart */}
-                <div className="glass p-6 rounded-3xl">
-                  <h3 className="text-xl font-bold mb-6">Revenue by Payment Method</h3>
+                <div className={`${panelClass} p-5`}>
+                  <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Revenue by Payment Method</h3>
                   {analyticsData.payment_breakdown.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">No payment data yet</p>
                   ) : (
@@ -1163,8 +1180,8 @@ export default function BusinessDetailPage() {
                 </div>
 
                 {/* Room availability bar chart */}
-                <div className="glass p-6 rounded-3xl">
-                  <h3 className="text-xl font-bold mb-6">Room Availability by Type</h3>
+                <div className={`${panelClass} p-5`}>
+                  <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Room Availability by Type</h3>
                   {analyticsData.room_availability.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">No room data yet</p>
                   ) : (
@@ -1184,7 +1201,7 @@ export default function BusinessDetailPage() {
               </div>
             </>
           ) : (
-            <div className="glass p-12 rounded-3xl text-center text-muted-foreground">
+            <div className={`${panelClass} p-12 text-center text-slate-500`}>
               No analytics data available
             </div>
           )}
@@ -1195,7 +1212,7 @@ export default function BusinessDetailPage() {
       {activeTab === "rooms" && (
         <div className="space-y-4">
           {business.room_types.length === 0 ? (
-            <div className="glass p-12 rounded-3xl flex flex-col items-center justify-center text-center gap-4">
+            <div className={`${panelClass} p-12 flex flex-col items-center justify-center text-center gap-4`}>
               <svg className="w-16 h-16 text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
@@ -1217,10 +1234,10 @@ export default function BusinessDetailPage() {
               const extraCount = Math.max(0, thumbs.length - 5);
 
               return (
-                <div key={rt.id} className="glass overflow-hidden rounded-3xl">
+                <div key={rt.id} className={`${panelClass} overflow-hidden`}>
                   <div className="flex flex-wrap items-end justify-between gap-3 px-6 pt-6 pb-4">
                     <div>
-                      <h3 className="text-xl font-bold tracking-tight">{rt.name}</h3>
+                      <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">{rt.name}</h3>
                       <p className="mt-1 text-sm text-muted-foreground">
                         <span className="font-semibold text-foreground">{formatCurrency(rt.price)}</span>
                         <span className="mx-1.5 text-muted-foreground/50">·</span>
@@ -1230,7 +1247,7 @@ export default function BusinessDetailPage() {
                       </p>
                     </div>
                     {thumbs.length > 0 && (
-                      <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
                         {thumbs.length} photo{thumbs.length !== 1 ? "s" : ""}
                       </p>
                     )}
@@ -1305,14 +1322,14 @@ export default function BusinessDetailPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="mx-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-border/70 bg-slate-50/70 dark:bg-zinc-900/40">
+                    <div className="mx-6 flex h-36 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 dark:bg-zinc-900/40">
                       <p className="text-sm text-muted-foreground">No photos uploaded for this room type</p>
                     </div>
                   )}
 
                   {rt.rooms.length > 0 && (
-                    <div className="mt-5 border-t border-border/60 px-6 py-5">
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <div className="mt-5 border-t border-slate-200 px-6 py-5">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                         Inventory
                       </p>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-6">
@@ -1325,7 +1342,7 @@ export default function BusinessDetailPage() {
                                 : "border-slate-200 bg-slate-50 text-slate-500 dark:border-zinc-700 dark:bg-zinc-800/50"
                             }`}
                           >
-                            <p className="text-base font-bold">#{room.number}</p>
+                            <p className="text-base font-semibold tabular-nums">#{room.number}</p>
                             <p className="mt-0.5 capitalize">{room.status}</p>
                           </div>
                         ))}
@@ -1341,7 +1358,7 @@ export default function BusinessDetailPage() {
 
       {/* ── Recent Bookings Tab ── */}
       {activeTab === "bookings" && (
-        <div className="glass p-6 rounded-3xl">
+        <div className={`${panelClass} p-5`}>
           <div className="mb-6">
             <select
               className="input max-w-xs"
@@ -1361,7 +1378,7 @@ export default function BusinessDetailPage() {
               <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
             </div>
           ) : reservations.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-slate-500">
               <svg className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -1372,7 +1389,7 @@ export default function BusinessDetailPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-sm text-muted-foreground border-b border-border">
+                    <tr className="text-left text-sm text-slate-500 border-b border-slate-200">
                       <th className="pb-4 font-medium">Booking ID</th>
                       <th className="pb-4 font-medium">Guest</th>
                       <th className="pb-4 font-medium">Room</th>
@@ -1383,12 +1400,12 @@ export default function BusinessDetailPage() {
                       <th className="pb-4 font-medium">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-slate-100">
                     {reservations.map((r) => {
                       const rawStatus = r.status ?? (r.cancelled ? "cancelled" : "upcoming");
                       const statusLabel = rawStatus === "past" ? "completed" : rawStatus;
                       return (
-                        <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                        <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-4 font-mono text-sm font-semibold">{r.booking_id}</td>
                           <td className="py-4 text-sm">{r.first_name} {r.last_name}</td>
                           <td className="py-4 text-sm text-muted-foreground">
@@ -1397,12 +1414,12 @@ export default function BusinessDetailPage() {
                           <td className="py-4 text-sm">{formatDate(r.start_date)}</td>
                           <td className="py-4 text-sm text-muted-foreground">{formatDate(r.end_date)}</td>
                           <td className="py-4 text-sm">{r.guests}</td>
-                          <td className="py-4 font-bold text-sm">{formatCurrency(r.total_amount)}</td>
+                          <td className="py-4 font-semibold tabular-nums text-sm">{formatCurrency(r.total_amount)}</td>
                           <td className="py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusLabel === "upcoming" ? "bg-blue-100 text-blue-600" :
-                                statusLabel === "active" ? "bg-green-100 text-green-600" :
+                            <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${statusLabel === "upcoming" ? "bg-blue-100 text-blue-700" :
+                                statusLabel === "active" ? "bg-green-100 text-green-700" :
                                   statusLabel === "completed" ? "bg-slate-100 text-slate-600" :
-                                    "bg-red-100 text-red-600"
+                                    "bg-red-100 text-red-700"
                               }`}>
                               {statusLabel}
                             </span>
@@ -1419,8 +1436,8 @@ export default function BusinessDetailPage() {
                     Page {reservationsMeta.current_page} of {reservationsMeta.total_pages} ({reservationsMeta.total_count} total)
                   </p>
                   <div className="flex gap-2">
-                    <button onClick={() => setReservationPage((p) => Math.max(1, p - 1))} disabled={reservationsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-                    <button onClick={() => setReservationPage((p) => Math.min(reservationsMeta.total_pages, p + 1))} disabled={reservationsMeta.current_page === reservationsMeta.total_pages} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
+                    <button onClick={() => setReservationPage((p) => Math.max(1, p - 1))} disabled={reservationsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors">Previous</button>
+                    <button onClick={() => setReservationPage((p) => Math.min(reservationsMeta.total_pages, p + 1))} disabled={reservationsMeta.current_page === reservationsMeta.total_pages} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors">Next</button>
                   </div>
                 </div>
               )}
@@ -1432,30 +1449,30 @@ export default function BusinessDetailPage() {
       {/* ── Verification Tab ── */}
       {activeTab === "verification" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass p-6 rounded-3xl space-y-4">
-            <h3 className="text-xl font-bold">Business Verification</h3>
+          <div className={`${panelClass} p-5 space-y-4`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Verification</h3>
             <div className="space-y-3">
               {/* Verification status row */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <div>
                   <p className="font-semibold">Verification Status</p>
                   <p className="text-xs text-muted-foreground">Current verification state</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${business.verification_status === "approved" ? "bg-green-100 text-green-600" :
-                    business.verification_status === "rejected" ? "bg-red-100 text-red-600" :
-                      "bg-orange-100 text-orange-600"
+                <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${business.verification_status === "approved" ? "bg-green-100 text-green-700" :
+                    business.verification_status === "rejected" ? "bg-red-100 text-red-700" :
+                      "bg-orange-100 text-orange-700"
                   }`}>
                   {business.verification_status}
                 </span>
               </div>
 
               {/* Suspension status row */}
-              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <div>
                   <p className="font-semibold">Suspension Status</p>
                   <p className="text-xs text-muted-foreground">Whether the business is suspended</p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${business.suspended ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${business.suspended ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
                   }`}>
                   {business.suspended ? "Suspended" : "Active"}
                 </span>
@@ -1489,10 +1506,10 @@ export default function BusinessDetailPage() {
             </div>
           </div>
 
-          <div className="glass p-6 rounded-3xl space-y-4">
+          <div className={`${panelClass} p-5 space-y-4`}>
             <div>
-              <h3 className="text-xl font-bold">Bank Account Verification</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Bank Account Verification</h3>
+              <p className="text-sm text-slate-500 mt-1">
                 Approve or reject payout bank accounts submitted by this business.
               </p>
             </div>
@@ -1505,13 +1522,13 @@ export default function BusinessDetailPage() {
             )}
           </div>
 
-          <div className="glass p-6 rounded-3xl space-y-4 lg:col-span-2">
-            <h3 className="text-xl font-bold">Verification Details</h3>
+          <div className={`${panelClass} p-5 space-y-4 lg:col-span-2`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Verification Details</h3>
             <div className="space-y-3">
               {business.verified_at && (
-                <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-green-600">Business Verified</span>
+                    <span className="text-xs font-semibold text-green-700">Business Verified</span>
                     <span className="text-xs text-muted-foreground">{formatDateTime(business.verified_at)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -1520,14 +1537,14 @@ export default function BusinessDetailPage() {
                 </div>
               )}
               {business.verification_notes && (
-                <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                  <p className="text-xs font-bold text-orange-600 mb-1">Rejection Notes</p>
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-xs font-semibold text-orange-700 mb-1">Rejection Notes</p>
                   <p className="text-sm text-muted-foreground">{business.verification_notes}</p>
                 </div>
               )}
-              <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-blue-600">Business Registered</span>
+                  <span className="text-xs font-semibold text-blue-700">Business Registered</span>
                   <span className="text-xs text-muted-foreground">{formatDateTime(business.created_at)}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -1543,17 +1560,17 @@ export default function BusinessDetailPage() {
       {/* ── Map Modal ── */}
       {showMapModal && business.latitude && business.longitude && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => { setShowMapModal(false); setMapLoading(true); }}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden"
+            className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-4xl mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-border flex items-center justify-between">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">{business.name} - Location</h3>
-                <p className="text-sm text-muted-foreground mt-1">{business.address}, {business.city}, {business.state}</p>
+                <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900">{business.name} - Location</h3>
+                <p className="text-sm text-slate-500 mt-1">{business.address}, {business.city}, {business.state}</p>
               </div>
               <button
                 onClick={() => { setShowMapModal(false); setMapLoading(true); }}
@@ -1566,7 +1583,7 @@ export default function BusinessDetailPage() {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
+                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <div>
                     <p className="text-xs font-medium text-muted-foreground">Latitude</p>
                     <p className="text-sm font-semibold">{business.latitude}</p>
@@ -1621,16 +1638,16 @@ export default function BusinessDetailPage() {
       {/* Status Reason Modal */}
       {showStatusModal && statusAction && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => setShowStatusModal(false)}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-md mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-border">
-              <h3 className="text-xl font-bold">{statusAction.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="p-6 border-b border-slate-200">
+              <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900">{statusAction.title}</h3>
+              <p className="text-sm text-slate-500 mt-1">
                 {statusAction.type === "suspend" && "You are about to suspend this business. It will no longer be visible to customers."}
                 {statusAction.type === "activate" && "You are about to reactivate this business."}
                 {statusAction.type === "verify" && "Confirm verification of this business."}
@@ -1639,21 +1656,21 @@ export default function BusinessDetailPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide pl-1">
                   Reason / Notes {statusAction.type === "suspend" || statusAction.type === "reject" ? "(Required)" : "(Optional)"}
                 </label>
                 <textarea
-                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-32 text-sm"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200 transition-colors resize-none h-32 text-sm"
                   placeholder="Enter reason for this action..."
                   value={statusReason}
                   onChange={(e) => setStatusReason(e.target.value)}
                 />
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+            <div className="p-5 bg-slate-50 border-t border-slate-200 flex gap-3">
               <button
                 onClick={() => setShowStatusModal(false)}
-                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>

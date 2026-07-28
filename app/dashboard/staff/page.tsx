@@ -22,6 +22,9 @@ import { toast } from "sonner";
 
 type PresetKey = keyof typeof ADMIN_PERMISSION_PRESETS;
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 const EMPTY_INVITE = {
   first_name: "",
   last_name: "",
@@ -292,49 +295,61 @@ export default function StaffManagementPage() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="p-8">
-        <div className="glass p-12 rounded-3xl text-center">
-          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <div className="dash-page">
+        <div className={`${panelClass} p-12 text-center`}>
+          <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">Only super admins can manage staff.</p>
+          <h2 className="font-display text-xl font-semibold mt-4 text-slate-900">Access Denied</h2>
+          <p className="text-sm text-slate-500 mt-2">Only super admins can manage staff.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Staff Management</h1>
-          <p className="text-muted-foreground mt-1">Manage admin staff and their permissions</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Staff Management
+          </h1>
+          <p className="text-sm text-slate-500 mt-2">Manage admin staff and their permissions</p>
         </div>
         <button
           onClick={() => { setShowInviteModal(true); setInviteError(null); }}
-          className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors"
+          className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors shrink-0"
         >
           Invite Staff
         </button>
       </div>
 
       {/* Filters */}
-      <div className="glass p-6 rounded-3xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`${panelClass} p-4 md:p-5`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
-            <label className="label">Search</label>
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Search</label>
+            <div className="relative mt-1.5">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <input type="text" placeholder="Search by name or email..." className="input pl-10" value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} />
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
             </div>
           </div>
           <div>
-            <label className="label">Role</label>
-            <select className="input" value={roleFilter} onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Role</label>
+            <select
+              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              value={roleFilter}
+              onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            >
               <option value="all">All Roles</option>
               <option value="super_admin">Super Admin</option>
               <option value="admin_staff">Admin Staff</option>
@@ -344,135 +359,141 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Table */}
-      <div className="glass p-6 rounded-3xl overflow-x-auto">
-        {isError && <div className="text-center py-12 text-red-500">Failed to load staff. Please try again.</div>}
+      <div className={`${panelClass} overflow-hidden`}>
+        {isError && (
+          <div className="text-center py-12 text-red-600 text-sm font-medium">
+            Failed to load staff. Please try again.
+          </div>
+        )}
         {(isLoading || isFetching) && !isError && (
           <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-            <p className="text-sm text-muted-foreground mt-4">Loading staff...</p>
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-500 mt-4">Loading staff…</p>
           </div>
         )}
         {!isLoading && !isFetching && !isError && staffList.length === 0 && (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <p className="text-muted-foreground mt-4">No staff members found</p>
+            <p className="text-sm text-slate-500 mt-4">No staff members found</p>
           </div>
         )}
         {!isLoading && !isFetching && !isError && staffList.length > 0 && (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                <th className="pb-4 font-medium">Name</th>
-                <th className="pb-4 font-medium">Email</th>
-                <th className="pb-4 font-medium">Role</th>
-                <th className="pb-4 font-medium">Status</th>
-                <th className="pb-4 font-medium">Last Sign-in</th>
-                <th className="pb-4 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {staffList.map((member) => (
-                <tr key={member.id} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold">
-                        {member.first_name[0]}{member.last_name[0]}
-                      </div>
-                      <div>
-                        <p className="font-semibold">{member.first_name} {member.last_name}</p>
-                        {member.title && <p className="text-xs text-muted-foreground">{member.title}</p>}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 text-sm">{member.email}</td>
-                  <td className="py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${member.admin_role === "super_admin" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
-                      {member.admin_role === "super_admin" ? "Super Admin" : "Admin Staff"}
-                    </span>
-                  </td>
-                  <td className="py-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${member.active ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
-                        {member.active ? "Active" : "Deactivated"}
-                      </span>
-                      {member.otp_required_for_login && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                          2FA
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-4 text-sm text-muted-foreground">
-                    {member.last_sign_in_at ? formatDate(member.last_sign_in_at) : "Never"}
-                  </td>
-                  <td className="py-4 text-right">
-                    <div className="relative inline-block" data-actions-menu>
-                      <button
-                        onClick={() => setOpenActionsMenu(openActionsMenu === member.id ? null : member.id)}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
-                        </svg>
-                      </button>
-                      {openActionsMenu === member.id && (
-                        <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-zinc-900 border border-border rounded-xl shadow-lg z-10 py-1" onClick={(e) => e.stopPropagation()}>
-                          {member.id === admin?.id ? (
-                            <p className="px-4 py-2.5 text-xs text-muted-foreground">You cannot edit your own account</p>
-                          ) : (
-                            <>
-                              <button onClick={() => { openEdit(member); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
-                                Edit Role & Permissions
-                              </button>
-                              {member.active ? (
-                                <button onClick={() => { setDeactivatingStaff(member); setDeactivateError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors">
-                                  Deactivate
-                                </button>
-                              ) : (
-                                <button onClick={() => { handleReactivate(member); setOpenActionsMenu(null); }} disabled={isReactivating} className="w-full text-left px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors disabled:opacity-50">
-                                  Reactivate
-                                </button>
-                              )}
-                              <button onClick={() => { setResettingTwoFactorStaff(member); setResetTwoFactorError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
-                                Reset 2FA
-                              </button>
-                              <button onClick={() => { setRemovingStaff(member); setRemoveError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                Remove from Platform
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-slate-100 bg-slate-50/60">
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Name</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Email</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Role</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Last Sign-in</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {staffList.map((member) => (
+                  <tr key={member.id} className="hover:bg-slate-50/90 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-semibold text-sm">
+                          {member.first_name[0]}{member.last_name[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900">{member.first_name} {member.last_name}</p>
+                          {member.title && <p className="text-xs text-slate-500 mt-0.5">{member.title}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-slate-700">{member.email}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${member.admin_role === "super_admin" ? "bg-indigo-50 text-indigo-700" : "bg-slate-100 text-slate-600"}`}>
+                        {member.admin_role === "super_admin" ? "Super Admin" : "Admin Staff"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${member.active ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                          {member.active ? "Active" : "Deactivated"}
+                        </span>
+                        {member.otp_required_for_login && (
+                          <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-50 text-blue-700">
+                            2FA
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-slate-500">
+                      {member.last_sign_in_at ? formatDate(member.last_sign_in_at) : "Never"}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="relative inline-block" data-actions-menu>
+                        <button
+                          onClick={() => setOpenActionsMenu(openActionsMenu === member.id ? null : member.id)}
+                          className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+                          </svg>
+                        </button>
+                        {openActionsMenu === member.id && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] z-10 py-1" onClick={(e) => e.stopPropagation()}>
+                            {member.id === admin?.id ? (
+                              <p className="px-4 py-2.5 text-xs text-slate-500">You cannot edit your own account</p>
+                            ) : (
+                              <>
+                                <button onClick={() => { openEdit(member); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                  Edit Role & Permissions
+                                </button>
+                                {member.active ? (
+                                  <button onClick={() => { setDeactivatingStaff(member); setDeactivateError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-orange-600 hover:bg-orange-50 transition-colors">
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button onClick={() => { handleReactivate(member); setOpenActionsMenu(null); }} disabled={isReactivating} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50">
+                                    Reactivate
+                                  </button>
+                                )}
+                                <button onClick={() => { setResettingTwoFactorStaff(member); setResetTwoFactorError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                                  Reset 2FA
+                                </button>
+                                <button onClick={() => { setRemovingStaff(member); setRemoveError(null); setOpenActionsMenu(null); }} className="w-full text-left px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors">
+                                  Remove from Platform
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
       {/* Pagination */}
       {meta && meta.total_pages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">Page {meta.current_page} of {meta.total_pages} ({meta.total_count} total)</p>
+          <p className="text-sm text-slate-500">Page {meta.current_page} of {meta.total_pages} ({meta.total_count} total)</p>
           <div className="flex items-center gap-2">
-            <button onClick={() => setPage(Math.max(1, page - 1))} disabled={meta.current_page === 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-            <button onClick={() => setPage(Math.min(meta.total_pages, page + 1))} disabled={meta.current_page === meta.total_pages} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
+            <button onClick={() => setPage(Math.max(1, page - 1))} disabled={meta.current_page === 1} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Previous</button>
+            <button onClick={() => setPage(Math.min(meta.total_pages, page + 1))} disabled={meta.current_page === meta.total_pages} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Next</button>
           </div>
         </div>
       )}
 
       {/* ── Invite Modal ─────────────────────────────────────────────────── */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Invite Staff Member</h2>
-              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Invite Staff Member</h2>
+              <button onClick={() => setShowInviteModal(false)} className="p-2 hover:bg-slate-100 rounded-xl">
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <form onSubmit={handleInviteSubmit} className="space-y-4">
@@ -504,10 +525,10 @@ export default function StaffManagementPage() {
                 </div>
               )}
               <PresetSelector preset={invitePreset} permissions={invitePermissions} onPresetChange={setInvitePreset} onPermissionsChange={setInvitePermissions} />
-              {inviteError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl">{inviteError}</p>}
+              {inviteError && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-xl font-medium">{inviteError}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowInviteModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-                <button type="submit" disabled={isInviting} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">{isInviting ? "Inviting..." : "Send Invite"}</button>
+                <button type="button" onClick={() => setShowInviteModal(false)} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={isInviting} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">{isInviting ? "Inviting..." : "Send Invite"}</button>
               </div>
             </form>
           </div>
@@ -516,12 +537,12 @@ export default function StaffManagementPage() {
 
       {/* ── Edit Modal ───────────────────────────────────────────────────── */}
       {editingStaff && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold">Edit {editingStaff.first_name} {editingStaff.last_name}</h2>
-              <button onClick={() => setEditingStaff(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Edit {editingStaff.first_name} {editingStaff.last_name}</h2>
+              <button onClick={() => setEditingStaff(null)} className="p-2 hover:bg-slate-100 rounded-xl">
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -539,10 +560,10 @@ export default function StaffManagementPage() {
                 </div>
               )}
               <PresetSelector preset={editPreset} permissions={editPermissions} onPresetChange={setEditPreset} onPermissionsChange={setEditPermissions} />
-              {editError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl">{editError}</p>}
+              {editError && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-xl font-medium">{editError}</p>}
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setEditingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-                <button type="submit" disabled={isUpdating} className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">{isUpdating ? "Saving..." : "Save Changes"}</button>
+                <button type="button" onClick={() => setEditingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={isUpdating} className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors">{isUpdating ? "Saving..." : "Save Changes"}</button>
               </div>
             </form>
           </div>
@@ -551,16 +572,16 @@ export default function StaffManagementPage() {
 
       {/* ── Deactivate Confirm ───────────────────────────────────────────── */}
       {deactivatingStaff && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Deactivate Staff Member</h2>
-            <p className="text-muted-foreground mb-6">
-              Are you sure you want to deactivate <span className="font-semibold text-foreground">{deactivatingStaff.first_name} {deactivatingStaff.last_name}</span>? They will lose access immediately.
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Deactivate Staff Member</h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to deactivate <span className="font-semibold text-slate-900">{deactivatingStaff.first_name} {deactivatingStaff.last_name}</span>? They will lose access immediately.
             </p>
-            {deactivateError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl mb-4">{deactivateError}</p>}
+            {deactivateError && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-xl font-medium mb-4">{deactivateError}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setDeactivatingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleDeactivate} disabled={isDeactivating} className="flex-1 px-4 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-medium hover:bg-orange-600 disabled:opacity-50 transition-colors">{isDeactivating ? "Deactivating..." : "Deactivate"}</button>
+              <button onClick={() => setDeactivatingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleDeactivate} disabled={isDeactivating} className="flex-1 px-4 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 disabled:opacity-50 transition-colors">{isDeactivating ? "Deactivating..." : "Deactivate"}</button>
             </div>
           </div>
         </div>
@@ -568,17 +589,17 @@ export default function StaffManagementPage() {
 
       {/* ── Remove Confirm ───────────────────────────────────────────────── */}
       {removingStaff && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Remove Staff Member</h2>
-            <p className="text-muted-foreground mb-2">
-              You are about to permanently remove <span className="font-semibold text-foreground">{removingStaff.first_name} {removingStaff.last_name}</span> from the platform.
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Remove Staff Member</h2>
+            <p className="text-sm text-slate-500 mb-2">
+              You are about to permanently remove <span className="font-semibold text-slate-900">{removingStaff.first_name} {removingStaff.last_name}</span> from the platform.
             </p>
-            <p className="text-sm text-red-600 dark:text-red-400 mb-6">This action cannot be undone.</p>
-            {removeError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl mb-4">{removeError}</p>}
+            <p className="text-sm text-red-600 mb-6">This action cannot be undone.</p>
+            {removeError && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-xl font-medium mb-4">{removeError}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setRemovingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleRemove} disabled={isRemoving} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">{isRemoving ? "Removing..." : "Remove Permanently"}</button>
+              <button onClick={() => setRemovingStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleRemove} disabled={isRemoving} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors">{isRemoving ? "Removing..." : "Remove Permanently"}</button>
             </div>
           </div>
         </div>
@@ -586,19 +607,19 @@ export default function StaffManagementPage() {
 
       {/* ── Reset 2FA Confirm ────────────────────────────────────────────── */}
       {resettingTwoFactorStaff && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-2">Reset Two-Factor Authentication</h2>
-            <p className="text-muted-foreground mb-2">
-              You are about to reset two-factor authentication for <span className="font-semibold text-foreground">{resettingTwoFactorStaff.first_name} {resettingTwoFactorStaff.last_name}</span>.
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 w-full max-w-md shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Reset Two-Factor Authentication</h2>
+            <p className="text-sm text-slate-500 mb-2">
+              You are about to reset two-factor authentication for <span className="font-semibold text-slate-900">{resettingTwoFactorStaff.first_name} {resettingTwoFactorStaff.last_name}</span>.
             </p>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               Their current authenticator app and recovery codes will stop working, any active session will be revoked, and they&apos;ll be required to set up a new authenticator on their next login.
             </p>
-            {resetTwoFactorError && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-xl mb-4">{resetTwoFactorError}</p>}
+            {resetTwoFactorError && <p className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-xl font-medium mb-4">{resetTwoFactorError}</p>}
             <div className="flex gap-3">
-              <button onClick={() => setResettingTwoFactorStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Cancel</button>
-              <button onClick={handleResetTwoFactor} disabled={isResettingTwoFactor} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">{isResettingTwoFactor ? "Resetting..." : "Reset 2FA"}</button>
+              <button onClick={() => setResettingTwoFactorStaff(null)} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={handleResetTwoFactor} disabled={isResettingTwoFactor} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors">{isResettingTwoFactor ? "Resetting..." : "Reset 2FA"}</button>
             </div>
           </div>
         </div>

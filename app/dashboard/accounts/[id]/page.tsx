@@ -20,6 +20,9 @@ import ImageLightbox from "@/components/ImageLightbox";
 import { PushNotificationAiModal } from "@/components/push-notification-ai-modal";
 import { normalizeApiMediaUrl } from "@/lib/media-url";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 export default function AccountDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -130,10 +133,10 @@ export default function AccountDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading account...</p>
+          <p className="text-sm text-slate-500">Loading account...</p>
         </div>
       </div>
     );
@@ -141,10 +144,10 @@ export default function AccountDetailPage() {
 
   if (isError || !account) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Account not found</p>
-          <Link href="/dashboard/accounts" className="text-sm text-primary mt-2 inline-block">
+          <p className="text-red-600 font-semibold">Account not found</p>
+          <Link href="/dashboard/accounts" className="text-sm text-indigo-600 font-semibold mt-2 inline-block hover:text-indigo-700">
             Back to accounts
           </Link>
         </div>
@@ -153,11 +156,11 @@ export default function AccountDetailPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       {/* Header & Back Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/accounts" className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
+          <Link href="/dashboard/accounts" className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -172,29 +175,31 @@ export default function AccountDetailPage() {
               <img
                 src={normalizeApiMediaUrl(account.avatar_url)}
                 alt={`${account.first_name} ${account.last_name}`}
-                className="w-14 h-14 rounded-full object-cover bg-slate-100 dark:bg-zinc-800 hover:opacity-90 transition-opacity cursor-zoom-in"
+                className="w-14 h-14 rounded-full object-cover bg-slate-100 hover:opacity-90 transition-opacity cursor-zoom-in"
               />
             </button>
           ) : (
-            <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center font-bold text-lg">
+            <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-semibold text-lg">
               {account.first_name[0]}{account.last_name[0]}
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-bold">{account.first_name} {account.last_name}</h1>
-            <p className="text-muted-foreground mt-1">Account ID: {account.account_unique_id}</p>
+            <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+              {account.first_name} {account.last_name}
+            </h1>
+            <p className="text-sm text-slate-500 mt-2">Account ID: {account.account_unique_id}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className={`px-4 py-2 rounded-full text-sm font-bold ${
-            account.status === "active" ? "bg-green-100 text-green-600 dark:bg-green-900/30" :
-            account.status === "suspended" ? "bg-red-100 text-red-600 dark:bg-red-900/30" :
-            "bg-orange-100 text-orange-600 dark:bg-orange-900/30"
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
+            account.status === "active" ? "bg-emerald-50 text-emerald-700" :
+            account.status === "suspended" ? "bg-red-50 text-red-600" :
+            "bg-amber-50 text-amber-700"
           }`}>
             {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
           </span>
           {account.email_verified && (
-            <span className="px-4 py-2 rounded-full text-sm font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/30">
+            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700">
               ✓ Verified
             </span>
           )}
@@ -206,7 +211,7 @@ export default function AccountDetailPage() {
                 setShowStatusModal(true);
               }}
               disabled={isActivating}
-              className="px-4 py-2 rounded-full text-sm font-bold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               Activate
             </button>
@@ -219,7 +224,7 @@ export default function AccountDetailPage() {
                 setShowStatusModal(true);
               }}
               disabled={isSuspending}
-              className="px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
             >
               Suspend
             </button>
@@ -228,7 +233,7 @@ export default function AccountDetailPage() {
           {can("accounts", "notify") && (
             <button
               onClick={() => setShowNotifyModal(true)}
-              className="px-4 py-2 rounded-full text-sm font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
               Send notification
             </button>
@@ -237,55 +242,62 @@ export default function AccountDetailPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Wallet Balance", value: formatCurrency(account.wallet_balance), icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", color: "bg-green-100 text-green-600 dark:bg-green-900/30" },
-          { label: "Total Bookings", value: account.total_bookings, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z", color: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30" },
-          { label: "Sign-in Count", value: account.sign_in_count, icon: "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1", color: "bg-purple-100 text-purple-600 dark:bg-purple-900/30" },
-          { label: "Last Login", value: account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30" },
+          { label: "Wallet Balance", value: formatCurrency(account.wallet_balance), icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
+          { label: "Total Bookings", value: account.total_bookings, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+          { label: "Sign-in Count", value: account.sign_in_count, icon: "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" },
+          { label: "Last Login", value: account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
         ].map((stat, i) => (
-          <div key={i} className="glass p-6 rounded-3xl">
-            <div className={`inline-flex p-3 rounded-2xl mb-3 ${stat.color}`}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
-              </svg>
+          <div key={i} className={`${panelClass} px-5 py-4`}>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">
+                {stat.label}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={stat.icon} />
+                </svg>
+              </div>
             </div>
-            <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{stat.value}</p>
+            <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
       {/* Tabs Navigation */}
-      <div className="glass rounded-3xl p-2">
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "hover:bg-slate-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
-              </svg>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div
+        className="inline-flex flex-wrap gap-1 p-1 rounded-2xl border border-slate-200/90 bg-slate-100/70 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]"
+        role="tablist"
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-semibold tracking-tight transition-all duration-150 whitespace-nowrap ${
+              activeTab === tab.id
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80"
+                : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={tab.icon} />
+            </svg>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 space-y-4">
             {/* Personal Information */}
-            <div className="glass p-6 rounded-3xl">
-              <h3 className="text-xl font-bold mb-4">Personal Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`${panelClass} p-5`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Personal Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
                   { label: "Full Name", value: [account.first_name, account.other_name, account.last_name].filter(Boolean).join(" ") },
                   { label: "Email", value: account.email },
@@ -296,26 +308,26 @@ export default function AccountDetailPage() {
                   { label: "Zip Code", value: account.zip_code || "—" },
                   { label: "Account Created", value: formatDate(account.created_at) },
                 ].map((field, i) => (
-                  <div key={i} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                    <p className="text-xs text-muted-foreground mb-1">{field.label}</p>
-                    <p className="font-semibold">{field.value}</p>
+                  <div key={i} className="p-3.5 bg-slate-50 rounded-xl">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1">{field.label}</p>
+                    <p className="font-semibold text-sm text-slate-900">{field.value}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Emergency Contact */}
-            <div className="glass p-6 rounded-3xl">
-              <h3 className="text-xl font-bold mb-4">Emergency Contact</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`${panelClass} p-5`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Emergency Contact</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   { label: "First Name", value: account.emer_first_name || "—" },
                   { label: "Last Name", value: account.emer_last_name || "—" },
                   { label: "Phone Number", value: account.emer_phone_number || "—" },
                 ].map((field, i) => (
-                  <div key={i} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                    <p className="text-xs text-muted-foreground mb-1">{field.label}</p>
-                    <p className="font-semibold">{field.value}</p>
+                  <div key={i} className="p-3.5 bg-slate-50 rounded-xl">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1">{field.label}</p>
+                    <p className="font-semibold text-sm text-slate-900">{field.value}</p>
                   </div>
                 ))}
               </div>
@@ -323,9 +335,9 @@ export default function AccountDetailPage() {
 
             {/* Payment Details */}
             {(account.dva_account_number || account.paystack_customer_code) && (
-              <div className="glass p-6 rounded-3xl">
-                <h3 className="text-xl font-bold mb-4">Payment Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={`${panelClass} p-5`}>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Payment Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
                     { label: "DVA Account Number", value: account.dva_account_number || "—" },
                     { label: "DVA Bank Name", value: account.dva_bank_name || "—" },
@@ -333,9 +345,9 @@ export default function AccountDetailPage() {
                     { label: "DVA Bank Code", value: account.dva_bank_code || "—" },
                     { label: "Paystack Customer Code", value: account.paystack_customer_code || "—" },
                   ].map((field, i) => (
-                    <div key={i} className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl">
-                      <p className="text-xs text-muted-foreground mb-1">{field.label}</p>
-                      <p className="font-semibold font-mono text-sm">{field.value}</p>
+                    <div key={i} className="p-3.5 bg-slate-50 rounded-xl">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-1">{field.label}</p>
+                      <p className="font-semibold font-mono text-sm text-slate-900">{field.value}</p>
                     </div>
                   ))}
                 </div>
@@ -344,19 +356,19 @@ export default function AccountDetailPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-6">
-            <div className="glass p-6 rounded-3xl">
-              <h3 className="text-xl font-bold mb-4">Account Activity</h3>
-              <div className="space-y-3">
+          <div className="space-y-4">
+            <div className={`${panelClass} p-5`}>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Account Activity</h3>
+              <div className="space-y-1">
                 {[
                   { label: "Last Login", value: account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never" },
                   { label: "Total Logins", value: account.sign_in_count },
                   { label: "Email Verified", value: account.email_verified ? "Yes" : "No" },
                   { label: "Phone Verified", value: account.phone_verified ? "Yes" : "No" },
                 ].map((field, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <span className="text-sm text-muted-foreground">{field.label}</span>
-                    <span className="font-semibold text-sm">{field.value}</span>
+                  <div key={i} className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+                    <span className="text-sm text-slate-500">{field.label}</span>
+                    <span className="font-semibold text-sm text-slate-900">{field.value}</span>
                   </div>
                 ))}
               </div>
@@ -367,10 +379,10 @@ export default function AccountDetailPage() {
 
       {/* Bookings Tab */}
       {activeTab === "bookings" && (
-        <div className="glass p-6 rounded-3xl">
-          <div className="mb-6">
+        <div className={`${panelClass} p-5`}>
+          <div className="mb-5">
             <select
-              className="input max-w-xs"
+              className="input max-w-xs rounded-xl"
               value={bookingStatusFilter}
               onChange={(e) => { setBookingStatusFilter(e.target.value); setReservationPage(1); }}
             >
@@ -387,54 +399,54 @@ export default function AccountDetailPage() {
               <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
             </div>
           ) : reservations.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <svg className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <div className="text-center py-12 text-slate-500">
+              <svg className="w-12 h-12 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p>No bookings found</p>
+              <p className="text-sm">No bookings found</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                      <th className="pb-4 font-medium">Booking ID</th>
-                      <th className="pb-4 font-medium">Business & Room</th>
-                      <th className="pb-4 font-medium">Dates</th>
-                      <th className="pb-4 font-medium">Guests</th>
-                      <th className="pb-4 font-medium">Amount</th>
-                      <th className="pb-4 font-medium">Payment</th>
-                      <th className="pb-4 font-medium">Status</th>
+                    <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 border-b border-slate-100">
+                      <th className="pb-3 font-semibold">Booking ID</th>
+                      <th className="pb-3 font-semibold">Business & Room</th>
+                      <th className="pb-3 font-semibold">Dates</th>
+                      <th className="pb-3 font-semibold">Guests</th>
+                      <th className="pb-3 font-semibold">Amount</th>
+                      <th className="pb-3 font-semibold">Payment</th>
+                      <th className="pb-3 font-semibold">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-slate-100">
                     {reservations.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                        <td className="py-4">
-                          <span className="font-mono text-sm font-bold">{r.booking_id}</span>
+                      <tr key={r.id} className="hover:bg-slate-50/90 transition-colors">
+                        <td className="py-3.5">
+                          <span className="font-mono text-sm font-semibold text-slate-900">{r.booking_id}</span>
                         </td>
-                        <td className="py-4">
-                          <p className="font-semibold text-sm">{r.business_name}</p>
-                          <p className="text-xs text-muted-foreground">{r.room_type}{r.room_number ? ` · Room ${r.room_number}` : ""}</p>
+                        <td className="py-3.5">
+                          <p className="font-semibold text-sm text-slate-900">{r.business_name}</p>
+                          <p className="text-xs text-slate-500">{r.room_type}{r.room_number ? ` · Room ${r.room_number}` : ""}</p>
                         </td>
-                        <td className="py-4">
-                          <p className="text-sm">{formatDate(r.start_date)}</p>
-                          <p className="text-xs text-muted-foreground">to {formatDate(r.end_date)}</p>
+                        <td className="py-3.5">
+                          <p className="text-sm text-slate-900">{formatDate(r.start_date)}</p>
+                          <p className="text-xs text-slate-500">to {formatDate(r.end_date)}</p>
                         </td>
-                        <td className="py-4 text-sm">{r.guests}</td>
-                        <td className="py-4 font-bold text-sm">{formatCurrency(r.total_amount)}</td>
-                        <td className="py-4">
-                          <span className="px-2 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-zinc-800 capitalize">
+                        <td className="py-3.5 text-sm text-slate-900 tabular-nums">{r.guests}</td>
+                        <td className="py-3.5 font-semibold text-sm text-slate-900 tabular-nums">{formatCurrency(r.total_amount)}</td>
+                        <td className="py-3.5">
+                          <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 capitalize">
                             {r.payment_method}
                           </span>
                         </td>
-                        <td className="py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                            r.status === "upcoming" ? "bg-blue-100 text-blue-600" :
-                            r.status === "active"   ? "bg-green-100 text-green-600" :
+                        <td className="py-3.5">
+                          <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${
+                            r.status === "upcoming" ? "bg-blue-50 text-blue-700" :
+                            r.status === "active"   ? "bg-emerald-50 text-emerald-700" :
                             r.status === "past"     ? "bg-slate-100 text-slate-600" :
-                            "bg-red-100 text-red-600"
+                            "bg-red-50 text-red-600"
                           }`}>
                             {r.status}
                           </span>
@@ -445,13 +457,13 @@ export default function AccountDetailPage() {
                 </table>
               </div>
               {reservationsMeta && reservationsMeta.total_pages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between mt-5">
+                  <p className="text-sm text-slate-500">
                     Page {reservationsMeta.current_page} of {reservationsMeta.total_pages} ({reservationsMeta.total_count} total)
                   </p>
                   <div className="flex gap-2">
-                    <button onClick={() => setReservationPage(p => Math.max(1, p - 1))} disabled={reservationsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-                    <button onClick={() => setReservationPage(p => Math.min(reservationsMeta.total_pages, p + 1))} disabled={reservationsMeta.current_page === reservationsMeta.total_pages} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
+                    <button onClick={() => setReservationPage(p => Math.max(1, p - 1))} disabled={reservationsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Previous</button>
+                    <button onClick={() => setReservationPage(p => Math.min(reservationsMeta.total_pages, p + 1))} disabled={reservationsMeta.current_page === reservationsMeta.total_pages} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Next</button>
                   </div>
                 </div>
               )}
@@ -462,10 +474,10 @@ export default function AccountDetailPage() {
 
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
-        <div className="glass p-6 rounded-3xl">
-          <div className="mb-6">
+        <div className={`${panelClass} p-5`}>
+          <div className="mb-5">
             <select
-              className="input max-w-xs"
+              className="input max-w-xs rounded-xl"
               value={transactionFilter}
               onChange={(e) => { setTransactionFilter(e.target.value); setTransactionPage(1); }}
             >
@@ -482,53 +494,53 @@ export default function AccountDetailPage() {
               <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <svg className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            <div className="text-center py-12 text-slate-500">
+              <svg className="w-12 h-12 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              <p>No transactions found</p>
+              <p className="text-sm">No transactions found</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                      <th className="pb-4 font-medium">Date</th>
-                      <th className="pb-4 font-medium">Type</th>
-                      <th className="pb-4 font-medium">Description</th>
-                      <th className="pb-4 font-medium">Payment</th>
-                      <th className="pb-4 font-medium">Amount</th>
-                      <th className="pb-4 font-medium">Status</th>
+                    <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 border-b border-slate-100">
+                      <th className="pb-3 font-semibold">Date</th>
+                      <th className="pb-3 font-semibold">Type</th>
+                      <th className="pb-3 font-semibold">Description</th>
+                      <th className="pb-3 font-semibold">Payment</th>
+                      <th className="pb-3 font-semibold">Amount</th>
+                      <th className="pb-3 font-semibold">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-slate-100">
                     {transactions.map((txn) => {
                       const isCredit = ["income", "refund"].includes(txn.transaction_type);
                       return (
-                        <tr key={txn.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                          <td className="py-4 text-sm">{formatDate(txn.created_at)}</td>
-                          <td className="py-4">
-                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-zinc-800 capitalize">
+                        <tr key={txn.id} className="hover:bg-slate-50/90 transition-colors">
+                          <td className="py-3.5 text-sm text-slate-900">{formatDate(txn.created_at)}</td>
+                          <td className="py-3.5">
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 capitalize">
                               {txn.transaction_type.replace(/_/g, " ")}
                             </span>
                           </td>
-                          <td className="py-4 text-sm text-muted-foreground max-w-xs truncate">{txn.description || "—"}</td>
-                          <td className="py-4">
-                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-zinc-800 capitalize">
+                          <td className="py-3.5 text-sm text-slate-500 max-w-xs truncate">{txn.description || "—"}</td>
+                          <td className="py-3.5">
+                            <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 capitalize">
                               {txn.payment_method || "—"}
                             </span>
                           </td>
-                          <td className="py-4">
-                            <span className={`font-bold text-sm ${isCredit ? "text-green-600" : "text-red-600"}`}>
+                          <td className="py-3.5">
+                            <span className={`font-semibold text-sm tabular-nums ${isCredit ? "text-emerald-600" : "text-red-600"}`}>
                               {isCredit ? "+" : "-"}{formatCurrency(Math.abs(txn.amount))}
                             </span>
                           </td>
-                          <td className="py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                              txn.status === "completed" ? "bg-green-100 text-green-600" :
-                              txn.status === "pending"   ? "bg-orange-100 text-orange-600" :
-                              "bg-red-100 text-red-600"
+                          <td className="py-3.5">
+                            <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${
+                              txn.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                              txn.status === "pending"   ? "bg-amber-50 text-amber-700" :
+                              "bg-red-50 text-red-600"
                             }`}>
                               {txn.status}
                             </span>
@@ -540,13 +552,13 @@ export default function AccountDetailPage() {
                 </table>
               </div>
               {transactionsMeta && transactionsMeta.total_pages > 1 && (
-                <div className="flex items-center justify-between mt-6">
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between mt-5">
+                  <p className="text-sm text-slate-500">
                     Page {transactionsMeta.current_page} of {transactionsMeta.total_pages} ({transactionsMeta.total_count} total)
                   </p>
                   <div className="flex gap-2">
-                    <button onClick={() => setTransactionPage(p => Math.max(1, p - 1))} disabled={transactionsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Previous</button>
-                    <button onClick={() => setTransactionPage(p => Math.min(transactionsMeta.total_pages, p + 1))} disabled={transactionsMeta.current_page === transactionsMeta.total_pages} className="px-4 py-2 rounded-xl border border-border text-sm font-medium disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">Next</button>
+                    <button onClick={() => setTransactionPage(p => Math.max(1, p - 1))} disabled={transactionsMeta.current_page === 1} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Previous</button>
+                    <button onClick={() => setTransactionPage(p => Math.min(transactionsMeta.total_pages, p + 1))} disabled={transactionsMeta.current_page === transactionsMeta.total_pages} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 disabled:opacity-40 hover:bg-slate-50 transition-colors">Next</button>
                   </div>
                 </div>
               )}
@@ -557,44 +569,44 @@ export default function AccountDetailPage() {
       {/* Status Reason Modal */}
       {showStatusModal && statusAction && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => setShowStatusModal(false)}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-md mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-border">
-              <h3 className="text-xl font-bold">{statusAction.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="px-5 py-4 border-b border-slate-100">
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">{statusAction.title}</h3>
+              <p className="text-sm text-slate-500 mt-1">
                 {statusAction.type === "suspend" && "You are about to suspend this customer account. They will no longer be able to sign in or make bookings."}
                 {statusAction.type === "activate" && "You are about to reactivate this customer account."}
               </p>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-5 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                   Reason / Notes {statusAction.type === "suspend" ? "(Required)" : "(Optional)"}
                 </label>
                 <textarea
-                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-32 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 transition-colors resize-none h-32 text-sm text-slate-900"
                   placeholder="Enter reason for this action..."
                   value={statusReason}
                   onChange={(e) => setStatusReason(e.target.value)}
                 />
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+            <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
               <button
                 onClick={() => setShowStatusModal(false)}
-                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleStatusAction}
                 disabled={(isSuspending || isActivating) || (statusAction.type === "suspend" && !statusReason.trim()) || (statusAction.type === "suspend" ? !can("accounts", "suspend") : !can("accounts", "activate"))}
-                className={`flex-1 px-4 py-3 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 ${
+                className={`flex-1 px-4 py-2.5 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 ${
                   statusAction.variant === "red" ? "bg-red-500" : "bg-green-600"
                 }`}
               >
@@ -607,25 +619,25 @@ export default function AccountDetailPage() {
 
       {showNotifyModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={() => setShowNotifyModal(false)}
         >
           <div
-            className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-md mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-border">
+            <div className="px-5 py-4 border-b border-slate-100">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-bold">Send notification</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Send notification</h3>
+                  <p className="text-sm text-slate-500 mt-1">
                     Deliver an in-app and push notification to {account.first_name} {account.last_name}.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setAiModalOpen(true)}
-                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-bold"
+                  className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-semibold"
                   title="Generate with AI"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -640,49 +652,49 @@ export default function AccountDetailPage() {
                 </button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-5 space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Title</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Title</label>
                 <input
                   type="text"
                   value={notifyTitle}
                   onChange={(e) => setNotifyTitle(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 transition-colors text-sm text-slate-900"
                   placeholder="Notification title"
                   maxLength={120}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Message</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Message</label>
                 <textarea
                   value={notifyMessage}
                   onChange={(e) => setNotifyMessage(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-28 text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 transition-colors resize-none h-28 text-sm text-slate-900"
                   placeholder="Notification body"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Deep link (optional)</label>
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Deep link (optional)</label>
                 <input
                   type="text"
                   value={notifyRoute}
                   onChange={(e) => setNotifyRoute(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 transition-colors text-sm text-slate-900"
                   placeholder="/bookings"
                 />
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
+            <div className="px-5 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
               <button
                 onClick={() => setShowNotifyModal(false)}
-                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="flex-1 px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSendNotification}
                 disabled={isSendingNotification || !notifyTitle.trim() || !notifyMessage.trim()}
-                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {isSendingNotification ? "Sending..." : "Send"}
               </button>

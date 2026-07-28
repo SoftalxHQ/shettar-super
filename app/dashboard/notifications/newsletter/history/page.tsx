@@ -13,12 +13,15 @@ import {
 } from "@/lib/store/services/api";
 import { Pagination } from "@/components/ui/pagination";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 const STATUS_STYLES: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700",
-  queued: "bg-amber-100 text-amber-800",
-  sending: "bg-blue-100 text-blue-800",
-  sent: "bg-green-100 text-green-800",
-  failed: "bg-red-100 text-red-800",
+  queued: "bg-amber-50 text-amber-700",
+  sending: "bg-sky-50 text-sky-700",
+  sent: "bg-emerald-50 text-emerald-700",
+  failed: "bg-red-50 text-red-600",
 };
 
 function mutationErrorMessage(err: unknown, fallback: string) {
@@ -107,10 +110,10 @@ export default function NewsletterHistoryPage() {
 
   if (!canView) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Access denied</p>
-          <Link href="/dashboard" className="text-sm text-primary mt-4 inline-block">Back to dashboard</Link>
+          <p className="font-display text-base font-semibold text-red-600">Access denied</p>
+          <Link href="/dashboard" className="text-sm text-indigo-600 mt-4 inline-block font-medium">Back to dashboard</Link>
         </div>
       </div>
     );
@@ -119,89 +122,91 @@ export default function NewsletterHistoryPage() {
   const actionBusy = deleting || resending || retrying;
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="dash-page space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Newsletter History</h1>
-          <p className="text-muted-foreground mt-2">Past email campaigns and delivery status.</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Newsletter History
+          </h1>
+          <p className="text-sm text-slate-500 mt-2">Past email campaigns and delivery status.</p>
         </div>
         {canCreate && (
           <Link
             href="/dashboard/notifications/newsletter"
-            className="px-5 py-2.5 rounded-2xl bg-primary text-primary-foreground text-sm font-bold hover:opacity-90"
+            className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-[13px] font-semibold hover:bg-indigo-700 transition-colors"
           >
             New newsletter
           </Link>
         )}
       </div>
 
-      <div className="glass rounded-3xl overflow-hidden">
+      <div className={`${panelClass} overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
-                <th className="px-6 py-4 font-bold">Subject</th>
-                <th className="px-6 py-4 font-bold">Audience</th>
-                <th className="px-6 py-4 font-bold">Status</th>
-                <th className="px-6 py-4 font-bold">Sent</th>
-                <th className="px-6 py-4 font-bold">Date</th>
-                <th className="px-6 py-4 font-bold">Actions</th>
+              <tr className="border-b border-slate-100 bg-slate-50/60 text-left">
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Subject</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Audience</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Sent</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {isLoading && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">Loading…</td>
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500">Loading…</td>
                 </tr>
               )}
               {!isLoading && data?.newsletters?.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">No newsletters yet.</td>
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500">No newsletters yet.</td>
                 </tr>
               )}
               {data?.newsletters?.map((newsletter) => (
-                <tr key={newsletter.id} className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-zinc-800/30">
-                  <td className="px-6 py-4">
+                <tr key={newsletter.id} className="hover:bg-slate-50/90 transition-colors">
+                  <td className="px-5 py-3.5">
                     <Link
                       href={
                         isEditable(newsletter)
                           ? `/dashboard/notifications/newsletter?id=${newsletter.id}`
                           : "#"
                       }
-                      className={`font-semibold ${isEditable(newsletter) ? "hover:text-primary" : "cursor-default"}`}
+                      className={`font-semibold text-slate-900 ${isEditable(newsletter) ? "hover:text-indigo-600" : "cursor-default"}`}
                     >
                       {newsletter.subject}
                     </Link>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       by {newsletter.admin?.name || newsletter.admin?.email || "Admin"}
                     </p>
                   </td>
-                  <td className="px-6 py-4 capitalize">
+                  <td className="px-5 py-3.5 capitalize text-slate-700">
                     {newsletter.audience}
                     {newsletter.target_type === "segment" && newsletter.target_value && (
-                      <span className="text-muted-foreground"> · {newsletter.target_value}</span>
+                      <span className="text-slate-400"> · {newsletter.target_value}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold capitalize ${STATUS_STYLES[newsletter.status] || ""}`}>
+                  <td className="px-5 py-3.5">
+                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${STATUS_STYLES[newsletter.status] || ""}`}>
                       {newsletter.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-3.5 tabular-nums text-slate-900">
                     {newsletter.sent_count.toLocaleString()}
                     {newsletter.failed_count > 0 && (
-                      <span className="text-red-500 text-xs ml-1">({newsletter.failed_count} failed)</span>
+                      <span className="text-red-600 text-xs ml-1">({newsletter.failed_count} failed)</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-muted-foreground">
+                  <td className="px-5 py-3.5 text-slate-500 text-xs">
                     {new Date(newsletter.created_at).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-2">
+                  <td className="px-5 py-3.5">
+                    <div className="flex flex-wrap gap-1.5">
                       {canCreate && isEditable(newsletter) && (
                         <Link
                           href={`/dashboard/notifications/newsletter?id=${newsletter.id}`}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                         >
                           Edit
                         </Link>
@@ -210,7 +215,7 @@ export default function NewsletterHistoryPage() {
                         <button
                           type="button"
                           onClick={() => setRetryTarget(newsletter)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-950/60"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
                         >
                           Retry
                         </button>
@@ -219,7 +224,7 @@ export default function NewsletterHistoryPage() {
                         <button
                           type="button"
                           onClick={() => setResendTarget(newsletter)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
                         >
                           Resend
                         </button>
@@ -228,7 +233,7 @@ export default function NewsletterHistoryPage() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(newsletter)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                         >
                           Delete
                         </button>
@@ -242,7 +247,7 @@ export default function NewsletterHistoryPage() {
         </div>
 
         {data?.meta && data.meta.total_pages > 1 && (
-          <div className="px-6 py-4 border-t border-border/50">
+          <div className="px-5 py-4 border-t border-slate-100">
             <Pagination
               currentPage={data.meta.current_page}
               totalPages={data.meta.total_pages}
@@ -253,25 +258,25 @@ export default function NewsletterHistoryPage() {
       </div>
 
       {retryTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black">Retry delivery</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h2 className="font-display text-base font-semibold text-slate-900">Retry delivery</h2>
+                <p className="text-sm text-slate-500 mt-1">
                   The previous delivery did not finish. This will queue the campaign again.
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-border/50 px-5 py-4 space-y-2">
-                <p className="text-sm font-semibold">{retryTarget.subject}</p>
-                <p className="text-sm text-muted-foreground capitalize">Status: {retryTarget.status}</p>
+              <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 space-y-1">
+                <p className="text-sm font-semibold text-slate-900">{retryTarget.subject}</p>
+                <p className="text-sm text-slate-500 capitalize">Status: {retryTarget.status}</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setRetryTarget(null)}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -279,7 +284,7 @@ export default function NewsletterHistoryPage() {
                   type="button"
                   onClick={() => void handleRetry()}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {retrying ? "Queueing…" : "Retry"}
                 </button>
@@ -290,31 +295,31 @@ export default function NewsletterHistoryPage() {
       )}
 
       {resendTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black">Resend campaign</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h2 className="font-display text-base font-semibold text-slate-900">Resend campaign</h2>
+                <p className="text-sm text-slate-500 mt-1">
                   Queue a new delivery using the saved content and audience.
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-border/50 px-5 py-4 space-y-2">
-                <p className="text-sm font-semibold">{resendTarget.subject}</p>
-                <p className="text-sm text-muted-foreground">
+              <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 space-y-1">
+                <p className="text-sm font-semibold text-slate-900">{resendTarget.subject}</p>
+                <p className="text-sm text-slate-500">
                   Resend to approximately{" "}
-                  <span className="font-bold text-foreground">
+                  <span className="font-semibold text-slate-900 tabular-nums">
                     {resendTarget.recipient_estimate.toLocaleString()}
                   </span>{" "}
                   recipients.
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setResendTarget(null)}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -322,7 +327,7 @@ export default function NewsletterHistoryPage() {
                   type="button"
                   onClick={() => void handleResend()}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {resending ? "Queueing…" : "Resend"}
                 </button>
@@ -333,24 +338,24 @@ export default function NewsletterHistoryPage() {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="p-5 space-y-4">
               <div>
-                <h2 className="text-2xl font-black">Delete newsletter</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+                <h2 className="font-display text-base font-semibold text-slate-900">Delete newsletter</h2>
+                <p className="text-sm text-slate-500 mt-1">
                   This permanently removes the newsletter record. This cannot be undone.
                 </p>
               </div>
-              <div className="rounded-2xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-5 py-4">
-                <p className="text-sm font-semibold text-red-900 dark:text-red-100">{deleteTarget.subject}</p>
+              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+                <p className="text-sm font-semibold text-red-700">{deleteTarget.subject}</p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setDeleteTarget(null)}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -358,7 +363,7 @@ export default function NewsletterHistoryPage() {
                   type="button"
                   onClick={() => void handleDelete()}
                   disabled={actionBusy}
-                  className="flex-1 px-5 py-3 rounded-2xl font-bold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
                 >
                   {deleting ? "Deleting…" : "Delete"}
                 </button>

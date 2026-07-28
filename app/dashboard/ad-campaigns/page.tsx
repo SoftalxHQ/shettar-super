@@ -159,47 +159,54 @@ export default function AdCampaignsAdminPage() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto relative">
+    <div className="dash-page space-y-6 relative">
       {refreshing && (
-        <div className="absolute inset-0 bg-white/10 dark:bg-black/10 backdrop-blur-[1px] z-[40] pointer-events-none flex items-center justify-center">
-          <div className="bg-white/80 dark:bg-zinc-900/80 p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-border">
-            <div className="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <span className="text-xs font-bold uppercase tracking-widest opacity-70">Refreshing…</span>
+        <div className="absolute inset-0 bg-white/40 z-[40] pointer-events-none flex items-center justify-center">
+          <div className="bg-white px-4 py-3 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
+            <span className="text-xs font-medium text-slate-500">Refreshing…</span>
           </div>
         </div>
       )}
 
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Ad Campaigns</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Ad Campaigns
+          </h1>
+          <p className="text-sm text-slate-500 mt-2 max-w-xl">
             Review business ad campaigns, check targeting and budgets, and approve delivery.
           </p>
         </div>
         <button
           type="button"
           onClick={() => loadCampaigns(statusFilter, page, true)}
-          className="btn-secondary w-fit px-5 py-2.5 text-sm font-semibold"
+          className="w-fit px-4 py-2 text-[13px] font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors"
         >
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "In this view", value: stats.total },
-          { label: "Pending review", value: stats.pending, color: "text-amber-600" },
-          { label: "Active", value: stats.active, color: "text-emerald-600" },
-          { label: "Spend (view)", value: formatCurrency(stats.spend), color: "text-primary" },
+          { label: "Pending review", value: stats.pending },
+          { label: "Active", value: stats.active },
+          { label: "Spend (view)", value: formatCurrency(stats.spend) },
         ].map((stat) => (
-          <div key={stat.label} className="glass p-6 rounded-3xl">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/60">{stat.label}</p>
-            <p className={`text-3xl font-black mt-1 ${stat.color || ""}`}>{stat.value}</p>
+          <div
+            key={stat.label}
+            className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{stat.label}</p>
+            <p className="mt-2.5 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 p-1 rounded-xl border border-slate-200 bg-white w-fit">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -208,10 +215,10 @@ export default function AdCampaignsAdminPage() {
               setStatusFilter(tab.id);
               setPage(1);
             }}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
               statusFilter === tab.id
-                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                : "bg-white dark:bg-zinc-900 border border-border text-muted-foreground hover:bg-slate-50 dark:hover:bg-zinc-800"
+                ? "bg-indigo-50 text-indigo-700"
+                : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >
             {tab.label}
@@ -221,45 +228,48 @@ export default function AdCampaignsAdminPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin" />
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="glass rounded-3xl p-12 text-center">
-          <p className="text-lg font-semibold">No campaigns found</p>
-          <p className="text-sm text-muted-foreground mt-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+          <p className="font-display text-base font-semibold text-slate-900">No campaigns found</p>
+          <p className="text-sm text-slate-500 mt-2">
             {statusFilter === "pending_review"
               ? "Nothing is waiting for review right now."
               : "Try another status filter."}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {campaigns.map((campaign) => {
             const status = statusStyle(campaign.status);
             const isPending = campaign.status === "pending_review";
 
             return (
-              <div key={campaign.id} className="glass rounded-3xl p-6 space-y-5">
+              <div
+                key={campaign.id}
+                className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]"
+              >
                 <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                  <div className="space-y-2 min-w-0">
+                  <div className="space-y-1.5 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-xl font-black tracking-tight">{campaign.name}</h2>
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${status.badge}`}>
+                      <h2 className="font-display text-base font-semibold tracking-tight text-slate-900">{campaign.name}</h2>
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold ${status.badge}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                         {status.label}
                       </span>
                       {campaign.complimentary && (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                        <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-50 text-violet-700">
                           Complimentary
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-500">
                       {campaign.business.name}
-                      <span className="mx-2 opacity-40">·</span>
+                      <span className="mx-2 text-slate-300">·</span>
                       Campaign #{campaign.id}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-400">
                       Created {formatDateTime(campaign.created_at)}
                     </p>
                   </div>
@@ -270,7 +280,7 @@ export default function AdCampaignsAdminPage() {
                         type="button"
                         disabled={reviewingId === campaign.id}
                         onClick={() => review(campaign.id, "approve")}
-                        className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold disabled:opacity-60"
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-semibold disabled:opacity-60"
                       >
                         {reviewingId === campaign.id ? "Processing…" : "Approve"}
                       </button>
@@ -281,7 +291,7 @@ export default function AdCampaignsAdminPage() {
                           setRejectTarget(campaign);
                           setRejectReason("Does not meet advertising guidelines");
                         }}
-                        className="px-5 py-2.5 rounded-xl border border-border bg-white dark:bg-zinc-900 text-sm font-semibold disabled:opacity-60"
+                        className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                       >
                         Reject
                       </button>
@@ -289,54 +299,54 @@ export default function AdCampaignsAdminPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Billing</p>
-                    <p className="font-semibold mt-1 capitalize">{campaign.billing_model}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Max bid {formatCurrency(campaign.max_bid)}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Billing</p>
+                    <p className="font-semibold mt-1.5 text-sm text-slate-900 capitalize">{campaign.billing_model}</p>
+                    <p className="text-xs text-slate-500 mt-1">Max bid {formatCurrency(campaign.max_bid)}</p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Budget</p>
-                    <p className="font-semibold mt-1">
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Budget</p>
+                    <p className="font-semibold mt-1.5 text-sm text-slate-900">
                       Daily {campaign.daily_budget != null ? formatCurrency(campaign.daily_budget) : "—"}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Total {campaign.total_budget != null ? formatCurrency(campaign.total_budget) : "—"}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Spend</p>
-                    <p className="font-semibold mt-1">{formatCurrency(campaign.spent_amount)}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Lifetime campaign spend</p>
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Spend</p>
+                    <p className="font-semibold mt-1.5 text-sm text-slate-900 tabular-nums">{formatCurrency(campaign.spent_amount)}</p>
+                    <p className="text-xs text-slate-500 mt-1">Lifetime campaign spend</p>
                   </div>
-                  <div className="rounded-2xl bg-slate-50 dark:bg-zinc-800/50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Schedule</p>
-                    <p className="font-semibold mt-1 text-sm">
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Schedule</p>
+                    <p className="font-semibold mt-1.5 text-sm text-slate-900">
                       {campaign.starts_at ? formatDateTime(campaign.starts_at) : "Immediate"}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Ends {campaign.ends_at ? formatDateTime(campaign.ends_at) : "Open-ended"}
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div className="rounded-2xl border border-border/60 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 mb-2">Placements</p>
-                    <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                  <div className="rounded-xl border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Placements</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {campaign.placements.map((placement) => (
                         <span
                           key={placement}
-                          className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary"
+                          className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-indigo-50 text-indigo-700"
                         >
                           {formatPlacement(placement)}
                         </span>
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-border/60 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 mb-2">Geo targeting</p>
-                    <p className="text-sm font-medium">{formatGeoTargets(campaign.target_geo)}</p>
+                  <div className="rounded-xl border border-slate-100 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Geo targeting</p>
+                    <p className="text-sm font-medium text-slate-700">{formatGeoTargets(campaign.target_geo)}</p>
                   </div>
                 </div>
               </div>
@@ -355,16 +365,16 @@ export default function AdCampaignsAdminPage() {
       )}
 
       {rejectTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-md glass rounded-3xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 space-y-4 shadow-lg">
             <div>
-              <h3 className="text-lg font-black">Reject campaign</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="font-display text-base font-semibold text-slate-900">Reject campaign</h3>
+              <p className="text-sm text-slate-500 mt-1">
                 {rejectTarget.name} · {rejectTarget.business.name}
               </p>
             </div>
             <div>
-              <label htmlFor="reject-reason" className="text-sm font-semibold">
+              <label htmlFor="reject-reason" className="text-[13px] font-medium text-slate-600">
                 Reason
               </label>
               <textarea
@@ -372,14 +382,14 @@ export default function AdCampaignsAdminPage() {
                 rows={4}
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-border bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
               />
             </div>
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setRejectTarget(null)}
-                className="px-4 py-2 rounded-xl border border-border text-sm font-semibold"
+                className="px-4 py-2 rounded-xl border border-slate-200 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -387,7 +397,7 @@ export default function AdCampaignsAdminPage() {
                 type="button"
                 disabled={!rejectReason.trim() || reviewingId === rejectTarget.id}
                 onClick={() => review(rejectTarget.id, "reject", rejectReason.trim())}
-                className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-60"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-[13px] font-semibold disabled:opacity-60"
               >
                 Reject campaign
               </button>

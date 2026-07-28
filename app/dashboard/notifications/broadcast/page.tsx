@@ -134,11 +134,13 @@ export default function BroadcastNotificationsPage() {
 
   if (!canNotify) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="dash-page flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Access denied</p>
-          <p className="text-sm text-muted-foreground mt-2">You need the &quot;Send Push Notifications&quot; permission.</p>
-          <Link href="/dashboard" className="text-sm text-primary mt-4 inline-block">Back to dashboard</Link>
+          <p className="font-display text-base font-semibold text-red-600">Access denied</p>
+          <p className="text-sm text-slate-500 mt-2">You need the &quot;Send Push Notifications&quot; permission.</p>
+          <Link href="/dashboard" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 mt-4 inline-block">
+            Back to dashboard
+          </Link>
         </div>
       </div>
     );
@@ -146,51 +148,70 @@ export default function BroadcastNotificationsPage() {
 
   const stats = pushDevices?.stats;
 
+  const chipClass = (active: boolean) =>
+    `px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+      active
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50 bg-slate-100/80"
+    }`;
+
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
+    <div className="dash-page space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Push Notifications</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+          Push Notifications
+        </h1>
+        <p className="text-sm text-slate-500 mt-2 max-w-2xl">
           Signed-up customers receive in-app history and push. Anonymous visitors receive push only
           (local device history where supported).
         </p>
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="glass rounded-2xl p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Active devices</p>
-            <p className="text-3xl font-bold mt-2">{stats.active.total.toLocaleString()}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Active devices</p>
+            <p className="mt-2.5 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stats.active.total.toLocaleString()}
+            </p>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Signed-up accounts</p>
-            <p className="text-3xl font-bold mt-2">{stats.active.account.total.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Signed-up accounts</p>
+            <p className="mt-2.5 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stats.active.account.total.toLocaleString()}
+            </p>
+            <p className="text-xs text-slate-500 mt-2.5 leading-snug">
               iOS {stats.active.account.ios} · Android {stats.active.account.android} · Web {stats.active.account.web}
             </p>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Guest devices</p>
-            <p className="text-3xl font-bold mt-2">{stats.active.guest.total.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Guest devices</p>
+            <p className="mt-2.5 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stats.active.guest.total.toLocaleString()}
+            </p>
+            <p className="text-xs text-slate-500 mt-2.5 leading-snug">
               iOS {stats.active.guest.ios} · Android {stats.active.guest.android} · Web {stats.active.guest.web}
             </p>
           </div>
-          <div className="glass rounded-2xl p-5">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Web push (active)</p>
-            <p className="text-3xl font-bold mt-2">{stats.active.web.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground mt-1">{stats.disabled.total} disabled total</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Web push (active)</p>
+            <p className="mt-2.5 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {stats.active.web.toLocaleString()}
+            </p>
+            <p className="text-xs text-slate-500 mt-2.5 leading-snug">{stats.disabled.total} disabled total</p>
           </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="glass rounded-3xl p-8 space-y-6">
-        <div className="flex items-center justify-between gap-4 pb-2">
-          <h2 className="text-lg font-bold">Compose notification</h2>
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-5">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">
+            Compose notification
+          </h2>
           <button
             type="button"
             onClick={() => setAiModalOpen(true)}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-sm font-bold"
+            className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-[13px] font-semibold"
             title="Generate with AI"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -205,54 +226,50 @@ export default function BroadcastNotificationsPage() {
           </button>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Title</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm"
             placeholder="Notification title"
             maxLength={120}
             required
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Message</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Message</label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors resize-none h-32 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors resize-none h-32 text-sm"
             placeholder="Notification body"
             required
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Deep link (optional)</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Deep link (optional)</label>
           <input
             type="text"
             value={route}
             onChange={(e) => setRoute(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm"
             placeholder="/bookings or /(tabs)/bookings"
           />
         </div>
 
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Audience</label>
-          <div className="flex flex-wrap gap-2">
+        <div className="space-y-2.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Audience</label>
+          <div className="flex flex-wrap gap-1.5">
             {AUDIENCE_OPTIONS.map(({ value, label }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setTargetType(value)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  targetType === value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700"
-                }`}
+                className={chipClass(targetType === value)}
               >
                 {label}
               </button>
@@ -261,7 +278,7 @@ export default function BroadcastNotificationsPage() {
         </div>
 
         {(targetType === "guests" || targetType === "all_devices") && (
-          <p className="text-sm text-muted-foreground bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3">
+          <p className="text-sm text-slate-500 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
             {targetType === "guests"
               ? "Anonymous visitors receive push notifications only. They will not get server-side in-app history."
               : "Accounts receive in-app history and push. Guest devices receive push only."}
@@ -269,12 +286,12 @@ export default function BroadcastNotificationsPage() {
         )}
 
         {targetType === "segment" && (
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Segment</label>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Segment</label>
             <select
               value={segment}
               onChange={(e) => setSegment(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm"
             >
               {SEGMENTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
@@ -285,8 +302,8 @@ export default function BroadcastNotificationsPage() {
 
         {targetType === "account_id" && (
           <div className="space-y-3">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Search customer</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Search customer</label>
               <input
                 type="text"
                 value={accountSearch}
@@ -294,29 +311,29 @@ export default function BroadcastNotificationsPage() {
                   setAccountSearch(e.target.value);
                   setSelectedAccountId(null);
                 }}
-                className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-border/50 rounded-2xl px-5 py-3 outline-none focus:border-primary/50 transition-colors text-sm"
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm"
                 placeholder="Name, email, or account ID"
               />
             </div>
             {searchResults?.accounts && searchResults.accounts.length > 0 && (
-              <div className="border border-border rounded-2xl overflow-hidden divide-y divide-border max-h-48 overflow-y-auto">
+              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
                 {searchResults.accounts.map((account) => (
                   <button
                     key={account.id}
                     type="button"
                     onClick={() => setSelectedAccountId(account.id)}
-                    className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors ${
-                      selectedAccountId === account.id ? "bg-primary/10" : ""
+                    className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 transition-colors ${
+                      selectedAccountId === account.id ? "bg-indigo-50" : ""
                     }`}
                   >
-                    <span className="font-semibold">{account.first_name} {account.last_name}</span>
-                    <span className="text-muted-foreground ml-2">{account.email}</span>
+                    <span className="font-semibold text-slate-900">{account.first_name} {account.last_name}</span>
+                    <span className="text-slate-500 ml-2">{account.email}</span>
                   </button>
                 ))}
               </div>
             )}
             {selectedAccountId && (
-              <p className="text-sm text-green-600 font-medium">Selected account ID: {selectedAccountId}</p>
+              <p className="text-sm text-emerald-600 font-medium">Selected account ID: {selectedAccountId}</p>
             )}
           </div>
         )}
@@ -324,7 +341,7 @@ export default function BroadcastNotificationsPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-2xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full px-5 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {isLoading
             ? "Sending..."
@@ -334,13 +351,17 @@ export default function BroadcastNotificationsPage() {
         </button>
       </form>
 
-      <div className="glass rounded-3xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-border/50 space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 space-y-4">
           <div>
-            <h2 className="text-xl font-bold">Registered devices</h2>
-            <p className="text-sm text-muted-foreground mt-1">Active and disabled push tokens for signed-up accounts and guests.</p>
+            <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">
+              Registered devices
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Active and disabled push tokens for signed-up accounts and guests.
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(
               [
                 { value: "all", label: "All kinds" },
@@ -352,9 +373,7 @@ export default function BroadcastNotificationsPage() {
                 key={value}
                 type="button"
                 onClick={() => { setDeviceKind(value); setDevicePage(1); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                  deviceKind === value ? "bg-primary text-primary-foreground" : "bg-slate-100 dark:bg-zinc-800"
-                }`}
+                className={chipClass(deviceKind === value)}
               >
                 {label}
               </button>
@@ -371,9 +390,7 @@ export default function BroadcastNotificationsPage() {
                 key={value}
                 type="button"
                 onClick={() => { setDevicePlatform(value); setDevicePage(1); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                  devicePlatform === value ? "bg-primary/15 text-primary border border-primary/30" : "bg-slate-100 dark:bg-zinc-800"
-                }`}
+                className={chipClass(devicePlatform === value)}
               >
                 {label}
               </button>
@@ -389,9 +406,7 @@ export default function BroadcastNotificationsPage() {
                 key={value}
                 type="button"
                 onClick={() => { setDeviceStatus(value); setDevicePage(1); }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
-                  deviceStatus === value ? "bg-slate-800 text-white dark:bg-zinc-100 dark:text-zinc-900" : "bg-slate-100 dark:bg-zinc-800"
-                }`}
+                className={chipClass(deviceStatus === value)}
               >
                 {label}
               </button>
@@ -402,49 +417,49 @@ export default function BroadcastNotificationsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/50 text-left text-xs uppercase tracking-widest text-muted-foreground">
-                <th className="px-6 py-4 font-bold">Kind</th>
-                <th className="px-6 py-4 font-bold">Platform</th>
-                <th className="px-6 py-4 font-bold">Owner</th>
-                <th className="px-6 py-4 font-bold">Token</th>
-                <th className="px-6 py-4 font-bold">Last seen</th>
-                <th className="px-6 py-4 font-bold">Status</th>
+              <tr className="border-b border-slate-100 bg-slate-50/60 text-left">
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Kind</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Platform</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Owner</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Token</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Last seen</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
               </tr>
             </thead>
             <tbody>
               {devicesLoading && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">Loading devices…</td>
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500">Loading devices…</td>
                 </tr>
               )}
               {!devicesLoading && pushDevices?.devices?.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">No devices match these filters.</td>
+                  <td colSpan={6} className="px-5 py-10 text-center text-slate-500">No devices match these filters.</td>
                 </tr>
               )}
               {pushDevices?.devices?.map((device) => (
-                <tr key={device.id} className="border-b border-border/30 hover:bg-slate-50/50 dark:hover:bg-zinc-800/30">
-                  <td className="px-6 py-4 capitalize">{device.kind}</td>
-                  <td className="px-6 py-4">{PLATFORM_LABELS[device.platform] ?? device.platform}</td>
-                  <td className="px-6 py-4">
+                <tr key={device.id} className="border-b border-slate-100 hover:bg-slate-50/80">
+                  <td className="px-5 py-4 capitalize text-slate-700">{device.kind}</td>
+                  <td className="px-5 py-4 text-slate-700">{PLATFORM_LABELS[device.platform] ?? device.platform}</td>
+                  <td className="px-5 py-4">
                     {device.kind === "account" && device.account ? (
                       <div>
-                        <Link href={`/dashboard/accounts/${device.account.id}`} className="font-semibold hover:text-primary">
+                        <Link href={`/dashboard/accounts/${device.account.id}`} className="font-semibold text-slate-900 hover:text-indigo-600">
                           {device.account.first_name} {device.account.last_name}
                         </Link>
-                        <p className="text-xs text-muted-foreground">{device.account.email}</p>
+                        <p className="text-xs text-slate-500">{device.account.email}</p>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground font-mono text-xs">{device.guest_id || "—"}</span>
+                      <span className="text-slate-400 font-mono text-xs">{device.guest_id || "—"}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{device.token_preview}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{formatDate(device.last_seen_at)}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4 font-mono text-xs text-slate-400">{device.token_preview}</td>
+                  <td className="px-5 py-4 text-slate-500">{formatDate(device.last_seen_at)}</td>
+                  <td className="px-5 py-4">
                     <span
-                      className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold capitalize ${
+                      className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${
                         device.status === "active"
-                          ? "bg-green-100 text-green-800"
+                          ? "bg-emerald-50 text-emerald-700"
                           : "bg-slate-100 text-slate-600"
                       }`}
                     >
@@ -458,7 +473,7 @@ export default function BroadcastNotificationsPage() {
         </div>
 
         {pushDevices?.meta && pushDevices.meta.total_pages > 1 && (
-          <div className="px-6 py-4 border-t border-border/50">
+          <div className="px-5 py-4 border-t border-slate-100">
             <Pagination
               currentPage={pushDevices.meta.current_page}
               totalPages={pushDevices.meta.total_pages}

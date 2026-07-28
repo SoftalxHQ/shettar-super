@@ -15,6 +15,9 @@ import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import { Pagination } from "@/components/ui/pagination";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 type MarketerFormState = {
   full_name: string;
   email: string;
@@ -102,9 +105,9 @@ export default function MarketersPage() {
   };
 
   const accountTypeBadgeClass = (type?: string) => {
-    if (type === "agency") return "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300";
-    if (type === "agency_member") return "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-slate-300";
-    return "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300";
+    if (type === "agency") return "bg-violet-50 text-violet-700";
+    if (type === "agency_member") return "bg-slate-100 text-slate-600";
+    return "bg-indigo-50 text-indigo-600";
   };
 
   const handleOpenModal = (marketer: Marketer | null = null) => {
@@ -167,171 +170,167 @@ export default function MarketersPage() {
 
   if (!can("marketers", "view")) {
     return (
-      <div className="p-8 flex flex-col items-center justify-center py-24 text-center">
-        <h2 className="text-lg font-semibold">Access restricted</h2>
-        <p className="text-sm text-muted-foreground mt-1">You don&apos;t have permission to view marketers.</p>
-      </div>
-    );
-  }
-
-  if (isLoading && !data) {
-    return (
-      <div className="p-8 flex justify-center py-20">
-        <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="dash-page">
+        <div className={`${panelClass} p-12 text-center`}>
+          <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <h2 className="font-display text-xl font-semibold mt-4 text-slate-900">Access Denied</h2>
+          <p className="text-sm text-slate-500 mt-2">You don&apos;t have permission to view marketers.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
+    <div className="dash-page space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight">Marketers</h1>
-          <p className="text-muted-foreground mt-1">Manage platform affiliates and track their referral performance.</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Marketers
+          </h1>
+          <p className="text-sm text-slate-500 mt-2">Manage platform affiliates and track their referral performance.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="glass hidden lg:flex px-4 py-2 rounded-xl items-center gap-2 text-sm border-primary/20">
-            <span className="font-medium text-muted-foreground">Portal:</span>
-            <a href={portalUrl} target="_blank" rel="noreferrer" className="text-primary font-bold hover:underline truncate max-w-[150px]">
+          <div className="hidden lg:flex px-3.5 py-2 rounded-xl border border-slate-200 bg-white items-center gap-2 text-sm">
+            <span className="font-medium text-slate-500">Portal:</span>
+            <a href={portalUrl} target="_blank" rel="noreferrer" className="text-indigo-600 font-semibold hover:text-indigo-700 truncate max-w-[150px]">
               {portalUrl.replace(/^https?:\/\//, '')}
             </a>
           </div>
           {can("marketers", "manage") && (
           <button 
             onClick={() => handleOpenModal()}
-            className="btn-primary px-6 py-3 shadow-lg shadow-primary/20"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
           >
-            <span className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-              </svg>
-              Invite Marketer
-            </span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Invite Marketer
           </button>
           )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Total Marketers", value: meta?.total_count ?? marketers.length, icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
-          { label: "Active", value: marketers.filter(m => m.status === 'active').length, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-green-600" },
+          { label: "Active", value: marketers.filter(m => m.status === 'active').length, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
           { label: "Referrals (MTD)", value: "—", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
-          { label: "Payouts Pending", value: "—", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-blue-600" },
-        ].map((stat, i) => (
-          <div key={i} className="glass p-6 rounded-3xl group hover:scale-[1.02] transition-transform">
-            <div className={`p-3 bg-primary/10 rounded-2xl inline-flex mb-4 ${stat.color || "text-primary"}`}>
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
-              </svg>
+          { label: "Payouts Pending", value: "—", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+        ].map((stat) => (
+          <div key={stat.label} className={`${panelClass} px-5 py-4`}>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">
+                {stat.label}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={stat.icon} />
+                </svg>
+              </div>
             </div>
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground/60">{stat.label}</p>
-            <p className="text-3xl font-black mt-1">{stat.value}</p>
+            <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+              {isLoading && !data ? "—" : stat.value}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* Full Width Table */}
-      <div className="glass rounded-3xl overflow-hidden border-border/50 shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-zinc-800/50 border-b border-border">
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Marketer</th>
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Account Type</th>
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Ref Code</th>
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Status</th>
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Joined</th>
-                <th className="p-5 font-bold text-muted-foreground uppercase tracking-widest text-[10px] text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {marketers.map((m) => (
-                <tr key={m.id} className="hover:bg-primary/[0.02] transition-colors group">
-                  <td className="p-5">
-                    <Link href={`/dashboard/marketers/${m.id}`} className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-black">
-                        {(m.full_name?.[0] ?? "?").toUpperCase()}
+      <div className={`${panelClass} overflow-hidden`}>
+        {(isLoading && !data) || isFetching ? (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-500 mt-4">Loading marketers…</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-slate-100 bg-slate-50/60">
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Marketer</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Account Type</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Ref Code</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Joined</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {marketers.map((m) => (
+                  <tr key={m.id} className="hover:bg-slate-50/90 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <Link href={`/dashboard/marketers/${m.id}`} className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-semibold text-sm">
+                          {(m.full_name?.[0] ?? "?").toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-slate-900">{m.full_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{m.email}</p>
+                        </div>
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-flex w-fit px-2 py-0.5 rounded-md text-[11px] font-semibold ${accountTypeBadgeClass(m.account_type)}`}>
+                          {accountTypeLabel(m.account_type)}
+                        </span>
+                        {m.account_type === "agency" && m.agency_name && (
+                          <span className="text-xs text-slate-500">{m.agency_name}</span>
+                        )}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-base group-hover:text-primary transition-colors">{m.full_name}</span>
-                        <span className="text-xs text-muted-foreground">{m.email}</span>
-                      </div>
-                    </Link>
-                  </td>
-                  <td className="p-5">
-                    <div className="flex flex-col gap-1">
-                      <span className={`inline-flex w-fit px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${accountTypeBadgeClass(m.account_type)}`}>
-                        {accountTypeLabel(m.account_type)}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className="font-mono text-xs font-semibold bg-slate-50 text-slate-700 px-2 py-1 rounded-md border border-slate-200">
+                        {m.referrer_code}
                       </span>
-                      {m.account_type === "agency" && m.agency_name && (
-                        <span className="text-xs text-muted-foreground">{m.agency_name}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-5">
-                    <span className="font-mono font-bold bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded border border-border text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                      {m.referrer_code}
-                    </span>
-                  </td>
-                  <td className="p-5">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter ${
-                      m.status === 'active' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-2 ${m.status === 'active' ? "bg-green-500" : "bg-red-500"}`} />
-                      {m.status}
-                    </span>
-                  </td>
-                  <td className="p-5 text-muted-foreground font-medium">
-                    {formatDate(m.created_at)}
-                  </td>
-                  <td className="p-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {can("marketers", "manage") && (
-                        <>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold capitalize ${
+                        m.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+                      }`}>
+                        {m.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-500">
+                      {formatDate(m.created_at)}
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {can("marketers", "manage") && (
                           <button
                             onClick={() => handleOpenModal(m)}
-                            className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition-colors"
                             title="Edit"
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
-                        </>
-                      )}
-                      <Link 
-                        href={`/dashboard/marketers/${m.id}`}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors inline-flex"
-                        title="View Details"
-                      >
-                        <svg className="w-5 h-5 text-muted-foreground hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {marketers.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="p-20 text-center">
-                    <div className="flex flex-col items-center gap-2 opacity-30">
-                      <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <p className="font-bold">No marketers found</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {isFetching && (
-          <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">Loading page…</div>
+                        )}
+                        <Link 
+                          href={`/dashboard/marketers/${m.id}`}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-[13px] font-semibold"
+                        >
+                          View
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {marketers.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-12 text-center text-sm text-slate-500">
+                      No marketers found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -344,170 +343,169 @@ export default function MarketersPage() {
         />
       )}
 
-      {/* Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-black">{editingMarketer ? "Edit Marketer" : "Invite Marketer"}</h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {editingMarketer ? "Update affiliate details." : "Create a new affiliate account."}
-                  </p>
-                </div>
-                <button 
-                  onClick={handleCloseModal}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-lg overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">
+                  {editingMarketer ? "Edit Marketer" : "Invite Marketer"}
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  {editingMarketer ? "Update affiliate details." : "Create a new affiliate account."}
+                </p>
+              </div>
+              <button 
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Full Name</label>
+                <input 
+                  className="input" 
+                  placeholder="John Doe" 
+                  value={form.full_name} 
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })} 
+                  required 
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Full Name</label>
-                  <input 
-                    className="input" 
-                    placeholder="John Doe" 
-                    value={form.full_name} 
-                    onChange={(e) => setForm({ ...form, full_name: e.target.value })} 
-                    required 
-                  />
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Email Address</label>
+                <input 
+                  className="input disabled:opacity-50" 
+                  type="email" 
+                  placeholder="john@example.com" 
+                  value={form.email} 
+                  onChange={(e) => setForm({ ...form, email: e.target.value })} 
+                  disabled={!!editingMarketer}
+                  required 
+                />
+                {editingMarketer && <p className="text-[11px] text-slate-500">Email cannot be changed after creation.</p>}
+              </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email Address</label>
-                  <input 
-                    className="input disabled:opacity-50" 
-                    type="email" 
-                    placeholder="john@example.com" 
-                    value={form.email} 
-                    onChange={(e) => setForm({ ...form, email: e.target.value })} 
-                    disabled={!!editingMarketer}
-                    required 
-                  />
-                  {editingMarketer && <p className="text-[10px] text-muted-foreground">Email cannot be changed after creation.</p>}
-                </div>
-
-                {!editingMarketer && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account Type</label>
-                      <select
-                        className="input"
-                        value={form.account_type}
-                        onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
-                      >
-                        <option value="individual">Individual Marketer</option>
-                        <option value="agency">Agency</option>
-                      </select>
-                    </div>
-                    {form.account_type === "agency" && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
-                        <input
-                          className="input"
-                          placeholder="Acme Marketing Ltd"
-                          value={form.agency_name}
-                          onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {editingMarketer?.account_type === "individual" && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Account Type</label>
-                      <select
-                        className="input"
-                        value={form.account_type}
-                        onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
-                      >
-                        <option value="individual">Individual Marketer</option>
-                        <option value="agency">Agency</option>
-                      </select>
-                      <p className="text-[10px] text-muted-foreground">
-                        Switch to Agency to enable team management and a shared commission pool in the marketer portal.
-                      </p>
-                    </div>
-                    {form.account_type === "agency" && (
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
-                        <input
-                          className="input"
-                          placeholder="Acme Marketing Ltd"
-                          value={form.agency_name}
-                          onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
-                          required
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {editingMarketer?.account_type === "agency" && (
+              {!editingMarketer && (
+                <>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Agency Name</label>
-                    <input
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Account Type</label>
+                    <select
                       className="input"
-                      placeholder="Acme Marketing Ltd"
-                      value={form.agency_name}
-                      onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
-                      required
-                    />
+                      value={form.account_type}
+                      onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
+                    >
+                      <option value="individual">Individual Marketer</option>
+                      <option value="agency">Agency</option>
+                    </select>
                   </div>
-                )}
+                  {form.account_type === "agency" && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Agency Name</label>
+                      <input
+                        className="input"
+                        placeholder="Acme Marketing Ltd"
+                        value={form.agency_name}
+                        onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phone Number</label>
-                  <input 
-                    className="input" 
-                    placeholder="+234..." 
-                    value={form.phone_number} 
-                    onChange={(e) => setForm({ ...form, phone_number: e.target.value })} 
-                  />
-                </div>
-
-                {!editingMarketer && (
-                  <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
-                    <p className="text-xs font-medium text-primary flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      A secure password will be automatically generated and sent to the marketer via email.
+              {editingMarketer?.account_type === "individual" && (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Account Type</label>
+                    <select
+                      className="input"
+                      value={form.account_type}
+                      onChange={(e) => setForm({ ...form, account_type: e.target.value as "individual" | "agency", agency_name: e.target.value === "agency" ? form.agency_name : "" })}
+                    >
+                      <option value="individual">Individual Marketer</option>
+                      <option value="agency">Agency</option>
+                    </select>
+                    <p className="text-[11px] text-slate-500">
+                      Switch to Agency to enable team management and a shared commission pool in the marketer portal.
                     </p>
                   </div>
-                )}
+                  {form.account_type === "agency" && (
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Agency Name</label>
+                      <input
+                        className="input"
+                        placeholder="Acme Marketing Ltd"
+                        value={form.agency_name}
+                        onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
-                <div className="flex gap-3 pt-2">
-                  <button 
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="flex-1 px-4 py-3 rounded-xl border border-border font-bold hover:bg-slate-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={isCreating || isUpdating}
-                    className="flex-[2] btn-primary py-4 shadow-xl shadow-primary/30"
-                  >
-                    {isCreating || isUpdating ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Saving...
-                      </span>
-                    ) : editingMarketer ? "Update Marketer" : "Send Invitation"}
-                  </button>
+              {editingMarketer?.account_type === "agency" && (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Agency Name</label>
+                  <input
+                    className="input"
+                    placeholder="Acme Marketing Ltd"
+                    value={form.agency_name}
+                    onChange={(e) => setForm({ ...form, agency_name: e.target.value })}
+                    required
+                  />
                 </div>
-              </form>
-            </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Phone Number</label>
+                <input 
+                  className="input" 
+                  placeholder="+234..." 
+                  value={form.phone_number} 
+                  onChange={(e) => setForm({ ...form, phone_number: e.target.value })} 
+                />
+              </div>
+
+              {!editingMarketer && (
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-xs font-medium text-slate-600 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    A secure password will be automatically generated and sent to the marketer via email.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-1">
+                <button 
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isCreating || isUpdating}
+                  className="flex-[2] px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {isCreating || isUpdating ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </span>
+                  ) : editingMarketer ? "Update Marketer" : "Send Invitation"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
