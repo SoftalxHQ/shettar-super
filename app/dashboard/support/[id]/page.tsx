@@ -25,6 +25,9 @@ import type { RootState } from "@/lib/store/store";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 const STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
 
 /** Chat-style timestamp: time only for today's messages, date + time otherwise. */
@@ -144,17 +147,17 @@ export default function SupportTicketDetailPage({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center bg-background min-h-screen pt-24">
-        <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+      <div className="dash-page text-center pt-24">
+        <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
       </div>
     );
   }
 
   if (isError || !ticket) {
     return (
-      <div className="p-8 bg-background min-h-screen">
+      <div className="dash-page">
         <p className="text-red-500">Error loading ticket.</p>
-        <Link href="/dashboard/support" className="text-primary hover:underline mt-4 inline-block">
+        <Link href="/dashboard/support" className="text-indigo-600 hover:underline mt-4 inline-block">
           &larr; Back to Tickets
         </Link>
       </div>
@@ -162,10 +165,10 @@ export default function SupportTicketDetailPage({
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       <Link
         href="/dashboard/support"
-        className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
+        className="text-sm text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -174,35 +177,35 @@ export default function SupportTicketDetailPage({
       </Link>
 
       {/* Ticket Header */}
-      <div className="glass p-6 rounded-3xl flex flex-col md:flex-row md:justify-between items-start gap-6">
+      <div className={`${panelClass} p-5 flex flex-col md:flex-row md:justify-between items-start gap-6`}>
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm font-mono font-bold text-muted-foreground">{ticket.ticket_id}</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ticket.priority === "high" ? "bg-red-100 text-red-600" :
-                ticket.priority === "medium" ? "bg-orange-100 text-orange-600" :
-                  "bg-blue-100 text-blue-600"
+            <span className="text-xs font-mono font-semibold text-slate-400">{ticket.ticket_id}</span>
+            <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${ticket.priority === "high" ? "bg-red-50 text-red-600" :
+                ticket.priority === "medium" ? "bg-amber-50 text-amber-700" :
+                  "bg-blue-50 text-blue-700"
               }`}>
               {ticket.priority.toUpperCase()}
             </span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${ticket.status === "open" ? "bg-orange-100 text-orange-600" :
-                ticket.status === "in_progress" ? "bg-blue-100 text-blue-600" :
-                  ticket.status === "closed" ? "bg-gray-100 text-gray-600" :
-                  "bg-green-100 text-green-600"
+            <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${ticket.status === "open" ? "bg-amber-50 text-amber-700" :
+                ticket.status === "in_progress" ? "bg-blue-50 text-blue-700" :
+                  ticket.status === "closed" ? "bg-slate-100 text-slate-600" :
+                  "bg-emerald-50 text-emerald-700"
               }`}>
               {ticket.status.replace("_", " ").toUpperCase()}
             </span>
             {(ticket.category === "business_verification" || ticket.category === "bank_account_verification") && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-violet-50 text-violet-700">
                 VERIFICATION
               </span>
             )}
           </div>
-          <h1 className="text-2xl font-bold">{ticket.subject}</h1>
-          <p className="text-muted-foreground mt-2">{ticket.description}</p>
+          <h1 className="font-display text-[1.75rem] font-semibold tracking-tight text-slate-900">{ticket.subject}</h1>
+          <p className="text-slate-500 mt-2">{ticket.description}</p>
           {(ticket.category === "business_verification" || ticket.category === "bank_account_verification") && (ticket.business?.business_unique_id || ticket.business?.id) && (
             <Link
               href={`/dashboard/businesses/${ticket.business.business_unique_id || ticket.business.id}?tab=verification`}
-              className="inline-flex mt-4 text-sm font-semibold text-primary hover:underline"
+              className="inline-flex mt-4 text-sm font-semibold text-indigo-600 hover:underline"
             >
               {ticket.category === "bank_account_verification" ? "Review bank account →" : "Review business profile →"}
             </Link>
@@ -213,12 +216,12 @@ export default function SupportTicketDetailPage({
           {/* Status dropdown */}
           {can("support_tickets", "update_status") && (
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Status</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2 block">Status</label>
             <select
               value={ticket.status}
               onChange={(e) => handleStatusChange(e.target.value)}
               disabled={isUpdating}
-              className="input text-sm"
+              className="input text-sm rounded-xl border-slate-200"
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -232,7 +235,7 @@ export default function SupportTicketDetailPage({
           {ticket.status === "open" && can("support_tickets", "assign") && (
             <button
               onClick={() => setAssignDialogOpen(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:opacity-90 transition-opacity text-sm font-semibold"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-semibold"
             >
               Assign
             </button>
@@ -243,20 +246,20 @@ export default function SupportTicketDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Messages / Conversation */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="glass p-6 rounded-3xl space-y-6">
-            <h3 className="text-lg font-bold">Conversation</h3>
+          <div className={`${panelClass} p-5 space-y-6`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Conversation</h3>
 
             {messages.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No messages yet. Send a reply below.</p>
+              <p className="text-slate-500 text-sm">No messages yet. Send a reply below.</p>
             ) : (
               <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                 {messages.map((msg) => {
                   const isAdmin = msg.sender_type === "Admin";
                   return (
                     <div key={msg.id} className={`flex ${isAdmin ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] p-4 rounded-2xl ${isAdmin ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted rounded-tl-none"}`}>
-                        <div className="flex items-center gap-2 mb-1 opacity-80 text-xs">
-                          <span className="font-bold">{msg.sender?.first_name || "System"}</span>
+                      <div className={`max-w-[80%] p-4 rounded-2xl ${isAdmin ? "bg-slate-900 text-white rounded-tr-none" : "bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none"}`}>
+                        <div className={`flex items-center gap-2 mb-1 text-xs ${isAdmin ? "text-white/70" : "text-slate-400"}`}>
+                          <span className="font-semibold">{msg.sender?.first_name || "System"}</span>
                           <span>•</span>
                           <span>{formatMessageTime(msg.created_at)}</span>
                         </div>
@@ -269,11 +272,11 @@ export default function SupportTicketDetailPage({
             )}
 
             {userTyping && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+              <div className="flex items-center gap-2 text-xs text-slate-500 animate-pulse">
                 <span className="flex gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:300ms]" />
                 </span>
                 {userTyping} is typing…
               </div>
@@ -281,16 +284,16 @@ export default function SupportTicketDetailPage({
 
             {/* Reply block */}
             {can("support_tickets", "reply") && (
-            <form onSubmit={handleReplySubmit} className="mt-6 border-t border-border pt-6">
+            <form onSubmit={handleReplySubmit} className="mt-6 border-t border-slate-100 pt-6">
               <textarea
                 value={replyMessage}
                 onChange={(e) => handleReplyChange(e.target.value)}
                 placeholder={isClosedOrResolved ? "Replies are not available for resolved or closed tickets." : "Type your reply to the user..."}
-                className="w-full input min-h-[100px] resize-y mb-3"
+                className="w-full input min-h-[100px] resize-y mb-3 rounded-xl border-slate-200"
                 disabled={isReplying || isClosedOrResolved}
               />
               {isClosedOrResolved ? (
-                <p className="text-sm text-muted-foreground italic">
+                <p className="text-sm text-slate-500 italic">
                   This ticket is {ticket.status}. Replies are disabled.
                 </p>
               ) : (
@@ -298,7 +301,7 @@ export default function SupportTicketDetailPage({
                   <button
                     type="submit"
                     disabled={isReplying || !replyMessage.trim()}
-                    className="px-6 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 transition-opacity font-semibold disabled:opacity-50"
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold disabled:opacity-50"
                   >
                     {isReplying ? "Sending..." : "Send Reply"}
                   </button>
@@ -311,33 +314,33 @@ export default function SupportTicketDetailPage({
 
         {/* Info Sidebar */}
         <div className="space-y-6">
-          <div className="glass p-6 rounded-3xl space-y-4">
-            <h3 className="text-lg font-bold">Details</h3>
+          <div className={`${panelClass} p-5 space-y-4`}>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Details</h3>
 
             <div>
-              <p className="text-sm text-muted-foreground">User</p>
+              <p className="text-sm text-slate-500">User</p>
               <p className="font-semibold">{ticket.user?.first_name} {ticket.user?.last_name}</p>
               <p className="text-sm">{ticket.user?.email}</p>
             </div>
 
             {ticket.business && (
               <div>
-                <p className="text-sm text-muted-foreground">Business</p>
+                <p className="text-sm text-slate-500">Business</p>
                 <p className="font-semibold">{ticket.business.name}</p>
               </div>
             )}
 
             <div>
-              <p className="text-sm text-muted-foreground">Assigned To</p>
+              <p className="text-sm text-slate-500">Assigned To</p>
               {ticket.assigned_to ? (
                 <p className="font-semibold">{ticket.assigned_to.first_name} {ticket.assigned_to.last_name}</p>
               ) : (
-                <p className="text-sm italic text-muted-foreground">Unassigned</p>
+                <p className="text-sm italic text-slate-500">Unassigned</p>
               )}
             </div>
 
             <div>
-              <p className="text-sm text-muted-foreground">Created</p>
+              <p className="text-sm text-slate-500">Created</p>
               <p className="font-semibold">{new Date(ticket.created_at).toLocaleString()}</p>
             </div>
           </div>

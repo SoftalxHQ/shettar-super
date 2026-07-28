@@ -10,6 +10,9 @@ import {
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", minimumFractionDigits: 2 }).format(n);
 
@@ -50,11 +53,11 @@ function WithdrawModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="glass rounded-3xl p-8 w-full max-w-lg space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className={`${panelClass} w-full max-w-lg p-6 space-y-6`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">Withdraw Platform Revenue</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Withdraw Platform Revenue</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -62,29 +65,29 @@ function WithdrawModal({
         </div>
 
         {/* Balance display */}
-        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center gap-4">
-          <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 rounded-xl">
+        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center gap-4">
+          <div className="p-3 bg-slate-100 text-slate-500 rounded-xl">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Available Balance</p>
-            <p className="text-2xl font-bold text-emerald-600">{fmt(walletBalance)}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Available Balance</p>
+            <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums mt-1">{fmt(walletBalance)}</p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
           <div>
-            <label className="label">Amount <span className="text-red-500">*</span></label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Amount <span className="text-red-500">*</span></label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₦</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₦</span>
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                className="input pl-8"
+                className="input pl-8 rounded-xl border-slate-200"
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -98,16 +101,16 @@ function WithdrawModal({
 
           {/* Bank Account */}
           <div>
-            <label className="label">Destination Account <span className="text-red-500">*</span></label>
+            <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Destination Account <span className="text-red-500">*</span></label>
             {accountsLoading ? (
-              <div className="h-10 bg-muted animate-pulse rounded-xl" />
+              <div className="h-10 bg-slate-100 animate-pulse rounded-xl" />
             ) : accounts.length === 0 ? (
               <p className="text-sm text-muted-foreground py-2">
                 No registered accounts.{" "}
-                <a href="/dashboard/finance/company-accounts" className="text-primary underline underline-offset-2">Add one here.</a>
+                <a href="/dashboard/finance/company-accounts" className="text-indigo-600 underline underline-offset-2">Add one here.</a>
               </p>
             ) : (
-              <select className="input" value={selectedAccountId} onChange={(e) => setSelectedAccountId(e.target.value)} required>
+              <select className="input rounded-xl border-slate-200" value={selectedAccountId} onChange={(e) => setSelectedAccountId(e.target.value)} required>
                 <option value="">Select a bank account…</option>
                 {accounts.map((a) => (
                   <option key={a.id} value={String(a.id)} disabled={!a.recipient_code}>
@@ -120,7 +123,7 @@ function WithdrawModal({
 
           {/* Selected account preview */}
           {selectedAccount && (
-            <div className="p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl grid grid-cols-2 gap-3 text-sm">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Bank</p>
                 <p className="font-semibold">{selectedAccount.bank_name}</p>
@@ -138,8 +141,8 @@ function WithdrawModal({
 
           {/* Fee breakdown */}
           {parsedAmount > 0 && (
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl space-y-2 text-sm">
-              <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Breakdown</p>
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2 text-sm">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-[0.12em]">Breakdown</p>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Withdrawal amount</span>
                 <span className="font-semibold">{fmt(parsedAmount)}</span>
@@ -150,21 +153,21 @@ function WithdrawModal({
                 </span>
                 <span className="text-xs text-muted-foreground italic">From Paystack balance</span>
               </div>
-              <div className="border-t border-indigo-200 pt-2 flex justify-between">
-                <span className="font-bold">Recipient receives</span>
-                <span className="font-bold text-emerald-600">{fmt(parsedAmount)}</span>
+              <div className="border-t border-slate-200 pt-2 flex justify-between">
+                <span className="font-semibold text-slate-900">Recipient receives</span>
+                <span className="font-semibold text-slate-900 tabular-nums">{fmt(parsedAmount)}</span>
               </div>
             </div>
           )}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
               Cancel
             </button>
             <button
               type="submit"
               disabled={withdrawing || accounts.length === 0 || parsedAmount > walletBalance}
-              className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {withdrawing ? (
                 <><div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />Processing…</>
@@ -200,13 +203,13 @@ export default function WithdrawRevenuePage() {
 
   if (!canManage) {
     return (
-      <div className="p-8">
-        <div className="glass p-12 rounded-3xl text-center">
-          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <div className="dash-page">
+        <div className={`${panelClass} p-12 text-center`}>
+          <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">You don&apos;t have permission to withdraw platform revenue.</p>
+          <h2 className="font-display text-xl font-semibold mt-4 text-slate-900">Access Denied</h2>
+          <p className="text-sm text-slate-500 mt-2">You don&apos;t have permission to withdraw platform revenue.</p>
         </div>
       </div>
     );
@@ -217,16 +220,16 @@ export default function WithdrawRevenuePage() {
     .reduce((s, w) => s + Number(w.amount), 0);
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Platform Revenue</h1>
-          <p className="text-muted-foreground mt-1">Manage and withdraw accumulated platform earnings</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">Withdraw Revenue</h1>
+          <p className="text-sm text-slate-500 mt-2">Manage and withdraw accumulated platform earnings</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-2 flex-shrink-0"
+          className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2 flex-shrink-0"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -236,21 +239,21 @@ export default function WithdrawRevenuePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Wallet Balance */}
-        <div className="glass p-6 rounded-3xl">
+        <div className={`${panelClass} px-5 py-4`}>
           <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl">
+            <div className="p-2.5 bg-slate-100 text-slate-500 rounded-xl">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Platform Wallet Balance</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Platform Wallet Balance</p>
           {withdrawalsLoading ? (
             <div className="h-8 w-36 bg-muted animate-pulse rounded-lg mt-1" />
           ) : (
-            <p className="text-2xl font-bold mt-1 text-emerald-600">{fmt(walletBalance)}</p>
+            <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums mt-2.5">{fmt(walletBalance)}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
             From booking commissions, cancellation fees & ad impression/click charges — not ad wallet top-ups
@@ -258,80 +261,83 @@ export default function WithdrawRevenuePage() {
         </div>
 
         {/* Total Withdrawn */}
-        <div className="glass p-6 rounded-3xl">
+        <div className={`${panelClass} px-5 py-4`}>
           <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-2xl">
+            <div className="p-2.5 bg-slate-100 text-slate-500 rounded-xl">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Total Withdrawn</p>
-          <p className="text-2xl font-bold mt-1">{withdrawalsLoading ? "—" : fmt(totalWithdrawn)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Total Withdrawn</p>
+          <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums mt-2.5">{withdrawalsLoading ? "—" : fmt(totalWithdrawn)}</p>
         </div>
 
         {/* Withdrawal Count */}
-        <div className="glass p-6 rounded-3xl">
+        <div className={`${panelClass} px-5 py-4`}>
           <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-2xl">
+            <div className="p-2.5 bg-slate-100 text-slate-500 rounded-xl">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Total Withdrawals</p>
-          <p className="text-2xl font-bold mt-1">{withdrawalsLoading ? "—" : withdrawals.length}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Total Withdrawals</p>
+          <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums mt-2.5">{withdrawalsLoading ? "—" : withdrawals.length}</p>
         </div>
       </div>
 
       {/* Withdrawal History Table */}
-      <div className="glass p-6 rounded-3xl overflow-x-auto">
-        <h2 className="text-lg font-bold mb-4">Withdrawal History</h2>
+      <div className={`${panelClass} overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Withdrawal History</h2>
+        </div>
+        <div className="overflow-x-auto px-5 pb-5">
 
         {withdrawalsLoading && (
           <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
           </div>
         )}
 
         {!withdrawalsLoading && withdrawals.length === 0 && (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
+            <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 13l-5 5m0 0l-5-5m5 5V6" />
             </svg>
-            <p className="text-muted-foreground mt-4">No withdrawals yet.</p>
+            <p className="text-sm text-slate-500 mt-4">No withdrawals yet.</p>
           </div>
         )}
 
         {!withdrawalsLoading && withdrawals.length > 0 && (
           <table className="w-full">
             <thead>
-              <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                <th className="pb-4 font-medium">Description</th>
-                <th className="pb-4 font-medium">Amount</th>
-                <th className="pb-4 font-medium">Transfer Code</th>
-                <th className="pb-4 font-medium">Paystack Fee</th>
-                <th className="pb-4 font-medium">Date</th>
-                <th className="pb-4 font-medium">Status</th>
+              <tr className="text-left border-b border-slate-100 bg-slate-50/60">
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Description</th>
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Amount</th>
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Transfer Code</th>
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Paystack Fee</th>
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Date</th>
+                <th className="py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-slate-100">
               {withdrawals.map((w) => (
-                <tr key={w.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                  <td className="py-4 text-sm max-w-xs truncate">{w.description ?? "—"}</td>
-                  <td className="py-4 font-bold text-sm">{fmt(Number(w.amount))}</td>
-                  <td className="py-4 text-xs text-muted-foreground font-mono">{w.metadata?.transfer_code ?? "—"}</td>
-                  <td className="py-4 text-xs text-muted-foreground">
+                <tr key={w.id} className="hover:bg-slate-50/90 transition-colors">
+                  <td className="py-3.5 text-sm max-w-xs truncate text-slate-700">{w.description ?? "—"}</td>
+                  <td className="py-3.5 font-semibold text-sm tabular-nums text-slate-900">{fmt(Number(w.amount))}</td>
+                  <td className="py-3.5 text-xs text-slate-400 font-mono">{w.metadata?.transfer_code ?? "—"}</td>
+                  <td className="py-3.5 text-xs text-slate-500">
                     {w.metadata?.paystack_transfer_fee != null
                       ? `₦${w.metadata.paystack_transfer_fee} (from Paystack balance)`
                       : "—"}
                   </td>
-                  <td className="py-4 text-sm text-muted-foreground">{new Date(w.created_at).toLocaleDateString()}</td>
-                  <td className="py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      w.status === "completed" ? "bg-green-100 text-green-600" :
-                      w.status === "failed" ? "bg-red-100 text-red-600" :
-                      "bg-orange-100 text-orange-600"
+                  <td className="py-3.5 text-sm text-slate-500">{new Date(w.created_at).toLocaleDateString()}</td>
+                  <td className="py-3.5">
+                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                      w.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                      w.status === "failed" ? "bg-red-50 text-red-600" :
+                      "bg-amber-50 text-amber-700"
                     }`}>
                       {w.status.charAt(0).toUpperCase() + w.status.slice(1)}
                     </span>
@@ -341,6 +347,7 @@ export default function WithdrawRevenuePage() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {showModal && (

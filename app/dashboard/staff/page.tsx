@@ -359,7 +359,7 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Table */}
-      <div className={`${panelClass} overflow-hidden`}>
+      <div className={`${panelClass} overflow-visible`}>
         {isError && (
           <div className="text-center py-12 text-red-600 text-sm font-medium">
             Failed to load staff. Please try again.
@@ -380,7 +380,7 @@ export default function StaffManagementPage() {
           </div>
         )}
         {!isLoading && !isFetching && !isError && staffList.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b border-slate-100 bg-slate-50/60">
@@ -438,7 +438,7 @@ export default function StaffManagementPage() {
                           </svg>
                         </button>
                         {openActionsMenu === member.id && (
-                          <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] z-10 py-1" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] z-20 py-1" onClick={(e) => e.stopPropagation()}>
                             {member.id === admin?.id ? (
                               <p className="px-4 py-2.5 text-xs text-slate-500">You cannot edit your own account</p>
                             ) : (

@@ -16,6 +16,9 @@ import {
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 function DeleteConfirmDialog({
   account,
   onConfirm,
@@ -28,20 +31,20 @@ function DeleteConfirmDialog({
   loading: boolean;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="glass rounded-3xl p-8 w-full max-w-md space-y-4">
-        <h2 className="text-xl font-bold">Remove Bank Account</h2>
-        <p className="text-muted-foreground text-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className={`${panelClass} w-full max-w-md p-6 space-y-4`}>
+        <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Remove Bank Account</h2>
+        <p className="text-slate-500 text-sm">
           Are you sure you want to remove{" "}
           <span className="font-semibold text-foreground">{account.account_name}</span> at{" "}
           <span className="font-semibold text-foreground">{account.bank_name}</span>? This cannot be undone.
         </p>
-        <p className="text-xs text-muted-foreground font-mono">{account.account_number}</p>
+        <p className="text-xs text-slate-400 font-mono">{account.account_number}</p>
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} disabled={loading} className="flex-1 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50">
+          <button onClick={onClose} disabled={loading} className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50">
             Cancel
           </button>
-          <button onClick={onConfirm} disabled={loading} className="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50">
+          <button onClick={onConfirm} disabled={loading} className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50">
             {loading ? "Removing…" : "Remove"}
           </button>
         </div>
@@ -153,28 +156,28 @@ export default function CompanyAccountsPage() {
 
   if (!canManage) {
     return (
-      <div className="p-8">
-        <div className="glass p-12 rounded-3xl text-center">
-          <svg className="w-16 h-16 mx-auto text-muted-foreground/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      <div className="dash-page">
+        <div className={`${panelClass} p-12 text-center`}>
+          <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          <h2 className="text-2xl font-bold mt-4">Access Denied</h2>
-          <p className="text-muted-foreground mt-2">You don&apos;t have permission to manage company bank accounts.</p>
+          <h2 className="font-display text-xl font-semibold mt-4 text-slate-900">Access Denied</h2>
+          <p className="text-sm text-slate-500 mt-2">You don&apos;t have permission to manage company bank accounts.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="dash-page space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Company Bank Accounts</h1>
-        <p className="text-muted-foreground mt-1">Manage the platform&apos;s registered bank accounts for revenue withdrawals.</p>
+        <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">Company Bank Accounts</h1>
+        <p className="text-sm text-slate-500 mt-2">Manage the platform&apos;s registered bank accounts for revenue withdrawals.</p>
       </div>
 
       {/* Add Account Form */}
-      <div className="glass p-6 rounded-3xl">
-        <h2 className="text-lg font-bold mb-4">Add Account</h2>
+      <div className={`${panelClass} p-5`}>
+        <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Add Account</h2>
         <form onSubmit={handleAdd} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bank selector */}
@@ -276,61 +279,64 @@ export default function CompanyAccountsPage() {
       </div>
 
       {/* Accounts Table */}
-      <div className="glass p-6 rounded-3xl overflow-x-auto">
-        <h2 className="text-lg font-bold mb-4">Registered Accounts</h2>
+      <div className={`${panelClass} overflow-hidden`}>
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Registered Accounts</h2>
+        </div>
+        <div className="overflow-x-auto px-5 pb-5">
 
-        {isError && <div className="text-center py-12 text-red-500">Failed to load bank accounts.</div>}
+        {isError && <div className="text-center py-12 text-red-600 text-sm font-medium">Failed to load bank accounts.</div>}
 
         {isLoading && !isError && (
           <div className="text-center py-12">
-            <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
           </div>
         )}
 
         {!isLoading && !isError && accounts.length === 0 && (
           <div className="text-center py-12">
-            <svg className="w-16 h-16 mx-auto text-muted-foreground/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            <svg className="w-12 h-12 mx-auto text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
-            <p className="text-muted-foreground mt-4">No bank accounts registered yet.</p>
+            <p className="text-sm text-slate-500 mt-4">No bank accounts registered yet.</p>
           </div>
         )}
 
         {!isLoading && !isError && accounts.length > 0 && (
           <table className="w-full">
             <thead>
-              <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                <th className="pb-4 font-medium">Bank</th>
-                <th className="pb-4 font-medium">Account</th>
-                <th className="pb-4 font-medium">Bank Code</th>
-                <th className="pb-4 font-medium">Currency</th>
-                <th className="pb-4 font-medium">Recipient</th>
-                <th className="pb-4 font-medium">Added</th>
-                <th className="pb-4 font-medium text-right">Actions</th>
+              <tr className="text-left border-b border-slate-100 bg-slate-50/60">
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Bank</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Account</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Bank Code</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Currency</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Recipient</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Added</th>
+                <th className="px-0 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-slate-100">
               {accounts.map((account) => (
-                <tr key={account.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                  <td className="py-4 font-semibold text-sm">{account.bank_name}</td>
-                  <td className="py-4">
+                <tr key={account.id} className="hover:bg-slate-50/90 transition-colors">
+                  <td className="py-3.5 font-semibold text-sm text-slate-900">{account.bank_name}</td>
+                  <td className="py-3.5">
                     <p className="text-sm">{account.account_name}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{account.account_number}</p>
+                    <p className="text-xs text-slate-400 font-mono">{account.account_number}</p>
                   </td>
-                  <td className="py-4 text-sm text-muted-foreground font-mono">{account.bank_code ?? "—"}</td>
-                  <td className="py-4">
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary">{account.currency}</span>
+                  <td className="py-3.5 text-sm text-slate-500 font-mono">{account.bank_code ?? "—"}</td>
+                  <td className="py-3.5">
+                    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600">{account.currency}</span>
                   </td>
-                  <td className="py-4">
+                  <td className="py-3.5">
                     {account.recipient_code ? (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-600">Ready</span>
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700">Ready</span>
                     ) : (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-600">Pending</span>
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700">Pending</span>
                     )}
                   </td>
-                  <td className="py-4 text-sm text-muted-foreground">{new Date(account.created_at).toLocaleDateString()}</td>
-                  <td className="py-4 text-right">
-                    <button onClick={() => setConfirmDelete(account)} className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:opacity-90 transition-opacity text-xs font-semibold">
+                  <td className="py-3.5 text-sm text-slate-500">{new Date(account.created_at).toLocaleDateString()}</td>
+                  <td className="py-3.5 text-right">
+                    <button onClick={() => setConfirmDelete(account)} className="px-3 py-1.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-xs font-semibold">
                       Remove
                     </button>
                   </td>
@@ -339,6 +345,7 @@ export default function CompanyAccountsPage() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {confirmDelete && (

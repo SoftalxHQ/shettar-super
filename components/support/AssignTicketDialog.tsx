@@ -76,10 +76,10 @@ export default function AssignTicketDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 w-full max-w-md shadow-2xl">
-        <h2 className="text-xl font-bold mb-2">Assign Ticket</h2>
-        <p className="text-muted-foreground mb-6 text-sm">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.2)]">
+        <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Assign Ticket</h2>
+        <p className="text-slate-500 mb-6 text-sm">
           {ticketLabel
             ? `Choose an admin staff member for "${ticketLabel}".`
             : "Choose an admin staff member for this ticket."}
@@ -91,11 +91,11 @@ export default function AssignTicketDialog({
           <p className="text-sm text-red-500 mb-6">Unable to load assignable staff.</p>
         ) : (
           <label className="block mb-6">
-            <span className="text-sm font-medium text-muted-foreground mb-2 block">Assign to</span>
+            <span className="text-[13px] font-medium text-slate-600 mb-2 block">Assign to</span>
             <select
               value={selectedAdminId}
               onChange={(e) => setSelectedAdminId(e.target.value)}
-              className="input w-full"
+              className="input w-full rounded-xl border-slate-200"
               disabled={isAssigning}
             >
               <option value="">Select admin staff</option>
@@ -118,7 +118,7 @@ export default function AssignTicketDialog({
             type="button"
             onClick={onClose}
             disabled={isAssigning}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -126,7 +126,7 @@ export default function AssignTicketDialog({
             type="button"
             onClick={handleAssign}
             disabled={isAssigning || isLoading || isError || !selectedAdminId}
-            className="flex-1 px-4 py-2.5 bg-blue-500 text-white rounded-xl text-sm font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
             {isAssigning ? "Assigning..." : "Assign"}
           </button>
