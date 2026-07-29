@@ -7,6 +7,9 @@ import { useUpdateAdminProfileMutation } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import Link from "next/link";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 export default function EditProfilePage() {
   const { admin, updateAdmin } = useAuth();
   const router = useRouter();
@@ -41,7 +44,7 @@ export default function EditProfilePage() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="dash-page space-y-6">
       <div className="flex items-center gap-4">
         <Link 
           href="/dashboard/profile"
@@ -52,12 +55,14 @@ export default function EditProfilePage() {
           </svg>
         </Link>
         <div>
-          <h1 className="text-2xl font-black italic uppercase">Update <span className="text-primary">Profile</span></h1>
-          <p className="text-sm text-muted-foreground">Modify your administrative identification details.</p>
+          <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+            Update <span className="text-indigo-600">Profile</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-2">Modify your administrative identification details.</p>
         </div>
       </div>
 
-      <div className="glass p-8 rounded-[2.5rem] shadow-xl">
+      <div className={`${panelClass} p-5`}>
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Avatar Section */}
           <div className="flex flex-col items-center gap-4 pb-6 border-b border-border/50">
@@ -83,7 +88,9 @@ export default function EditProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-lg font-bold border-l-4 border-primary pl-3">Personal Information</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 border-l-4 border-indigo-500 pl-3">
+              Personal Information
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">First Name</label>
@@ -143,7 +150,9 @@ export default function EditProfilePage() {
           </div>
 
           <div className="space-y-6">
-            <h3 className="text-lg font-bold border-l-4 border-indigo-500 pl-3">Contact & Identification</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 border-l-4 border-indigo-500 pl-3">
+              Contact & Identification
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Phone Number</label>
@@ -197,7 +206,7 @@ export default function EditProfilePage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
+              className="px-10 py-4 bg-indigo-600 text-white rounded-xl font-semibold shadow-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
             >
               {isLoading ? (
                 <>

@@ -12,6 +12,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 
+const panelClass =
+  "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
+
 export default function ProfilePage() {
   const { admin, logout } = useAuth();
   const [regenerateBackupCodes, { isLoading: isRegenerating }] = useRegenerateBackupCodesMutation();
@@ -92,9 +95,9 @@ export default function ProfilePage() {
     : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
 
   return (
-    <div className="p-8 space-y-8 max-w-4xl mx-auto">
+    <div className="dash-page space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="dash-enter flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div className="flex items-center gap-6">
           <div className="w-24 h-24 bg-primary/10 rounded-3xl border-4 border-white dark:border-zinc-900 shadow-xl flex items-center justify-center overflow-hidden">
             {admin?.avatar_url ? (
@@ -106,8 +109,8 @@ export default function ProfilePage() {
             )}
           </div>
           <div>
-            <h1 className="text-3xl font-black tracking-tight italic uppercase">
-              {admin?.first_name} <span className="text-primary">{admin?.last_name}</span>
+            <h1 className="font-display text-[1.75rem] md:text-[2rem] font-semibold tracking-tight text-slate-900 leading-none">
+              {admin?.first_name} <span className="text-indigo-600">{admin?.last_name}</span>
             </h1>
             <div className="text-muted-foreground font-medium flex items-center gap-2 mt-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -124,7 +127,7 @@ export default function ProfilePage() {
         </div>
         <Link 
           href="/dashboard/profile/edit" 
-          className="bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform flex items-center gap-2 text-sm"
+          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -136,14 +139,14 @@ export default function ProfilePage() {
       {/* Information Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Account Details */}
-        <div className="glass p-8 rounded-[2.5rem] space-y-6">
+        <div className={`${panelClass} p-5 space-y-6`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold">Account Details</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Account Details</h3>
           </div>
           
           <div className="space-y-4">
@@ -159,14 +162,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Personal Profile */}
-        <div className="glass p-8 rounded-[2.5rem] space-y-6">
+        <div className={`${panelClass} p-5 space-y-6`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold">Personal Profile</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Personal Profile</h3>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -198,14 +201,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Two-Factor Authentication */}
-        <div className="glass p-8 rounded-[2.5rem] space-y-6">
+        <div className={`${panelClass} p-5 space-y-6`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold">Two-Factor Authentication</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Two-Factor Authentication</h3>
           </div>
 
           <div className="space-y-4">
@@ -263,14 +266,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Role & Permissions */}
-        <div className="glass p-8 rounded-[2.5rem] space-y-6">
+        <div className={`${panelClass} p-5 space-y-6`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold">Role & Permissions</h3>
+            <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Role & Permissions</h3>
           </div>
 
           <div className="space-y-3">
@@ -313,7 +316,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Change Password Section */}
-        <div className="glass p-8 rounded-[2.5rem] space-y-6">
+        <div className={`${panelClass} p-5 space-y-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-xl flex items-center justify-center">
@@ -321,7 +324,7 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold">Change Password</h3>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Change Password</h3>
             </div>
             {!isChangingPassword && (
               <button
@@ -403,10 +406,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Account Activity Section */}
-      <div className="glass p-8 rounded-[2.5rem] space-y-6">
+      <div className={`${panelClass} p-5 space-y-6`}>
         <div className="flex items-center justify-between px-2">
-          <h3 className="text-xl font-bold">Administrative Logs</h3>
-          <Link href="/dashboard/activities" className="text-sm font-bold text-primary hover:underline">View All</Link>
+          <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Administrative Logs</h3>
+          <Link href="/dashboard/activity" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors">
+            View All
+          </Link>
         </div>
 
         <div className="divide-y divide-border/50">
