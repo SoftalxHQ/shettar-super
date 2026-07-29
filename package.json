@@ -70,7 +70,19 @@
   },
   "pnpm": {
     "overrides": {
-      "vite": "8.0.16"
+      "vite": "8.0.16",
+      "postcss": "8.5.24",
+      "sharp": "0.35.3",
+      "immutable": "5.1.9",
+      "flatted": "3.4.3",
+      "js-yaml": "4.3.0",
+      "ajv": "6.15.0",
+      "@babel/core": "7.29.7",
+      "minimatch@<4": "3.1.5",
+      "minimatch@>=9": "9.0.9",
+      "picomatch@<3": "2.3.2",
+      "picomatch@>=4": "4.0.5",
+      "brace-expansion": "5.0.8"
     }
   },
   "packageManager": "pnpm@10.28.1+sha512.7d7dbbca9e99447b7c3bf7a73286afaaf6be99251eb9498baefa7d406892f67b879adb3a1d7e687fc4ccc1a388c7175fbaae567a26ab44d1067b54fcb0d6a316"
