@@ -32,6 +32,7 @@ type PlatformConfig = {
   withdrawal_commission_rate: number;
   withdrawal_flat_fee: number;
   minimum_withdrawal_amount: number;
+  maximum_withdrawal_commission: number | null;
   cancellation_fee_percentage: number;
   business_cancellation_credit_percentage: number;
   marketer_commission_tiers: CommissionTier[];
@@ -52,6 +53,7 @@ export default function ConfigurationPage() {
     withdrawal_commission_rate: 0,
     withdrawal_flat_fee: 100,
     minimum_withdrawal_amount: 10000,
+    maximum_withdrawal_commission: null,
     cancellation_fee_percentage: 10,
     business_cancellation_credit_percentage: 22.22,
     marketer_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
@@ -81,6 +83,10 @@ export default function ConfigurationPage() {
       withdrawal_commission_rate:              Number(data.withdrawal_commission_rate ?? 0),
       withdrawal_flat_fee:                     Number(data.withdrawal_flat_fee ?? 100),
       minimum_withdrawal_amount:               Number(data.minimum_withdrawal_amount ?? 10000),
+      maximum_withdrawal_commission:
+        data.maximum_withdrawal_commission == null || data.maximum_withdrawal_commission === ""
+          ? null
+          : Number(data.maximum_withdrawal_commission),
       cancellation_fee_percentage:             Number(data.cancellation_fee_percentage ?? 10),
       business_cancellation_credit_percentage: Number(data.business_cancellation_credit_percentage ?? 22.22),
       marketer_commission_tiers: normalizeCommissionTiers(data.marketer_commission_tiers),
@@ -249,6 +255,44 @@ export default function ConfigurationPage() {
               </div>
               <p className="text-xs text-slate-500">
                 Total commission = (rate% × amount) + flat fee. Default ₦100 covers Paystack&apos;s fixed transfer charge.
+              </p>
+            </div>
+
+            {/* Maximum Withdrawal Commission */}
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-slate-100 text-slate-500 rounded-xl">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Maximum Withdrawal Commission</h3>
+                  <p className="text-xs text-slate-500">Naira ceiling on the platform percentage fee</p>
+                </div>
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₦</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={config.maximum_withdrawal_commission ?? ""}
+                  onChange={(e) => {
+                    if (!canEdit) return;
+                    const raw = e.target.value;
+                    setConfig({
+                      ...config,
+                      maximum_withdrawal_commission: raw === "" ? null : Math.max(0, parseFloat(raw) || 0),
+                    });
+                  }}
+                  readOnly={!canEdit}
+                  className="input pl-8 text-lg font-semibold tabular-nums rounded-xl border-slate-200 read-only:opacity-70 read-only:cursor-default"
+                  placeholder="No limit"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                Caps the platform % fee on large withdrawals. Leave blank for no limit. Paystack transfer fee is not capped.
               </p>
             </div>
 
@@ -524,15 +568,36 @@ export default function ConfigurationPage() {
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                 <p className="text-xs text-slate-500 mb-1">Est. Commission on ₦1M withdrawal</p>
-                <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums">
-                  ₦{(Math.round(1000000 * config.withdrawal_commission_rate / 100) + config.withdrawal_flat_fee).toLocaleString()}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {config.withdrawal_commission_rate}% (₦{Math.round(1000000 * config.withdrawal_commission_rate / 100).toLocaleString()}) + ₦{config.withdrawal_flat_fee} flat fee
-                </p>
-                <p className="text-xs text-slate-500">
-                  Business receives ₦{(1000000 - Math.round(1000000 * config.withdrawal_commission_rate / 100) - config.withdrawal_flat_fee).toLocaleString()}
-                </p>
+                {(() => {
+                  const sampleAmount = 1000000;
+                  const uncappedPlatform = Math.round(sampleAmount * config.withdrawal_commission_rate / 100);
+                  const maxCap = config.maximum_withdrawal_commission;
+                  const platformFee =
+                    maxCap != null ? Math.min(uncappedPlatform, maxCap) : uncappedPlatform;
+                  const capped = maxCap != null && uncappedPlatform > maxCap;
+                  const total = platformFee + config.withdrawal_flat_fee;
+                  const net = sampleAmount - total;
+                  return (
+                    <>
+                      <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums">
+                        ₦{total.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {config.withdrawal_commission_rate}% (₦{platformFee.toLocaleString()}
+                        {capped ? ` capped from ₦${uncappedPlatform.toLocaleString()}` : ""}
+                        ) + ₦{config.withdrawal_flat_fee} flat fee
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Business receives ₦{net.toLocaleString()}
+                      </p>
+                      {maxCap != null && (
+                        <p className="text-xs text-indigo-600 mt-1">
+                          Platform fee capped at ₦{maxCap.toLocaleString()}
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                 <p className="text-xs text-slate-500 mb-2">₦100K cancellation split</p>
