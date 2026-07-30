@@ -146,6 +146,8 @@ export interface DesktopRelease {
   macos_arm_installer_url?: string | null;
   linux_installer_url?: string | null;
   linux_deb_installer_url?: string | null;
+  android_apk_url?: string | null;
+  ios_store_url?: string | null;
   windows_updater_url?: string | null;
   macos_x64_updater_url?: string | null;
   macos_arm_updater_url?: string | null;
