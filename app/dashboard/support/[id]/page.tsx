@@ -153,13 +153,21 @@ export default function SupportTicketDetailPage({
     );
   }
 
-  if (isError || !ticket) {
+  if (isError && !ticket) {
     return (
       <div className="dash-page">
         <p className="text-red-500">Error loading ticket.</p>
         <Link href="/dashboard/support" className="text-indigo-600 hover:underline mt-4 inline-block">
           &larr; Back to Tickets
         </Link>
+      </div>
+    );
+  }
+
+  if (!ticket) {
+    return (
+      <div className="dash-page text-center pt-24">
+        <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mx-auto" />
       </div>
     );
   }
@@ -237,7 +245,7 @@ export default function SupportTicketDetailPage({
               onClick={() => setAssignDialogOpen(true)}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-semibold"
             >
-              Assign
+              {ticket.assigned_to ? "Reassign" : "Assign"}
             </button>
           )}
         </div>
@@ -352,6 +360,7 @@ export default function SupportTicketDetailPage({
         ticketId={ticketId}
         ticketLabel={ticket.subject}
         currentAdminId={adminId}
+        mode={ticket.assigned_to ? "reassign" : "assign"}
         onClose={() => setAssignDialogOpen(false)}
         onAssigned={() => refetch()}
       />

@@ -14,6 +14,11 @@ export type SupportAdminCableEvent =
       ticket_id: string;
       support_ticket_id?: number;
       message: SupportMessage;
+    }
+  | {
+      type: "stats_changed";
+      ticket_id?: string;
+      support_ticket_id?: number;
     };
 
 export function supportCableUrl(token: string): string {

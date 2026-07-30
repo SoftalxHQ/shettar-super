@@ -71,13 +71,17 @@ export default function SupportTicketsCableListener() {
     let subscription: Subscription | null = null;
 
     const invalidateSupport = (ticketId?: number | string | null) => {
-      const tags: Array<"SupportTicket" | { type: "SupportTicket"; id: number | string }> = [
-        "SupportTicket",
-      ];
+      const tags: Array<
+        "SupportTicket" | "SupportTicketStats" | { type: "SupportTicket"; id: number | string }
+      > = ["SupportTicket", "SupportTicketStats"];
       if (ticketId != null) {
         tags.push({ type: "SupportTicket", id: ticketId });
       }
       dispatch(apiService.util.invalidateTags(tags));
+    };
+
+    const invalidateSupportStats = () => {
+      dispatch(apiService.util.invalidateTags(["SupportTicketStats"]));
     };
 
     const isViewingTicket = (numericId?: number | string | null) => {
@@ -143,6 +147,11 @@ export default function SupportTicketsCableListener() {
                   }
                 : undefined,
           });
+          break;
+        }
+        case "stats_changed": {
+          // Marking a ticket as viewed — refresh unread badge/stats without refetching detail.
+          invalidateSupportStats();
           break;
         }
         default:

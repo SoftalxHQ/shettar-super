@@ -3,11 +3,15 @@
 import { useGetSupportTicketStatsQuery } from "@/lib/store/services/api";
 
 /**
- * Unread support-ticket count pill for the sidebar Support nav item. Stays
- * fresh via SupportTicketsCableListener's SupportTicket tag invalidation.
+ * Unread support-ticket count pill for the sidebar Support nav item.
+ * Refreshes when SupportTicketsCableListener invalidates SupportTicketStats
+ * (new messages, ticket updates, mark-viewed stats_changed).
  */
 export default function SupportUnreadBadge() {
-  const { data } = useGetSupportTicketStatsQuery();
+  const { data } = useGetSupportTicketStatsQuery(undefined, {
+    refetchOnFocus: false,
+    refetchOnReconnect: true,
+  });
   const unread = data?.unread ?? 0;
 
   if (unread <= 0) return null;

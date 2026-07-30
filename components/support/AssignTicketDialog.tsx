@@ -13,6 +13,7 @@ type AssignTicketDialogProps = {
   ticketId: number | string;
   ticketLabel?: string;
   currentAdminId?: number;
+  mode?: "assign" | "reassign";
   onClose: () => void;
   onAssigned?: () => void;
 };
@@ -22,12 +23,14 @@ export default function AssignTicketDialog({
   ticketId,
   ticketLabel,
   currentAdminId,
+  mode = "assign",
   onClose,
   onAssigned,
 }: AssignTicketDialogProps) {
   const [selectedAdminId, setSelectedAdminId] = useState<string>("");
   const { data, isLoading, isError } = useGetAssignableAdminsQuery(undefined, { skip: !open });
   const [assignTicket, { isLoading: isAssigning }] = useAssignSupportTicketMutation();
+  const isReassign = mode === "reassign";
 
   const admins = data?.admins ?? [];
 
@@ -59,7 +62,11 @@ export default function AssignTicketDialog({
       const assigneeName = assignee
         ? `${assignee.first_name} ${assignee.last_name}`.trim()
         : "selected admin";
-      toast.success(`Ticket assigned to ${assigneeName}`);
+      toast.success(
+        isReassign
+          ? `Ticket reassigned to ${assigneeName}`
+          : `Ticket assigned to ${assigneeName}`
+      );
       onAssigned?.();
       onClose();
     } catch (err: unknown) {
@@ -68,7 +75,9 @@ export default function AssignTicketDialog({
         err.data && typeof err.data === "object" && "error" in err.data &&
         typeof err.data.error === "string"
           ? err.data.error
-          : "Failed to assign ticket";
+          : isReassign
+            ? "Failed to reassign ticket"
+            : "Failed to assign ticket";
       toast.error(message);
     }
   };
@@ -78,7 +87,9 @@ export default function AssignTicketDialog({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-12px_rgba(15,23,42,0.2)]">
-        <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">Assign Ticket</h2>
+        <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 mb-2">
+          {isReassign ? "Reassign Ticket" : "Assign Ticket"}
+        </h2>
         <p className="text-slate-500 mb-6 text-sm">
           {ticketLabel
             ? `Choose an admin staff member for "${ticketLabel}".`
@@ -91,7 +102,9 @@ export default function AssignTicketDialog({
           <p className="text-sm text-red-500 mb-6">Unable to load assignable staff.</p>
         ) : (
           <label className="block mb-6">
-            <span className="text-[13px] font-medium text-slate-600 mb-2 block">Assign to</span>
+            <span className="text-[13px] font-medium text-slate-600 mb-2 block">
+              {isReassign ? "Reassign to" : "Assign to"}
+            </span>
             <select
               value={selectedAdminId}
               onChange={(e) => setSelectedAdminId(e.target.value)}
@@ -100,7 +113,9 @@ export default function AssignTicketDialog({
             >
               <option value="">Select admin staff</option>
               {currentAdminId ? (
-                <option value={String(currentAdminId)}>Assign to me</option>
+                <option value={String(currentAdminId)}>
+                  {isReassign ? "Reassign to me" : "Assign to me"}
+                </option>
               ) : null}
               {admins
                 .filter((admin) => admin.id !== currentAdminId)
@@ -128,7 +143,13 @@ export default function AssignTicketDialog({
             disabled={isAssigning || isLoading || isError || !selectedAdminId}
             className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            {isAssigning ? "Assigning..." : "Assign"}
+            {isAssigning
+              ? isReassign
+                ? "Reassigning..."
+                : "Assigning..."
+              : isReassign
+                ? "Reassign"
+                : "Assign"}
           </button>
         </div>
       </div>

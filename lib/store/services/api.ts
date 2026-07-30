@@ -912,7 +912,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease"],
+  tagTypes: ["Account", "Business", "SupportTicket", "SupportTicketStats", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -1179,7 +1179,10 @@ export const apiService = createApi({
     }),
     getSupportTicketStats: builder.query<SupportTicketStats, void>({
       query: () => '/api/v1/admin/support_tickets/stats',
-      providesTags: ["SupportTicket"],
+      providesTags: ["SupportTicketStats"],
+      // Stay fresh via SupportTicketsCableListener invalidation — avoid focus spam.
+      refetchOnFocus: false,
+      refetchOnReconnect: true,
     }),
     getSupportTicket: builder.query<GetSupportTicketResponse, number | string>({
       query: (id) => `/api/v1/admin/support_tickets/${id}`,
@@ -1194,7 +1197,7 @@ export const apiService = createApi({
         method: "PATCH",
         body: { admin_id },
       }),
-      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", { type: "SupportTicket", id }],
+      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", "SupportTicketStats", { type: "SupportTicket", id }],
     }),
     updateSupportTicketStatus: builder.mutation<{ message: string; ticket: SupportTicket }, { id: number | string; status: string }>({
       query: ({ id, status }) => ({
@@ -1202,7 +1205,7 @@ export const apiService = createApi({
         method: "PATCH",
         body: { status },
       }),
-      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", { type: "SupportTicket", id }],
+      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", "SupportTicketStats", { type: "SupportTicket", id }],
     }),
     replyToSupportTicket: builder.mutation<{ message: string; support_message: SupportMessage }, { id: number | string; body: string }>({
       query: ({ id, body }) => ({
@@ -1210,7 +1213,7 @@ export const apiService = createApi({
         method: "POST",
         body: { body },
       }),
-      invalidatesTags: (_result, _err, { id }) => [{ type: "SupportTicket", id }],
+      invalidatesTags: (_result, _err, { id }) => ["SupportTicket", "SupportTicketStats", { type: "SupportTicket", id }],
     }),
 
     // ── Admin Staff endpoints ───────────────────────────────────────────────

@@ -34,6 +34,7 @@ export default function SupportPage() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inFlightTicketId, setInFlightTicketId] = useState<number | null>(null);
   const [assignDialogTicket, setAssignDialogTicket] = useState<SupportTicket | null>(null);
+  const [openActionsMenu, setOpenActionsMenu] = useState<number | null>(null);
 
   // Debounce search input by 400ms
   useEffect(() => {
@@ -46,6 +47,18 @@ export default function SupportPage() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [searchInput]);
+
+  useEffect(() => {
+    if (openActionsMenu === null) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-actions-menu]")) {
+        setOpenActionsMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openActionsMenu]);
 
   const { data, isLoading, isError, isFetching } = useGetSupportTicketsQuery({
     page,
@@ -279,33 +292,80 @@ export default function SupportPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 ml-4">
-                  {ticket.status === "open" && can("support_tickets", "assign") && (
-                    <button
-                      onClick={() => setAssignDialogTicket(ticket)}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors text-sm font-semibold whitespace-nowrap"
-                    >
-                      Assign
-                    </button>
-                  )}
-                  {ticket.status !== "resolved" && ticket.status !== "closed" && can("support_tickets", "update_status") && (
-                    <button
-                      onClick={() => handleResolveTicket(ticket.id)}
-                      disabled={isInFlight}
-                      className="px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-sm font-semibold whitespace-nowrap disabled:opacity-50"
-                    >
-                      Resolve
-                    </button>
-                  )}
-                  {ticket.status !== "closed" && can("support_tickets", "update_status") && (
-                    <button
-                      onClick={() => handleCloseTicket(ticket.id)}
-                      disabled={isInFlight}
-                      className="px-4 py-2 bg-slate-700 text-white rounded-xl hover:bg-slate-800 transition-colors text-sm font-semibold whitespace-nowrap disabled:opacity-50"
-                    >
-                      Close
-                    </button>
-                  )}
+                <div className="flex flex-col gap-2 ml-4 items-end">
+                  {(() => {
+                    const canAssign =
+                      ticket.status === "open" && can("support_tickets", "assign");
+                    const canResolve =
+                      ticket.status !== "resolved" &&
+                      ticket.status !== "closed" &&
+                      can("support_tickets", "update_status");
+                    const canClose =
+                      ticket.status !== "closed" && can("support_tickets", "update_status");
+                    if (!canAssign && !canResolve && !canClose) return null;
+
+                    return (
+                      <div className="relative inline-block" data-actions-menu>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenActionsMenu(openActionsMenu === ticket.id ? null : ticket.id)
+                          }
+                          className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                          aria-label="Ticket actions"
+                        >
+                          <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 5a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm0 7a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+                          </svg>
+                        </button>
+                        {openActionsMenu === ticket.id && (
+                          <div
+                            className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] z-20 py-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {canAssign && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAssignDialogTicket(ticket);
+                                  setOpenActionsMenu(null);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                              >
+                                {ticket.assigned_to ? "Reassign" : "Assign"}
+                              </button>
+                            )}
+                            {canResolve && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleResolveTicket(ticket.id);
+                                  setOpenActionsMenu(null);
+                                }}
+                                disabled={isInFlight}
+                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                              >
+                                Resolve
+                              </button>
+                            )}
+                            {canClose && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleCloseTicket(ticket.id);
+                                  setOpenActionsMenu(null);
+                                }}
+                                disabled={isInFlight}
+                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                              >
+                                Close
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <Link
                     href={`/dashboard/support/${ticket.id}`}
                     className="px-4 py-2 border border-slate-200 bg-white text-slate-700 rounded-xl hover:bg-slate-50 transition-colors text-sm font-semibold whitespace-nowrap text-center block"
@@ -357,6 +417,7 @@ export default function SupportPage() {
         ticketId={assignDialogTicket?.id ?? ""}
         ticketLabel={assignDialogTicket?.subject}
         currentAdminId={adminId}
+        mode={assignDialogTicket?.assigned_to ? "reassign" : "assign"}
         onClose={() => setAssignDialogTicket(null)}
       />
     </div>
