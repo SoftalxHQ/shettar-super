@@ -3,14 +3,18 @@
 import { useState, useCallback, useMemo } from "react";
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
-import { useGetAdminActivitiesQuery } from "@/lib/store/services/api";
-import type { AdminActivityItem } from "@/lib/store/services/api";
+import {
+  useGetAdminActivitiesQuery,
+  useAnalyzeAdminActivitiesMutation,
+} from "@/lib/store/services/api";
+import type { AdminActivityItem, ActivityAiReport } from "@/lib/store/services/api";
 import { useAppSelector } from "@/lib/store/hooks";
 import { selectToken } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
+import { ActivityAiPanel } from "@/components/activity-ai-panel";
 
 const panelClass =
   "rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]";
@@ -39,6 +43,9 @@ const ACTION_LABELS: Record<string, string> = {
   promo_code_updated: "Promo Updated",
   marketer_created: "Marketer Created",
   marketer_updated: "Marketer Updated",
+  octopus_search: "Octopus Search",
+  octopus_analyze: "Octopus AI Analyze",
+  activity_analyze: "Activity AI Analyze",
 };
 
 function formatTimeAgo(dateStr: string): string {
@@ -104,12 +111,20 @@ export default function ActivityPage() {
   const [actionType, setActionType] = useState("");
   const [dateRange, setDateRange] = useState<Date[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiPromptOpen, setAiPromptOpen] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiStatus, setAiStatus] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiReport, setAiReport] = useState<ActivityAiReport | null>(null);
+  const [analyzedCount, setAnalyzedCount] = useState<number | undefined>();
   const token = useAppSelector(selectToken);
   const { admin } = useAuth();
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
+  const [analyzeActivities, { isLoading: isAnalyzing }] = useAnalyzeAdminActivitiesMutation();
 
   const formatLocalDate = (d: Date) => {
     const y = d.getFullYear();
@@ -203,6 +218,51 @@ export default function ActivityPage() {
     }
   };
 
+  const handleAnalyze = async (mode: "general" | "request") => {
+    if (!can("activities", "analyze")) {
+      setAiError("You don't have permission to run AI analysis");
+      return;
+    }
+    const query = mode === "request" ? aiQuery.trim() : "";
+    if (mode === "request" && !query) {
+      setAiError("Enter a request, or use general scan");
+      return;
+    }
+    setAiError(null);
+    setAiStatus(
+      query
+        ? "Running your request against the activity log..."
+        : "Analyzing activity for abnormalities..."
+    );
+    try {
+      const result = await analyzeActivities({
+        action_type: actionType || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+        query: query || undefined,
+      }).unwrap();
+      setAiReport(result.report);
+      setAnalyzedCount(result.analyzed_count);
+      setAiStatus(null);
+      setAiPromptOpen(false);
+      setAiOpen(true);
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "data" in err
+          ? String((err as { data?: { error?: string } }).data?.error || "Analysis failed")
+          : "Analysis failed";
+      setAiStatus(null);
+      setAiError(message);
+    }
+  };
+
+  const filtersLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (actionType) parts.push(ACTION_LABELS[actionType] || actionType);
+    if (dateFrom && dateTo) parts.push(`${dateFrom} → ${dateTo}`);
+    return parts.join(" · ") || "All activity";
+  }, [actionType, dateFrom, dateTo]);
+
   // Group by date
   const grouped: { date: string; items: AdminActivityItem[] }[] = [];
   for (const activity of activities) {
@@ -270,6 +330,22 @@ export default function ActivityPage() {
           <p className="text-sm text-slate-500 mt-2">Real-time record of all admin operations</p>
         </div>
       <div className="flex items-center gap-2">
+        {can("activities", "analyze") && (
+          <button
+            onClick={() => {
+              setAiError(null);
+              setAiStatus(null);
+              setAiPromptOpen(true);
+            }}
+            disabled={isAnalyzing}
+            className="px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-semibold hover:bg-indigo-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            <svg className={`w-4 h-4 ${isAnalyzing ? "animate-pulse" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            {isAnalyzing ? "Analyzing..." : "AI Analyzer"}
+          </button>
+        )}
         <button
           onClick={handleExport}
           disabled={isExporting}
@@ -388,6 +464,89 @@ export default function ActivityPage() {
           totalCount={pagination.count}
           onPageChange={setPage}
         />
+      )}
+
+      <ActivityAiPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        report={aiReport}
+        analyzedCount={analyzedCount}
+        filtersLabel={filtersLabel}
+      />
+
+      {aiPromptOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 p-4">
+          <button
+            type="button"
+            className="absolute inset-0"
+            aria-label="Close"
+            onClick={() => !isAnalyzing && setAiPromptOpen(false)}
+          />
+          <div className={`relative w-full max-w-lg ${panelClass} p-5`}>
+            <h2 className="font-display text-lg font-semibold text-slate-900">AI Analyzer</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Ask about something specific, or run a general abnormality scan on the current filters
+              ({filtersLabel}).
+            </p>
+
+            {isAnalyzing && aiStatus ? (
+              <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/80 px-4 py-5 text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+                <p className="mt-3 text-sm font-medium text-indigo-900">{aiStatus}</p>
+                <p className="mt-1 text-xs text-indigo-600/80">This can take a few seconds.</p>
+              </div>
+            ) : (
+              <>
+                <label className="mt-4 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Specific request <span className="font-normal normal-case tracking-normal text-slate-400">(optional)</span>
+                </label>
+                <textarea
+                  value={aiQuery}
+                  onChange={(e) => {
+                    setAiQuery(e.target.value);
+                    if (aiError) setAiError(null);
+                  }}
+                  rows={4}
+                  placeholder='e.g. "Did anyone suspend accounts after midnight last week?" or "List all staff permission changes by Alex"'
+                  className="input mt-1.5 w-full rounded-xl border-slate-200 text-sm"
+                />
+              </>
+            )}
+
+            {aiError && !isAnalyzing && (
+              <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {aiError}
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={isAnalyzing}
+                onClick={() => setAiPromptOpen(false)}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isAnalyzing}
+                onClick={() => handleAnalyze("general")}
+                className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+              >
+                General scan
+              </button>
+              <button
+                type="button"
+                disabled={isAnalyzing || !aiQuery.trim()}
+                onClick={() => handleAnalyze("request")}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                Send request
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

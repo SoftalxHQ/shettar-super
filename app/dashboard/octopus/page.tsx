@@ -24,6 +24,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   bookings: "Bookings",
   transactions: "Transactions",
   support: "Support",
+  reviews: "Reviews",
   activity: "Activity",
 };
 
@@ -35,6 +36,7 @@ const CATEGORY_ORDER = [
   "bookings",
   "transactions",
   "support",
+  "reviews",
   "activity",
 ];
 

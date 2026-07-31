@@ -46,14 +46,18 @@ export default function RootLayout({
           position="top-center" 
           expand={false}
           theme="system"
+          richColors
+          closeButton
+          style={{ zIndex: 9999 }}
           toastOptions={{
             style: {
-              background: 'rgba(255, 255, 255, 0.8)',
+              background: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              border: '1px solid rgba(15, 23, 42, 0.08)',
               borderRadius: '1.25rem',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05)',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.08)',
               padding: '1.25rem',
+              zIndex: 9999,
             },
             className: 'shettar-toast',
           }}

@@ -145,6 +145,7 @@ export const ADMIN_PERMISSION_LABELS = {
     title: "Activities",
     actions: {
       view: "View Activity Logs",
+      analyze: "Run AI abnormality analysis",
     },
   },
   system_jobs: {

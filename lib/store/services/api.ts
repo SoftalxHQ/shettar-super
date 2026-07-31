@@ -933,6 +933,25 @@ export interface OctopusAiReport {
   }[];
 }
 
+export interface ActivityAiAbnormality {
+  severity: "low" | "medium" | "high" | "critical" | string;
+  title: string;
+  detail: string;
+  occurred_at: string | null;
+  action_types: string[];
+}
+
+export interface ActivityAiReport {
+  query?: string | null;
+  focused_answer?: string;
+  executive_summary: string;
+  timeline_analysis: string;
+  abnormalities: ActivityAiAbnormality[];
+  actor_patterns: string;
+  risk_assessment: string;
+  recommendations: string[];
+}
+
 export interface AdminReservationDetail {
   id: number;
   booking_id: string | null;
@@ -1441,6 +1460,17 @@ export const apiService = createApi({
       },
       providesTags: ["AdminActivity"],
     }),
+    analyzeAdminActivities: builder.mutation<
+      { report: ActivityAiReport; analyzed_count: number },
+      { action_type?: string; date_from?: string; date_to?: string; query?: string }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/activities/analyze",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["AdminActivity"],
+    }),
 
     // ── System Jobs endpoints ───────────────────────────────────────────────
     getSystemJobs: builder.query<{ jobs: SystemJob[]; meta: AccountsMeta }, { page?: number; status?: string; search?: string }>({
@@ -1916,6 +1946,7 @@ export const {
   useChangePasswordMutation,
   useUpdateAdminProfileMutation,
   useGetAdminActivitiesQuery,
+  useAnalyzeAdminActivitiesMutation,
   useGetSystemJobsQuery,
   useGetSystemJobQuery,
   useGetSystemJobStatsQuery,

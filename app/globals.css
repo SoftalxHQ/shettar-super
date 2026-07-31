@@ -472,6 +472,10 @@ a:disabled,
   }
   
   /* Premium Toast Customization */
+  [data-sonner-toaster] {
+    z-index: 9999 !important;
+  }
+
   .shettar-toast {
     --glass-bg: rgba(255, 255, 255, 0.85);
     --glass-border: rgba(255, 255, 255, 0.3);

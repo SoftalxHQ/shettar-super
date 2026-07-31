@@ -8,7 +8,7 @@ export interface AdminPermissions {
   finance?: { view?: boolean; manage_payouts?: boolean; manage_company_accounts?: boolean; withdraw_revenue?: boolean };
   configurations?: { view?: boolean; edit?: boolean };
   staff?: { view?: boolean; invite?: boolean; edit?: boolean; deactivate?: boolean };
-  activities?: { view?: boolean };
+  activities?: { view?: boolean; analyze?: boolean };
   system_jobs?: { view?: boolean; manage?: boolean };
   analytics?: { view?: boolean };
   marketers?: { view?: boolean; manage?: boolean };
