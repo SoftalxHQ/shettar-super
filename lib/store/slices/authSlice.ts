@@ -15,6 +15,7 @@ export interface AdminPermissions {
   promos?: { view?: boolean; create?: boolean; edit?: boolean };
   newsletters?: { view?: boolean; create?: boolean; send?: boolean };
   desktop_releases?: { view?: boolean; edit?: boolean };
+  octopus_search?: { view?: boolean; analyze?: boolean };
 }
 
 export interface Admin {

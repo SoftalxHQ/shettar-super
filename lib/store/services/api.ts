@@ -848,6 +848,141 @@ export interface PaystackBank {
   currency: string;
 }
 
+export interface OctopusSearchHit {
+  id: number;
+  entity_type: string;
+  entity_id: number;
+  category: string;
+  public_id: string | null;
+  title: string;
+  subtitle: string | null;
+  status: string | null;
+  account_id: number | null;
+  occurred_at: string;
+  metadata: Record<string, unknown>;
+  href: string;
+}
+
+export interface OctopusSearchResponse {
+  query: string;
+  took_ms: number;
+  total_count: number;
+  counts_by_category: Record<string, number>;
+  primary_account_id: number | null;
+  hits: OctopusSearchHit[];
+  groups: Record<string, OctopusSearchHit[]>;
+  meta: AccountsMeta;
+}
+
+export interface OctopusSearchParams {
+  q: string;
+  page?: number;
+  per_page?: number;
+  types?: string[];
+}
+
+export interface OctopusSearchProfile {
+  identity: {
+    account_id: number;
+    member_id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    status: string;
+    wallet_balance: number;
+    created_at: string;
+    last_sign_in_at: string | null;
+    href: string;
+  };
+  bookings: {
+    total: number;
+    completed: number;
+    cancelled: number;
+    upcoming: number;
+    last_booking_at: string | null;
+    href: string;
+  };
+  financial: {
+    total_transactions: number;
+    total_spend: number;
+    refunds: number;
+    failed_payments: number;
+    href: string;
+  };
+  activity: {
+    account_created_at: string;
+    last_login_at: string | null;
+    sign_in_count: number;
+    recent: OctopusSearchHit[];
+  };
+}
+
+export interface OctopusAiReport {
+  executive_summary: string;
+  customer_profile: string;
+  booking_analysis: string;
+  financial_analysis: string;
+  risk_assessment: string;
+  recommendations: string[];
+  links: {
+    label: string;
+    href_hint: string;
+    account_id?: number | null;
+    business_id?: number | null;
+    entity_id?: number | null;
+  }[];
+}
+
+export interface AdminReservationDetail {
+  id: number;
+  booking_id: string | null;
+  status: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  guests: number | null;
+  total_amount: number | null;
+  customer_paid_amount: number | null;
+  payment_method: string | null;
+  booking_source: string | null;
+  cancelled: boolean;
+  cancellation_reason: string | null;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+  created_at: string;
+  account_id: number | null;
+  business: { id: number; name: string; business_unique_id: string } | null;
+  room: { id: number; number: string | null; room_type: string | null } | null;
+  href_account: string | null;
+  href_business: string;
+}
+
+export interface AdminTransactionDetail {
+  id: number;
+  reference_code: string;
+  amount: number;
+  transaction_type: string;
+  status: string;
+  payment_method: string | null;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  account_id: number | null;
+  business_id: number | null;
+  account: {
+    id: number;
+    email: string;
+    name: string;
+    account_unique_id: string;
+  } | null;
+  business: { id: number; name: string; business_unique_id: string } | null;
+  href_account: string | null;
+  href_business: string | null;
+}
+
 export interface PlatformWithdrawal {
   id: number;
   amount: number;
@@ -1683,6 +1818,52 @@ export const apiService = createApi({
       }),
       invalidatesTags: ["Marketer"],
     }),
+
+    // ── Octopus Search ──────────────────────────────────────────────────────
+    octopusSearch: builder.query<OctopusSearchResponse, OctopusSearchParams>({
+      query: ({ q, page = 1, per_page = 40, types } = { q: "" }) => {
+        const params = new URLSearchParams({
+          q: q || "",
+          page: String(page),
+          per_page: String(per_page),
+        });
+        if (types?.length) types.forEach((t) => params.append("types[]", t));
+        return `/api/v1/admin/octopus_search?${params.toString()}`;
+      },
+    }),
+    octopusSearchProfile: builder.query<
+      { profile: OctopusSearchProfile },
+      { account_id?: number | string; email?: string }
+    >({
+      query: ({ account_id, email }) => {
+        const params = new URLSearchParams();
+        if (account_id) params.set("account_id", String(account_id));
+        if (email) params.set("email", email);
+        return `/api/v1/admin/octopus_search/profile?${params.toString()}`;
+      },
+    }),
+    octopusSearchAnalyze: builder.mutation<
+      { report: OctopusAiReport },
+      {
+        q?: string;
+        query?: string;
+        account_id?: number | string;
+        email?: string;
+        hits?: OctopusSearchHit[];
+      }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/octopus_search/analyze",
+        method: "POST",
+        body,
+      }),
+    }),
+    getAdminReservation: builder.query<{ reservation: AdminReservationDetail }, number | string>({
+      query: (id) => `/api/v1/admin/reservations/${id}`,
+    }),
+    getAdminTransaction: builder.query<{ transaction: AdminTransactionDetail }, number | string>({
+      query: (id) => `/api/v1/admin/transactions/${id}`,
+    }),
   }),
 });
 
@@ -1781,4 +1962,10 @@ export const {
   useResendNewsletterMutation,
   useRetryNewsletterDeliveryMutation,
   useUploadNewsletterAssetMutation,
+  useOctopusSearchQuery,
+  useLazyOctopusSearchQuery,
+  useOctopusSearchProfileQuery,
+  useOctopusSearchAnalyzeMutation,
+  useGetAdminReservationQuery,
+  useGetAdminTransactionQuery,
 } = apiService;

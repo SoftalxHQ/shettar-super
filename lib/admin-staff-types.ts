@@ -188,4 +188,11 @@ export const ADMIN_PERMISSION_LABELS = {
       edit: "Activate / Deactivate & Edit Notes",
     },
   },
+  octopus_search: {
+    title: "Octopus Search",
+    actions: {
+      view: "Search across customers and records",
+      analyze: "Run AI Analyzer reports",
+    },
+  },
 } as const;
