@@ -1182,9 +1182,6 @@ export const apiService = createApi({
     getSupportTicketStats: builder.query<SupportTicketStats, void>({
       query: () => '/api/v1/admin/support_tickets/stats',
       providesTags: ["SupportTicketStats"],
-      // Stay fresh via SupportTicketsCableListener invalidation — avoid focus spam.
-      refetchOnFocus: false,
-      refetchOnReconnect: true,
     }),
     getSupportTicket: builder.query<GetSupportTicketResponse, number | string>({
       query: (id) => `/api/v1/admin/support_tickets/${id}`,
