@@ -9,6 +9,7 @@ import { useGetBusinessQuery,
   useGetBusinessTransactionsQuery,
   useGetBusinessReservationsQuery,
   useGetBusinessAnalyticsQuery,
+  useGetBusinessReviewsQuery,
   useSuspendBusinessMutation,
   useActivateBusinessMutation,
   useVerifyBusinessMutation,
@@ -20,6 +21,7 @@ import { useGetBusinessQuery,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
   type BankAccount,
+  type BusinessReviewComment,
 } from "@/lib/store/services/api";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
@@ -49,6 +51,7 @@ const BUSINESS_TABS = new Set([
   "analytics",
   "rooms",
   "bookings",
+  "reviews",
   "verification",
 ]);
 
@@ -81,6 +84,9 @@ export default function BusinessDetailPage() {
   // Bookings tab state
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
   const [reservationPage, setReservationPage] = useState(1);
+
+  // Reviews tab state
+  const [reviewPage, setReviewPage] = useState(1);
 
   // Reject flow state — removed (now handled by status modal)
 
@@ -141,11 +147,19 @@ export default function BusinessDetailPage() {
     skip: activeTab !== "analytics",
   });
 
+  const { data: reviewsData, isLoading: reviewsLoading } = useGetBusinessReviewsQuery(
+    { id, page: reviewPage },
+    { skip: activeTab !== "reviews" }
+  );
+
   const business = data?.business;
   const transactions = transactionsData?.transactions ?? [];
   const transactionsMeta = transactionsData?.meta;
   const reservations = reservationsData?.reservations ?? [];
   const reservationsMeta = reservationsData?.meta;
+  const reviews = reviewsData?.reviews ?? [];
+  const reviewsMeta = reviewsData?.meta;
+  const reviewsSummary = reviewsData?.summary;
 
   // Mutation handlers
   const handleStatusAction = async () => {
@@ -518,6 +532,7 @@ export default function BusinessDetailPage() {
           { id: "analytics", label: "Analytics", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
           { id: "rooms", label: "Rooms & Types", icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
           { id: "bookings", label: "Recent Bookings", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+          { id: "reviews", label: "Reviews", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
           { id: "verification", label: "Verification", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
         ].map((tab) => (
           <button
@@ -1442,6 +1457,119 @@ export default function BusinessDetailPage() {
                 </div>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* ── Reviews Tab ── */}
+      {activeTab === "reviews" && (
+        <div className={`${panelClass} p-5 space-y-5`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Guest Reviews</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {reviewsSummary
+                  ? `${reviewsSummary.total} review${reviewsSummary.total === 1 ? "" : "s"}${
+                      reviewsSummary.average_rating != null
+                        ? ` · avg ${reviewsSummary.average_rating.toFixed(1)}★`
+                        : ""
+                    }`
+                  : "Read-only review thread for this business"}
+              </p>
+            </div>
+          </div>
+
+          {reviewsLoading ? (
+            <div className="py-16 text-center text-sm text-muted-foreground">Loading reviews…</div>
+          ) : reviews.length === 0 ? (
+            <div className="py-16 text-center text-sm text-muted-foreground">No reviews yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => {
+                const topLevel = (review.comments ?? []).filter((c) => !c.parent_id);
+                const repliesFor = (parentId: number) =>
+                  (review.comments ?? []).filter((c) => c.parent_id === parentId);
+
+                const renderComment = (comment: BusinessReviewComment, nested = false) => (
+                  <div
+                    key={comment.id}
+                    className={`${nested ? "ml-4 mt-2 border-l-2 border-slate-100 pl-3" : "mt-2"} space-y-1`}
+                  >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-slate-700">{comment.author_name || "User"}</span>
+                      {comment.author_role && (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 capitalize">{comment.author_role}</span>
+                      )}
+                      <span>{formatDateTime(comment.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{comment.body}</p>
+                    {repliesFor(comment.id).map((reply) => renderComment(reply, true))}
+                  </div>
+                );
+
+                return (
+                  <div key={review.id} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4 space-y-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {review.account?.display_name || review.reviewer_name || "Guest"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{review.date || formatDate(review.created_at)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold tabular-nums text-amber-600">{review.rating}★</span>
+                        {review.verified && (
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-green-100 text-green-700">
+                            Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {review.content && (
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{review.content}</p>
+                    )}
+                    {review.admin_reply && !(review.comments?.length) && (
+                      <div className="rounded-lg bg-white border border-slate-100 p-3">
+                        <p className="text-xs font-semibold text-slate-500 mb-1">
+                          Business reply{review.admin_reply_by ? ` · ${review.admin_reply_by}` : ""}
+                        </p>
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap">{review.admin_reply}</p>
+                      </div>
+                    )}
+                    {topLevel.length > 0 && (
+                      <div className="pt-1 border-t border-slate-100/80">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Replies</p>
+                        {topLevel.map((c) => renderComment(c))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {reviewsMeta && reviewsMeta.total_pages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                Page {reviewsMeta.current_page} of {reviewsMeta.total_pages} ({reviewsMeta.total_count} total)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setReviewPage((p) => Math.max(1, p - 1))}
+                  disabled={reviewsMeta.current_page === 1}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setReviewPage((p) => Math.min(reviewsMeta.total_pages, p + 1))}
+                  disabled={reviewsMeta.current_page === reviewsMeta.total_pages}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           )}
         </div>
       )}

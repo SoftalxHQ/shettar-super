@@ -37,6 +37,9 @@ type PlatformConfig = {
   business_cancellation_credit_percentage: number;
   marketer_commission_tiers: CommissionTier[];
   agency_commission_tiers: CommissionTier[];
+  ai_monthly_free_points: number;
+  ai_point_price_naira: number;
+  ai_points_per_request: number;
   ad_settings: AdSettings;
 };
 
@@ -58,6 +61,9 @@ export default function ConfigurationPage() {
     business_cancellation_credit_percentage: 22.22,
     marketer_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
     agency_commission_tiers: DEFAULT_MARKETER_TIERS as CommissionTier[],
+    ai_monthly_free_points: 5,
+    ai_point_price_naira: 50,
+    ai_points_per_request: 1,
     ad_settings: DEFAULT_AD_SETTINGS,
   });
   const [loading, setLoading] = useState(true);
@@ -91,6 +97,9 @@ export default function ConfigurationPage() {
       business_cancellation_credit_percentage: Number(data.business_cancellation_credit_percentage ?? 22.22),
       marketer_commission_tiers: normalizeCommissionTiers(data.marketer_commission_tiers),
       agency_commission_tiers: normalizeCommissionTiers(data.agency_commission_tiers),
+      ai_monthly_free_points: Number(data.ai_monthly_free_points ?? 5),
+      ai_point_price_naira: Number(data.ai_point_price_naira ?? 50),
+      ai_points_per_request: Number(data.ai_points_per_request ?? 1),
       ad_settings: {
         default_cpm_rate: Number(ad.default_cpm_rate ?? DEFAULT_AD_SETTINGS.default_cpm_rate),
         default_cpc_rate: Number(ad.default_cpc_rate ?? DEFAULT_AD_SETTINGS.default_cpc_rate),
@@ -438,6 +447,51 @@ export default function ConfigurationPage() {
               <p className="text-xs text-slate-500">
                 Default is 22.22% (2/9 of the refundable amount). The guest receives the remaining {(100 - config.business_cancellation_credit_percentage).toFixed(2)}%.
               </p>
+            </div>
+
+            {/* Business AI Analyzer points */}
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <div>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business AI Analyzer</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Free monthly points reset on the 1st. Businesses buy extra points via Paystack. Spend free points first.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Monthly free points</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.ai_monthly_free_points}
+                    onChange={(e) => canEdit && setConfig({ ...config, ai_monthly_free_points: parseInt(e.target.value, 10) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Price per point (₦)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.ai_point_price_naira}
+                    onChange={(e) => canEdit && setConfig({ ...config, ai_point_price_naira: parseInt(e.target.value, 10) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Points per analyzer request</span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.ai_points_per_request}
+                    onChange={(e) => canEdit && setConfig({ ...config, ai_points_per_request: parseInt(e.target.value, 10) || 1 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+              </div>
             </div>
 
             {/* Sponsored ads platform settings */}

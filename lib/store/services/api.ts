@@ -481,6 +481,42 @@ export interface BusinessTransaction {
   created_at: string;
 }
 
+export interface BusinessReviewComment {
+  id: number;
+  body: string;
+  author_name: string | null;
+  author_role: string | null;
+  created_at: string;
+  parent_id?: number | null;
+  replies?: BusinessReviewComment[];
+}
+
+export interface BusinessReview {
+  id: number;
+  rating: number;
+  content: string | null;
+  reviewer_name: string | null;
+  verified: boolean;
+  created_at: string;
+  date: string;
+  admin_reply: string | null;
+  admin_reply_by: string | null;
+  admin_replied_at: string | null;
+  comments: BusinessReviewComment[];
+  account?: {
+    id: number;
+    first_name: string | null;
+    last_name: string | null;
+    display_name: string | null;
+  } | null;
+}
+
+export interface GetBusinessReviewsResponse {
+  reviews: BusinessReview[];
+  meta: AccountsMeta;
+  summary: { total: number; average_rating: number | null };
+}
+
 export interface GetBusinessesParams {
   page?: number;
   search?: string;
@@ -1319,6 +1355,12 @@ export const apiService = createApi({
     getBusinessAnalytics: builder.query<BusinessAnalytics, number | string>({
       query: (id) => `/api/v1/admin/businesses/${id}/analytics`,
     }),
+    getBusinessReviews: builder.query<GetBusinessReviewsResponse, { id: number | string; page?: number }>({
+      query: ({ id, page = 1 }) => {
+        const params = new URLSearchParams({ page: String(page) });
+        return `/api/v1/admin/businesses/${id}/reviews?${params.toString()}`;
+      },
+    }),
 
     // ── Support Tickets endpoints ───────────────────────────────────────────
     getSupportTickets: builder.query<GetSupportTicketsResponse, GetSupportTicketsParams>({
@@ -1928,6 +1970,7 @@ export const {
   useGetBusinessReservationsQuery,
   useGetBusinessTransactionsQuery,
   useGetBusinessAnalyticsQuery,
+  useGetBusinessReviewsQuery,
   useGetSupportTicketsQuery,
   useGetSupportTicketStatsQuery,
   useGetSupportTicketQuery,
