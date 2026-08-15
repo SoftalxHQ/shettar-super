@@ -454,12 +454,12 @@ export default function ConfigurationPage() {
               <div>
                 <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business AI Analyzer</h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Free monthly points reset on the 1st. Businesses buy extra points via Paystack. Spend free points first.
+                  One-time welcome free points for new business registrations. Businesses buy more after free points are used. Spend free points first.
                 </p>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
                 <label className="space-y-1 text-sm">
-                  <span className="text-slate-500">Monthly free points</span>
+                  <span className="text-slate-500">Welcome free points (one-time)</span>
                   <input
                     type="number"
                     min={0}
