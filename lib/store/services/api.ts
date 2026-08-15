@@ -408,6 +408,20 @@ export interface BusinessOwner {
   is_primary: boolean;
 }
 
+export interface BusinessMember {
+  id: number;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string | null;
+  title: string | null;
+  role: string | null;
+  is_owner: boolean;
+  status: string;
+  created_at: string;
+}
+
 export interface RoomType {
   id: number;
   name: string;
@@ -442,6 +456,7 @@ export interface BusinessDetail extends Business {
   images_thumb_url?: string[];
   room_types: RoomType[];
   owners: BusinessOwner[];
+  members: BusinessMember[];
   bank_accounts: BankAccount[];
   commission_rate: number | null;
   cancellation_fee_percentage: number | null;
@@ -1259,6 +1274,17 @@ export const apiService = createApi({
       query: (id) => `/api/v1/admin/businesses/${id}`,
       providesTags: (_result, _err, id) => [{ type: "Business", id }],
     }),
+    createBusinessOwner: builder.mutation<
+      { message: string; member: BusinessMember },
+      { id: number | string; email: string; first_name: string; last_name: string }
+    >({
+      query: ({ id, email, first_name, last_name }) => ({
+        url: `/api/v1/admin/businesses/${id}/owners`,
+        method: "POST",
+        body: { email, first_name, last_name },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
     suspendBusiness: builder.mutation<BusinessActionResponse, { id: number | string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/api/v1/admin/businesses/${id}/suspend`,
@@ -1957,6 +1983,7 @@ export const {
   useGetAccountTransactionsQuery,
   useGetBusinessesQuery,
   useGetBusinessQuery,
+  useCreateBusinessOwnerMutation,
   useSuspendBusinessMutation,
   useActivateBusinessMutation,
   useVerifyBusinessMutation,

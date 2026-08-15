@@ -20,6 +20,7 @@ import { useGetBusinessQuery,
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
+  useCreateBusinessOwnerMutation,
   type BankAccount,
   type BusinessReviewComment,
 } from "@/lib/store/services/api";
@@ -46,6 +47,7 @@ import {
 
 const BUSINESS_TABS = new Set([
   "overview",
+  "team",
   "financials",
   "transactions",
   "analytics",
@@ -102,6 +104,10 @@ export default function BusinessDetailPage() {
   const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
   const [setBusinessFeatured, { isLoading: isSettingFeatured }] = useSetBusinessFeaturedMutation();
   const [setBusinessCancellationFee, { isLoading: isSettingCancellationFee }] = useSetBusinessCancellationFeeMutation();
+  const [createBusinessOwner, { isLoading: isCreatingOwner }] = useCreateBusinessOwnerMutation();
+
+  const [showAddOwnerModal, setShowAddOwnerModal] = useState(false);
+  const [ownerForm, setOwnerForm] = useState({ first_name: "", last_name: "", email: "" });
 
   // Commission state
   const [showCommissionForm, setShowCommissionForm] = useState(false);
@@ -280,6 +286,27 @@ export default function BusinessDetailPage() {
     } catch (err: unknown) {
       const e = err as { data?: { error?: string } };
       toast.error(e?.data?.error || "Failed to update cancellation fee");
+    }
+  };
+
+  const handleAddOwner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const first_name = ownerForm.first_name.trim();
+    const last_name = ownerForm.last_name.trim();
+    const email = ownerForm.email.trim();
+    if (!first_name || !last_name || !email) {
+      toast.error("First name, last name, and email are required");
+      return;
+    }
+    try {
+      const result = await createBusinessOwner({ id, first_name, last_name, email }).unwrap();
+      toast.success(result.message || "Owner invited successfully");
+      setShowAddOwnerModal(false);
+      setOwnerForm({ first_name: "", last_name: "", email: "" });
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string; errors?: string[] } };
+      toast.error(e?.data?.error || e?.data?.errors?.join(", ") || "Failed to add owner");
     }
   };
 
@@ -527,6 +554,7 @@ export default function BusinessDetailPage() {
       >
         {[
           { id: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
+          { id: "team", label: "Team", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
           { id: "financials", label: "Financials", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" },
           { id: "transactions", label: "Transactions", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" },
           { id: "analytics", label: "Analytics", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" },
@@ -670,14 +698,28 @@ export default function BusinessDetailPage() {
           <div className="space-y-6">
             {/* Owners */}
             <div className={`${panelClass} p-5 space-y-4`}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Owners</h3>
-                <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">
-                  {business.owners.length} Owner{business.owners.length !== 1 ? "s" : ""}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">
+                    {business.owners.length} Owner{business.owners.length !== 1 ? "s" : ""}
+                  </span>
+                  {can("businesses", "verify") && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddOwnerModal(true)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+                    >
+                      Add Owner
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="space-y-3">
-                {business.owners.map((owner) => (
+                {business.owners.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No owners yet.</p>
+                ) : (
+                  business.owners.map((owner) => (
                   <div key={owner.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
                     <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white font-semibold text-sm shrink-0">
                       {owner.first_name[0]}{owner.last_name[0]}
@@ -693,7 +735,8 @@ export default function BusinessDetailPage() {
                       {owner.phone_number && <p className="text-xs text-muted-foreground">{owner.phone_number}</p>}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -713,6 +756,95 @@ export default function BusinessDetailPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Team Tab ── */}
+      {activeTab === "team" && (
+        <div className={`${panelClass} overflow-hidden`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-slate-100">
+            <div>
+              <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Team</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                All owners and staff members for this business
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">
+                {(business.members ?? []).length} member{(business.members ?? []).length !== 1 ? "s" : ""}
+              </span>
+              {can("businesses", "verify") && (
+                <button
+                  type="button"
+                  onClick={() => setShowAddOwnerModal(true)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
+                >
+                  Add Owner
+                </button>
+              )}
+            </div>
+          </div>
+          {(business.members ?? []).length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">No team members found.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Name</th>
+                    <th className="px-5 py-3 font-semibold">Email</th>
+                    <th className="px-5 py-3 font-semibold">Title</th>
+                    <th className="px-5 py-3 font-semibold">Status</th>
+                    <th className="px-5 py-3 font-semibold">Joined</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(business.members ?? []).map((member) => (
+                    <tr key={member.id} className="hover:bg-slate-50/80">
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 bg-slate-800 rounded-xl flex items-center justify-center text-white font-semibold text-xs shrink-0">
+                            {(member.first_name?.[0] || "?").toUpperCase()}
+                            {(member.last_name?.[0] || "").toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-slate-900 truncate">
+                                {member.first_name} {member.last_name}
+                              </p>
+                              {member.is_owner && (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-semibold">
+                                  Owner
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-slate-600 truncate max-w-[220px]">{member.email}</td>
+                      <td className="px-5 py-3 text-slate-600">{member.title || "—"}</td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${
+                          member.status === "active"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : member.status === "suspended"
+                              ? "bg-amber-50 text-amber-800"
+                              : member.status === "fired"
+                                ? "bg-red-50 text-red-700"
+                                : "bg-slate-100 text-slate-700"
+                        }`}>
+                          {member.status || "active"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        {member.created_at ? formatDate(member.created_at) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -1813,6 +1945,71 @@ export default function BusinessDetailPage() {
                 {isMutationLoading ? "Processing..." : statusAction.confirmText}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAddOwnerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className={`${panelClass} w-full max-w-md overflow-hidden`}>
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Add Business Owner</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                A one-time password will be generated and emailed to this person so they can sign in to the business portal.
+              </p>
+            </div>
+            <form onSubmit={handleAddOwner} className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">First name</label>
+                  <input
+                    required
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
+                    value={ownerForm.first_name}
+                    onChange={(e) => setOwnerForm({ ...ownerForm, first_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Last name</label>
+                  <input
+                    required
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
+                    value={ownerForm.last_name}
+                    onChange={(e) => setOwnerForm({ ...ownerForm, last_name: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</label>
+                <input
+                  required
+                  type="email"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
+                  value={ownerForm.email}
+                  onChange={(e) => setOwnerForm({ ...ownerForm, email: e.target.value })}
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddOwnerModal(false);
+                    setOwnerForm({ first_name: "", last_name: "", email: "" });
+                  }}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                  disabled={isCreatingOwner}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingOwner}
+                  className="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                >
+                  {isCreatingOwner ? "Inviting..." : "Send invite"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
