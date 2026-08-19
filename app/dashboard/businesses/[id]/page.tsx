@@ -20,7 +20,9 @@ import { useGetBusinessQuery,
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
-  useCreateBusinessOwnerMutation,
+  useCreateBusinessAdminMutation,
+  useLockBusinessMemberMutation,
+  useUnlockBusinessMemberMutation,
   type BankAccount,
   type BusinessReviewComment,
 } from "@/lib/store/services/api";
@@ -104,10 +106,16 @@ export default function BusinessDetailPage() {
   const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
   const [setBusinessFeatured, { isLoading: isSettingFeatured }] = useSetBusinessFeaturedMutation();
   const [setBusinessCancellationFee, { isLoading: isSettingCancellationFee }] = useSetBusinessCancellationFeeMutation();
-  const [createBusinessOwner, { isLoading: isCreatingOwner }] = useCreateBusinessOwnerMutation();
+  const [createBusinessAdmin, { isLoading: isCreatingAdmin }] = useCreateBusinessAdminMutation();
+  const [lockBusinessMember, { isLoading: isLockingMember }] = useLockBusinessMemberMutation();
+  const [unlockBusinessMember, { isLoading: isUnlockingMember }] = useUnlockBusinessMemberMutation();
 
-  const [showAddOwnerModal, setShowAddOwnerModal] = useState(false);
-  const [ownerForm, setOwnerForm] = useState({ first_name: "", last_name: "", email: "" });
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [adminForm, setAdminForm] = useState({ first_name: "", last_name: "", email: "" });
+
+  // Lock member modal state
+  const [lockingMemberId, setLockingMemberId] = useState<number | null>(null);
+  const [lockReason, setLockReason] = useState("");
 
   // Commission state
   const [showCommissionForm, setShowCommissionForm] = useState(false);
@@ -289,26 +297,61 @@ export default function BusinessDetailPage() {
     }
   };
 
-  const handleAddOwner = async (e: React.FormEvent) => {
+  const handleAddAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const first_name = ownerForm.first_name.trim();
-    const last_name = ownerForm.last_name.trim();
-    const email = ownerForm.email.trim();
+    const first_name = adminForm.first_name.trim();
+    const last_name = adminForm.last_name.trim();
+    const email = adminForm.email.trim();
     if (!first_name || !last_name || !email) {
       toast.error("First name, last name, and email are required");
       return;
     }
     try {
-      const result = await createBusinessOwner({ id, first_name, last_name, email }).unwrap();
-      toast.success(result.message || "Owner invited successfully");
-      setShowAddOwnerModal(false);
-      setOwnerForm({ first_name: "", last_name: "", email: "" });
+      const result = await createBusinessAdmin({ id, first_name, last_name, email }).unwrap();
+      toast.success(result.message || "Admin invited successfully");
+      setShowAddAdminModal(false);
+      setAdminForm({ first_name: "", last_name: "", email: "" });
       refetch();
     } catch (err: unknown) {
       const e = err as { data?: { error?: string; errors?: string[] } };
-      toast.error(e?.data?.error || e?.data?.errors?.join(", ") || "Failed to add owner");
+      toast.error(e?.data?.error || e?.data?.errors?.join(", ") || "Failed to add admin");
     }
   };
+
+  const handleLockMember = async () => {
+    if (!lockingMemberId || !lockReason.trim()) return;
+    try {
+      const result = await lockBusinessMember({
+        businessId: id,
+        memberId: lockingMemberId,
+        reason: lockReason.trim(),
+      }).unwrap();
+      toast.success(result.message || "Portal account locked");
+      setLockingMemberId(null);
+      setLockReason("");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to lock portal account");
+    }
+  };
+
+  const handleUnlockMember = async (memberId: number) => {
+    try {
+      const result = await unlockBusinessMember({ businessId: id, memberId }).unwrap();
+      toast.success(result.message || "Portal account unlocked");
+      refetch();
+    } catch (err: unknown) {
+      const e = err as { data?: { error?: string } };
+      toast.error(e?.data?.error || "Failed to unlock portal account");
+    }
+  };
+
+  const isMemberAdmin = (member: { is_admin?: boolean; is_owner?: boolean }) =>
+    member.is_admin === true || member.is_owner === true;
+
+  const isMemberLocked = (status: string) =>
+    status === "suspended" || status === "locked";
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -352,6 +395,7 @@ export default function BusinessDetailPage() {
   const isVerified = business.verification_status === "approved";
   const isMutationLoading = isSuspending || isActivating || isVerifying || isVerifyingBank;
   const bankAccounts = business.bank_accounts ?? [];
+  const admins = business.admins ?? business.owners ?? [];
 
   const renderBankAccountCard = (bank: BankAccount) => (
     <div key={bank.id} className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
@@ -696,43 +740,43 @@ export default function BusinessDetailPage() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Owners */}
+            {/* Business Admins */}
             <div className={`${panelClass} p-5 space-y-4`}>
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Owners</h3>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business Admins</h3>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">
-                    {business.owners.length} Owner{business.owners.length !== 1 ? "s" : ""}
+                    {admins.length} Admin{admins.length !== 1 ? "s" : ""}
                   </span>
                   {can("businesses", "verify") && (
                     <button
                       type="button"
-                      onClick={() => setShowAddOwnerModal(true)}
+                      onClick={() => setShowAddAdminModal(true)}
                       className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
                     >
-                      Add Owner
+                      Add Admin
                     </button>
                   )}
                 </div>
               </div>
               <div className="space-y-3">
-                {business.owners.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No owners yet.</p>
+                {admins.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No admins yet.</p>
                 ) : (
-                  business.owners.map((owner) => (
-                  <div key={owner.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                  admins.map((admin) => (
+                  <div key={admin.id} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
                     <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                      {owner.first_name[0]}{owner.last_name[0]}
+                      {admin.first_name[0]}{admin.last_name[0]}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm truncate">{owner.first_name} {owner.last_name}</p>
-                        {owner.is_primary && (
+                        <p className="font-semibold text-sm truncate">{admin.first_name} {admin.last_name}</p>
+                        {admin.is_primary && (
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-xs font-semibold">Primary</span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{owner.email}</p>
-                      {owner.phone_number && <p className="text-xs text-muted-foreground">{owner.phone_number}</p>}
+                      <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
+                      {admin.phone_number && <p className="text-xs text-muted-foreground">{admin.phone_number}</p>}
                     </div>
                   </div>
                   ))
@@ -766,7 +810,7 @@ export default function BusinessDetailPage() {
             <div>
               <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Team</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                All owners and staff members for this business
+                All admins and staff members for this business
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -776,10 +820,10 @@ export default function BusinessDetailPage() {
               {can("businesses", "verify") && (
                 <button
                   type="button"
-                  onClick={() => setShowAddOwnerModal(true)}
+                  onClick={() => setShowAddAdminModal(true)}
                   className="px-2.5 py-1 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
                 >
-                  Add Owner
+                  Add Admin
                 </button>
               )}
             </div>
@@ -796,6 +840,9 @@ export default function BusinessDetailPage() {
                     <th className="px-5 py-3 font-semibold">Title</th>
                     <th className="px-5 py-3 font-semibold">Status</th>
                     <th className="px-5 py-3 font-semibold">Joined</th>
+                    {can("businesses", "lock_members") && (
+                      <th className="px-5 py-3 font-semibold">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -812,9 +859,9 @@ export default function BusinessDetailPage() {
                               <p className="font-semibold text-slate-900 truncate">
                                 {member.first_name} {member.last_name}
                               </p>
-                              {member.is_owner && (
+                              {isMemberAdmin(member) && (
                                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-semibold">
-                                  Owner
+                                  Admin
                                 </span>
                               )}
                             </div>
@@ -827,7 +874,7 @@ export default function BusinessDetailPage() {
                         <span className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${
                           member.status === "active"
                             ? "bg-emerald-50 text-emerald-700"
-                            : member.status === "suspended"
+                            : member.status === "suspended" || member.status === "locked"
                               ? "bg-amber-50 text-amber-800"
                               : member.status === "fired"
                                 ? "bg-red-50 text-red-700"
@@ -839,6 +886,29 @@ export default function BusinessDetailPage() {
                       <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
                         {member.created_at ? formatDate(member.created_at) : "—"}
                       </td>
+                      {can("businesses", "lock_members") && (
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          {member.status === "active" ? (
+                            <button
+                              type="button"
+                              onClick={() => setLockingMemberId(member.id)}
+                              disabled={isLockingMember || isUnlockingMember}
+                              className="px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-xs font-semibold hover:bg-amber-100 transition-colors disabled:opacity-50"
+                            >
+                              Lock
+                            </button>
+                          ) : isMemberLocked(member.status) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleUnlockMember(member.id)}
+                              disabled={isLockingMember || isUnlockingMember}
+                              className="px-2.5 py-1 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                            >
+                              {isUnlockingMember ? "Unlocking..." : "Unlock"}
+                            </button>
+                          ) : null}
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -1809,7 +1879,7 @@ export default function BusinessDetailPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Business account created
-                  {business.owners.length > 0 ? ` by ${business.owners[0].first_name} ${business.owners[0].last_name}` : ""}
+                  {admins.length > 0 ? ` by ${admins[0].first_name} ${admins[0].last_name}` : ""}
                 </p>
               </div>
             </div>
@@ -1949,24 +2019,24 @@ export default function BusinessDetailPage() {
         </div>
       )}
 
-      {showAddOwnerModal && (
+      {showAddAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
           <div className={`${panelClass} w-full max-w-md overflow-hidden`}>
             <div className="p-5 border-b border-slate-100">
-              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Add Business Owner</h2>
+              <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">Add Business Admin</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 A one-time password will be generated and emailed to this person so they can sign in to the business portal.
               </p>
             </div>
-            <form onSubmit={handleAddOwner} className="p-5 space-y-4">
+            <form onSubmit={handleAddAdmin} className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">First name</label>
                   <input
                     required
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
-                    value={ownerForm.first_name}
-                    onChange={(e) => setOwnerForm({ ...ownerForm, first_name: e.target.value })}
+                    value={adminForm.first_name}
+                    onChange={(e) => setAdminForm({ ...adminForm, first_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1974,8 +2044,8 @@ export default function BusinessDetailPage() {
                   <input
                     required
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
-                    value={ownerForm.last_name}
-                    onChange={(e) => setOwnerForm({ ...ownerForm, last_name: e.target.value })}
+                    value={adminForm.last_name}
+                    onChange={(e) => setAdminForm({ ...adminForm, last_name: e.target.value })}
                   />
                 </div>
               </div>
@@ -1985,31 +2055,79 @@ export default function BusinessDetailPage() {
                   required
                   type="email"
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200"
-                  value={ownerForm.email}
-                  onChange={(e) => setOwnerForm({ ...ownerForm, email: e.target.value })}
+                  value={adminForm.email}
+                  onChange={(e) => setAdminForm({ ...adminForm, email: e.target.value })}
                 />
               </div>
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAddOwnerModal(false);
-                    setOwnerForm({ first_name: "", last_name: "", email: "" });
+                    setShowAddAdminModal(false);
+                    setAdminForm({ first_name: "", last_name: "", email: "" });
                   }}
                   className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-                  disabled={isCreatingOwner}
+                  disabled={isCreatingAdmin}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreatingOwner}
+                  disabled={isCreatingAdmin}
                   className="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50"
                 >
-                  {isCreatingOwner ? "Inviting..." : "Send invite"}
+                  {isCreatingAdmin ? "Inviting..." : "Send invite"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lock Member Modal */}
+      {lockingMemberId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => { setLockingMemberId(null); setLockReason(""); }}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)] w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-slate-200">
+              <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900">Lock Portal Account</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                This member will be unable to sign in to the business portal until unlocked.
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide pl-1">
+                  Reason (Required)
+                </label>
+                <textarea
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200 transition-colors resize-none h-32 text-sm"
+                  placeholder="Enter reason for locking this account..."
+                  value={lockReason}
+                  onChange={(e) => setLockReason(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="p-5 bg-slate-50 border-t border-slate-200 flex gap-3">
+              <button
+                onClick={() => { setLockingMemberId(null); setLockReason(""); }}
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLockMember}
+                disabled={isLockingMember || !lockReason.trim()}
+                className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isLockingMember ? "Locking..." : "Lock Account"}
+              </button>
+            </div>
           </div>
         </div>
       )}
