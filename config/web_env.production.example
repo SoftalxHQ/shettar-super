@@ -1,0 +1,13 @@
+# Kamal production secrets are loaded from gitignored `.env.production`
+# (see .kamal/secrets). Copy keys as needed.
+#
+# Required KEY=value lines (no quotes):
+#
+# NEXT_PUBLIC_API_URL=
+# NEXT_PUBLIC_APP_ENV=production
+#
+# Optional:
+#
+# NEXT_PUBLIC_MARKETER_PORTAL_URL=
+#
+# Docker Hub token: config/registry.yml (also gitignored)

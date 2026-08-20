@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Kamal / Docker Hub secrets (never commit)
+/config/registry.yml
+/config/web_env.production
+
 # vercel
 .vercel
 
