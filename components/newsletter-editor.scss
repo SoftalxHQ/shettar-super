@@ -71,6 +71,42 @@
       top: 0;
       width: 4px;
     }
+
+    [data-resize-wrapper] {
+      position: relative;
+    }
+
+    .newsletter-image-remove {
+      display: none;
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 6;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.82);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+    }
+
+    .newsletter-image-remove:hover,
+    .newsletter-image-remove:focus-visible {
+      background: #b91c1c;
+    }
+
+    [data-resize-container][data-node="image"]:hover .newsletter-image-remove,
+    .ProseMirror-selectednode .newsletter-image-remove {
+      display: flex;
+    }
+
+    &[contenteditable="false"] .newsletter-image-remove {
+      display: none !important;
+    }
   }
 }
 

@@ -175,6 +175,7 @@ export interface Newsletter {
   deletable?: boolean;
   cta_url?: string | null;
   cta_label?: string | null;
+  include_header?: boolean;
   admin?: { id: number; name?: string; email?: string };
   created_at: string;
   updated_at: string;
@@ -187,7 +188,8 @@ export interface NewsletterPayload {
   audience: "customers" | "businesses";
   target_type: "all" | "segment" | "single";
   target_value?: string;
-  metadata?: { cta_url?: string; cta_label?: string };
+  include_header?: boolean;
+  metadata?: { cta_url?: string; cta_label?: string; include_header?: boolean };
 }
 
 export interface PushNotificationSuggestion {
@@ -1902,6 +1904,12 @@ export const apiService = createApi({
         };
       },
     }),
+    deleteNewsletterAsset: builder.mutation<void, number | string>({
+      query: (id) => ({
+        url: `/api/v1/admin/newsletter_assets/${id}`,
+        method: "DELETE",
+      }),
+    }),
 
     // ── Marketers endpoints ───────────────────────────────────────────────
     getMarketers: builder.query<{ marketers: Marketer[]; meta: AccountsMeta }, { page?: number; search?: string; status?: string }>({
@@ -2095,6 +2103,7 @@ export const {
   useResendNewsletterMutation,
   useRetryNewsletterDeliveryMutation,
   useUploadNewsletterAssetMutation,
+  useDeleteNewsletterAssetMutation,
   useOctopusSearchQuery,
   useLazyOctopusSearchQuery,
   useOctopusSearchProfileQuery,

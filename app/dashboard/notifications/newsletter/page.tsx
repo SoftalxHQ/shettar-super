@@ -15,6 +15,7 @@ import {
   useTestNewsletterMutation,
   useUpdateNewsletterMutation,
   useUploadNewsletterAssetMutation,
+  useDeleteNewsletterAssetMutation,
 } from "@/lib/store/services/api";
 
 const CUSTOMER_SEGMENTS = [
@@ -77,6 +78,7 @@ export default function NewsletterComposerPage() {
   const [segment, setSegment] = useState("verified");
   const [ctaUrl, setCtaUrl] = useState("");
   const [ctaLabel, setCtaLabel] = useState("");
+  const [includeHeader, setIncludeHeader] = useState(false);
   const [newsletterId, setNewsletterId] = useState<number | null>(draftId ? Number(draftId) : null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [sendModalMode, setSendModalMode] = useState<"send" | "resend">("send");
@@ -88,6 +90,7 @@ export default function NewsletterComposerPage() {
   const [resendNewsletter, { isLoading: resending }] = useResendNewsletterMutation();
   const [testNewsletter, { isLoading: testing }] = useTestNewsletterMutation();
   const [uploadAsset] = useUploadNewsletterAssetMutation();
+  const [deleteAsset] = useDeleteNewsletterAssetMutation();
 
   const newsletterStatus = existingDraft?.newsletter?.status;
   const isEditable = !newsletterStatus || newsletterStatus === "draft" || newsletterStatus === "sent" || newsletterStatus === "failed";
@@ -115,6 +118,7 @@ export default function NewsletterComposerPage() {
     if (n.target_type === "segment" && n.target_value) setSegment(n.target_value);
     setCtaUrl((n.metadata?.cta_url as string) || n.cta_url || "");
     setCtaLabel((n.metadata?.cta_label as string) || n.cta_label || "");
+    setIncludeHeader(n.include_header === true || n.metadata?.include_header === true);
     setNewsletterId(n.id);
   }, [draftId, existingDraft?.newsletter]);
 
@@ -128,12 +132,14 @@ export default function NewsletterComposerPage() {
       audience,
       target_type: targetType,
       target_value: targetType === "segment" ? segment : undefined,
+      include_header: includeHeader,
       metadata: {
         ...(ctaUrl.trim() ? { cta_url: ctaUrl.trim() } : {}),
         ...(ctaLabel.trim() ? { cta_label: ctaLabel.trim() } : {}),
+        include_header: includeHeader,
       },
     }),
-    [subject, previewText, htmlBody, audience, targetType, segment, ctaUrl, ctaLabel]
+    [subject, previewText, htmlBody, audience, targetType, segment, ctaUrl, ctaLabel, includeHeader]
   );
 
   const recipientEstimate = existingDraft?.newsletter?.recipient_estimate;
@@ -141,7 +147,7 @@ export default function NewsletterComposerPage() {
   const editorKey = draftId ?? "new";
   const editorInitialContent = existingDraft?.newsletter?.html_body ?? "<p></p>";
 
-  const saveDraft = async () => {
+  const saveDraft = async ({ notify = true }: { notify?: boolean } = {}) => {
     if (!canCreate) {
       toast.error("You do not have permission to save newsletters");
       return null;
@@ -154,13 +160,13 @@ export default function NewsletterComposerPage() {
     try {
       if (newsletterId) {
         const result = await updateNewsletter({ id: newsletterId, newsletter: payload }).unwrap();
-        toast.success(isDraft ? "Draft saved" : "Changes saved");
+        if (notify) toast.success(isDraft ? "Draft saved" : "Changes saved");
         return result.newsletter.id;
       }
       const result = await createNewsletter(payload).unwrap();
       setNewsletterId(result.newsletter.id);
       router.replace(`/dashboard/notifications/newsletter?id=${result.newsletter.id}`);
-      toast.success("Draft created");
+      if (notify) toast.success("Draft created");
       return result.newsletter.id;
     } catch (err) {
       toast.error(mutationErrorMessage(err, "Failed to save"));
@@ -168,12 +174,17 @@ export default function NewsletterComposerPage() {
     }
   };
 
+  const persistCurrentDraft = async () => {
+    if (canCreate) return saveDraft({ notify: false });
+    return newsletterId;
+  };
+
   const handleTestSend = async () => {
     if (!canSend) {
       toast.error("You do not have permission to send test emails");
       return;
     }
-    const id = newsletterId || (await saveDraft());
+    const id = await persistCurrentDraft();
     if (!id) return;
 
     try {
@@ -194,7 +205,7 @@ export default function NewsletterComposerPage() {
       return;
     }
 
-    const id = newsletterId || (await saveDraft());
+    const id = await persistCurrentDraft();
     if (!id) return;
 
     const refreshed = await refetchNewsletter();
@@ -205,12 +216,11 @@ export default function NewsletterComposerPage() {
   };
 
   const handleConfirmSend = async () => {
-    const id = newsletterId;
+    const id = await persistCurrentDraft();
     if (!id) return;
 
     try {
       if (sendModalMode === "resend") {
-        await saveDraft();
         const result = await resendNewsletter(id).unwrap();
         toast.success(result.message);
       } else {
@@ -227,9 +237,23 @@ export default function NewsletterComposerPage() {
   const handleUploadImage = useCallback(
     async (file: File) => {
       const result = await uploadAsset(file).unwrap();
-      return result.url;
+      return { url: result.url, assetId: result.asset_id };
     },
     [uploadAsset]
+  );
+
+  const handleDeleteImageAsset = useCallback(
+    async (assetId: string) => {
+      try {
+        await deleteAsset(assetId).unwrap();
+      } catch (err) {
+        const status = (err as { status?: number }).status;
+        if (status === 404) return;
+        console.error("Failed to delete newsletter image", err);
+        toast.error("Failed to delete image from the server");
+      }
+    },
+    [deleteAsset]
   );
 
   if (!canView) {
@@ -411,6 +435,20 @@ export default function NewsletterComposerPage() {
             </div>
           </div>
 
+          <label className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${isEditable ? "border-slate-200 bg-slate-50/80" : "border-slate-100 bg-slate-50 opacity-60"}`}>
+            <input
+              type="checkbox"
+              checked={includeHeader}
+              onChange={(e) => setIncludeHeader(e.target.checked)}
+              disabled={!isEditable}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span>
+              <span className="block text-sm font-medium text-slate-800">Include Shettar header</span>
+              <span className="block text-xs text-slate-500 mt-0.5">Adds the purple Shettar logo band at the top of the email. Off by default.</span>
+            </span>
+          </label>
+
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Email body</label>
             {draftReady ? (
@@ -419,6 +457,7 @@ export default function NewsletterComposerPage() {
                 initialContent={editorInitialContent}
                 onChange={setHtmlBody}
                 onUploadImage={handleUploadImage}
+                onDeleteImageAsset={handleDeleteImageAsset}
                 disabled={!canCreate || !isEditable}
               />
             ) : (
@@ -479,6 +518,7 @@ export default function NewsletterComposerPage() {
             htmlBody={htmlBody}
             ctaUrl={ctaUrl}
             ctaLabel={ctaLabel}
+            includeHeader={includeHeader}
           />
           {typeof recipientEstimate === "number" && (
             <p className="text-xs text-slate-500 mt-3 text-center">

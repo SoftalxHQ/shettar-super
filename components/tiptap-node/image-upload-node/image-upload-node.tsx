@@ -39,6 +39,8 @@ export interface FileItem {
   abortController?: AbortController
 }
 
+export type UploadedImageResult = string | { url: string; assetId?: number | string }
+
 export interface UploadOptions {
   /**
    * Maximum allowed file size in bytes
@@ -58,13 +60,13 @@ export interface UploadOptions {
    * @param {File} file - The file to be uploaded
    * @param {Function} onProgress - Callback function to report upload progress
    * @param {AbortSignal} signal - Signal that can be used to abort the upload
-   * @returns {Promise<string>} Promise resolving to the URL of the uploaded file
+   * @returns {Promise<UploadedImageResult>} Promise resolving to the URL or URL plus asset id
    */
   upload: (
     file: File,
     onProgress: (event: { progress: number }) => void,
     signal: AbortSignal
-  ) => Promise<string>
+  ) => Promise<UploadedImageResult>
   /**
    * Callback triggered when a file is uploaded successfully
    * @param {string} url - URL of the successfully uploaded file
@@ -85,7 +87,7 @@ export interface UploadOptions {
 function useFileUpload(options: UploadOptions) {
   const [fileItems, setFileItems] = useState<FileItem[]>([])
 
-  const uploadFile = async (file: File): Promise<string | null> => {
+  const uploadFile = async (file: File): Promise<UploadedImageResult | null> => {
     if (file.size > options.maxSize) {
       const error = new Error(
         `File size exceeds maximum allowed (${options.maxSize / 1024 / 1024}MB)`
@@ -112,7 +114,7 @@ function useFileUpload(options: UploadOptions) {
         throw new Error("Upload function is not defined")
       }
 
-      const url = await options.upload(
+      const result = await options.upload(
         file,
         (event: { progress: number }) => {
           setFileItems((prev) =>
@@ -124,6 +126,7 @@ function useFileUpload(options: UploadOptions) {
         abortController.signal
       )
 
+      const url = typeof result === "string" ? result : result?.url
       if (!url) throw new Error("Upload failed: No URL returned")
 
       if (!abortController.signal.aborted) {
@@ -135,7 +138,7 @@ function useFileUpload(options: UploadOptions) {
           )
         )
         options.onSuccess?.(url)
-        return url
+        return result
       }
 
       return null
@@ -156,7 +159,7 @@ function useFileUpload(options: UploadOptions) {
     }
   }
 
-  const uploadFiles = async (files: File[]): Promise<string[]> => {
+  const uploadFiles = async (files: File[]): Promise<UploadedImageResult[]> => {
     if (!files || files.length === 0) {
       options.onError?.(new Error("No files to upload"))
       return []
@@ -176,7 +179,7 @@ function useFileUpload(options: UploadOptions) {
     const results = await Promise.all(uploadPromises)
 
     // Filter out null results (failed uploads)
-    return results.filter((url): url is string => url !== null)
+    return results.filter((result): result is UploadedImageResult => result !== null)
   }
 
   const removeFileItem = (fileId: string) => {
@@ -457,16 +460,18 @@ export const ImageUploadNode: React.FC<NodeViewProps> = (props) => {
       const pos = props.getPos()
 
       if (isValidPosition(pos)) {
-        const imageNodes = urls.map((url, index) => {
+        const imageNodes = urls.map((result, index) => {
           const filename =
             files[index]?.name.replace(/\.[^/.]+$/, "") || "unknown"
+          const src = typeof result === "string" ? result : result.url
+          const assetId = typeof result === "string" ? undefined : result.assetId
           return {
             type: extension.options.type,
             attrs: {
-              ...extension.options,
-              src: url,
+              src,
               alt: filename,
               title: filename,
+              ...(assetId != null ? { assetId } : {}),
             },
           }
         })

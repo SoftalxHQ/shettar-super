@@ -6,9 +6,10 @@ interface EmailPreviewProps {
   htmlBody: string;
   ctaUrl?: string;
   ctaLabel?: string;
+  includeHeader?: boolean;
 }
 
-export function EmailPreview({ subject, previewText, htmlBody, ctaUrl, ctaLabel }: EmailPreviewProps) {
+export function EmailPreview({ subject, previewText, htmlBody, ctaUrl, ctaLabel, includeHeader = false }: EmailPreviewProps) {
   const body = htmlBody || "<p style='color:#94a3b8'>Start writing to see a live preview…</p>";
 
   return (
@@ -29,16 +30,18 @@ export function EmailPreview({ subject, previewText, htmlBody, ctaUrl, ctaLabel 
           className="mx-auto max-w-[600px] bg-white rounded-xl overflow-hidden shadow"
           style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
-          <div
-            className="text-center py-8 px-5"
-            style={{
-              background: "radial-gradient(circle, rgba(234,233,250,1) 0%, rgba(160,154,234,0.87) 100%)",
-            }}
-          >
-            <div className="inline-block px-6 py-2 rounded-lg bg-white/70 text-primary font-bold text-sm">
-              Shettar
+          {includeHeader && (
+            <div
+              className="text-center py-8 px-5"
+              style={{
+                background: "radial-gradient(circle, rgba(234,233,250,1) 0%, rgba(160,154,234,0.87) 100%)",
+              }}
+            >
+              <div className="inline-block px-6 py-2 rounded-lg bg-white/70 text-primary font-bold text-sm">
+                Shettar
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="px-6 py-6 text-[#334155] text-base leading-relaxed newsletter-preview-body">
             {previewText && <div className="sr-only">{previewText}</div>}
