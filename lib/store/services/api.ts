@@ -152,6 +152,7 @@ export interface DesktopRelease {
   macos_x64_updater_url?: string | null;
   macos_arm_updater_url?: string | null;
   linux_updater_url?: string | null;
+  latest?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -1833,6 +1834,13 @@ export const apiService = createApi({
       }),
       invalidatesTags: ["DesktopRelease"],
     }),
+    deleteDesktopRelease: builder.mutation<{ message?: string }, number>({
+      query: (id) => ({
+        url: `/api/v1/admin/desktop_releases/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["DesktopRelease"],
+    }),
 
     // ── Newsletter endpoints ────────────────────────────────────────────────
     getNewsletters: builder.query<{ newsletters: Newsletter[]; meta: AccountsMeta }, { page?: number }>({
@@ -2087,6 +2095,7 @@ export const {
   useUpdatePromoCodeMutation,
   useGetDesktopReleasesQuery,
   useUpdateDesktopReleaseMutation,
+  useDeleteDesktopReleaseMutation,
   useGetMarketersQuery,
   useGetMarketerQuery,
   useCreateMarketerMutation,

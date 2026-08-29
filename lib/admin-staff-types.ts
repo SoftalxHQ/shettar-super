@@ -187,7 +187,7 @@ export const ADMIN_PERMISSION_LABELS = {
     title: "Desktop Releases",
     actions: {
       view: "View Desktop Releases",
-      edit: "Activate / Deactivate & Edit Notes",
+      edit: "Activate, edit notes, and delete outdated builds",
     },
   },
   octopus_search: {

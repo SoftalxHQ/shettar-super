@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   useGetDesktopReleasesQuery,
   useUpdateDesktopReleaseMutation,
+  useDeleteDesktopReleaseMutation,
   type DesktopRelease,
 } from "@/lib/store/services/api";
 import { useAuth } from "@/lib/auth-context";
@@ -30,12 +31,14 @@ export default function DesktopReleasesPage() {
   const [channel, setChannel] = useState<string>("");
   const [editing, setEditing] = useState<DesktopRelease | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<DesktopRelease | null>(null);
 
   const { data, isLoading, isFetching } = useGetDesktopReleasesQuery(
     { page, channel: channel || undefined },
     { refetchOnMountOrArgChange: true, skip: !can("desktop_releases", "view") },
   );
   const [updateRelease, { isLoading: isUpdating }] = useUpdateDesktopReleaseMutation();
+  const [deleteRelease, { isLoading: isDeleting }] = useDeleteDesktopReleaseMutation();
 
   const releases = data?.releases ?? [];
   const meta = data?.meta;
@@ -88,6 +91,25 @@ export default function DesktopReleasesPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    if (!can("desktop_releases", "edit")) {
+      toast.error("You don't have permission to delete releases");
+      return;
+    }
+    try {
+      await deleteRelease(confirmDelete.id).unwrap();
+      toast.success(`Deleted v${confirmDelete.version} (${confirmDelete.channel})`);
+      setConfirmDelete(null);
+    } catch (error) {
+      const message =
+        error && typeof error === "object" && "data" in error
+          ? (error as { data?: { error?: string } }).data?.error
+          : undefined;
+      toast.error(message || "Failed to delete release");
+    }
+  };
+
   return (
     <div className="dash-page space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -96,7 +118,8 @@ export default function DesktopReleasesPage() {
             Desktop Releases
           </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Shettar Business installers registered from CI. Creates stay CI-only.
+            Shettar Business installers registered from CI. Delete outdated builds to free S3 space.
+            The latest active release per channel cannot be deleted.
           </p>
         </div>
         <div>
@@ -181,6 +204,19 @@ export default function DesktopReleasesPage() {
                           >
                             {release.active ? "Deactivate" : "Activate"}
                           </button>
+                          {release.latest ? (
+                            <span className="text-sm text-slate-400" title="Deactivate or publish a newer release first">
+                              Latest
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDelete(release)}
+                              className="text-sm font-semibold text-red-600 hover:text-red-700"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </>
                       )}
                     </td>
@@ -236,6 +272,38 @@ export default function DesktopReleasesPage() {
                 className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 {isUpdating ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className={`${panelClass} w-full max-w-md p-6 space-y-4`}>
+            <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900">
+              Delete v{confirmDelete.version} ({confirmDelete.channel})
+            </h2>
+            <p className="text-sm text-slate-500">
+              This removes the release record and deletes its installers and updater files from S3.
+              This cannot be undone.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => void handleDelete()}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
