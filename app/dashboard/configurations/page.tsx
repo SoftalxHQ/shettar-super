@@ -40,6 +40,7 @@ type PlatformConfig = {
   ai_monthly_free_points: number;
   ai_point_price_naira: number;
   ai_points_per_request: number;
+  unverified_sales_block_after_days: number;
   ad_settings: AdSettings;
 };
 
@@ -64,6 +65,7 @@ export default function ConfigurationPage() {
     ai_monthly_free_points: 5,
     ai_point_price_naira: 50,
     ai_points_per_request: 1,
+    unverified_sales_block_after_days: 7,
     ad_settings: DEFAULT_AD_SETTINGS,
   });
   const [loading, setLoading] = useState(true);
@@ -100,6 +102,10 @@ export default function ConfigurationPage() {
       ai_monthly_free_points: Number(data.ai_monthly_free_points ?? 5),
       ai_point_price_naira: Number(data.ai_point_price_naira ?? 50),
       ai_points_per_request: Number(data.ai_points_per_request ?? 1),
+      unverified_sales_block_after_days: Math.max(
+        1,
+        Number(data.unverified_sales_block_after_days ?? 7) || 7
+      ),
       ad_settings: {
         default_cpm_rate: Number(ad.default_cpm_rate ?? DEFAULT_AD_SETTINGS.default_cpm_rate),
         default_cpc_rate: Number(ad.default_cpc_rate ?? DEFAULT_AD_SETTINGS.default_cpc_rate),
@@ -447,6 +453,33 @@ export default function ConfigurationPage() {
               <p className="text-xs text-slate-500">
                 Default is 22.22% (2/9 of the refundable amount). The guest receives the remaining {(100 - config.business_cancellation_credit_percentage).toFixed(2)}%.
               </p>
+            </div>
+
+            {/* Business verification */}
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <div>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business verification</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Unverified businesses stay active but cannot take new walk-in, POS, cash, transfer, or restaurant sales after this many days from signup. Approval clears the block immediately. Suspended businesses cannot process sales regardless of verification.
+                </p>
+              </div>
+              <label className="space-y-1 text-sm">
+                <span className="text-slate-500">Block unverified sales after (days)</span>
+                <input
+                  type="number"
+                  min={1}
+                  className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                  value={config.unverified_sales_block_after_days}
+                  onChange={(e) =>
+                    canEdit &&
+                    setConfig({
+                      ...config,
+                      unverified_sales_block_after_days: Math.max(1, parseInt(e.target.value, 10) || 1),
+                    })
+                  }
+                  readOnly={!canEdit}
+                />
+              </label>
             </div>
 
             {/* Business AI Analyzer points */}

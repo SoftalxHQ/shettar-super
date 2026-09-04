@@ -383,6 +383,9 @@ export interface Business {
   commission_rate?: number | null;
   is_featured?: boolean;
   logo_url?: string | null;
+  can_process_sales?: boolean;
+  sales_blocked_reason?: "suspended" | "unverified_grace_elapsed" | null;
+  unverified_sales_block_at?: string | null;
 }
 
 export interface BankAccount {
@@ -1469,6 +1472,13 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { id }) => ["SupportTicket", "SupportTicketStats", { type: "SupportTicket", id }],
     }),
+    suggestSupportReply: builder.mutation<{ reply: string }, { id: number | string; instruction: string }>({
+      query: ({ id, instruction }) => ({
+        url: `/api/v1/admin/support_tickets/${id}/suggest_reply`,
+        method: "POST",
+        body: { instruction },
+      }),
+    }),
 
     // ── Admin Staff endpoints ───────────────────────────────────────────────
     getAdminStaff: builder.query<GetAdminStaffResponse, GetAdminStaffParams>({
@@ -2053,6 +2063,7 @@ export const {
   useAssignSupportTicketMutation,
   useUpdateSupportTicketStatusMutation,
   useReplyToSupportTicketMutation,
+  useSuggestSupportReplyMutation,
   useGetAdminStaffQuery,
   useGetAdminStaffMemberQuery,
   useInviteAdminStaffMutation,

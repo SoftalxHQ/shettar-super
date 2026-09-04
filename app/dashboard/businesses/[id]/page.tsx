@@ -393,6 +393,13 @@ export default function BusinessDetailPage() {
   }
 
   const isVerified = business.verification_status === "approved";
+  const salesBlocked = business.can_process_sales === false;
+  const salesBlockedReasonLabel =
+    business.sales_blocked_reason === "suspended"
+      ? "Deactivated"
+      : business.sales_blocked_reason === "unverified_grace_elapsed"
+        ? "Verification grace ended"
+        : "Blocked";
   const isMutationLoading = isSuspending || isActivating || isVerifying || isVerifyingBank;
   const bankAccounts = business.bank_accounts ?? [];
   const admins = business.admins ?? business.owners ?? [];
@@ -1808,6 +1815,17 @@ export default function BusinessDetailPage() {
                 </span>
               </div>
 
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                <div>
+                  <p className="font-semibold">Sales</p>
+                  <p className="text-xs text-muted-foreground">Walk-in, POS, cash, transfer, and restaurant payments</p>
+                </div>
+                <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${salesBlocked ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                  }`}>
+                  {salesBlocked ? `Blocked · ${salesBlockedReasonLabel}` : "Allowed"}
+                </span>
+              </div>
+
               {/* Verify / Reject business actions */}
               {business.verification_status === "pending" && can("businesses", "verify") && (
                 <div className="flex gap-3 pt-2">
@@ -1978,8 +1996,8 @@ export default function BusinessDetailPage() {
             <div className="p-6 border-b border-slate-200">
               <h3 className="font-display text-lg font-semibold tracking-tight text-slate-900">{statusAction.title}</h3>
               <p className="text-sm text-slate-500 mt-1">
-                {statusAction.type === "suspend" && "You are about to suspend this business. It will no longer be visible to customers."}
-                {statusAction.type === "activate" && "You are about to reactivate this business."}
+                {statusAction.type === "suspend" && "You are about to suspend this business. It will no longer be visible to customers, and sales in the business app will stop, including cash and POS."}
+                {statusAction.type === "activate" && "You are about to reactivate this business. If it is verified, walk-in and restaurant sales in the business app will be allowed again."}
                 {statusAction.type === "verify" && "Confirm verification of this business."}
                 {statusAction.type === "reject" && "Provide the reason for rejecting this business."}
               </p>
