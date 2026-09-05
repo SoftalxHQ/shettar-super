@@ -118,7 +118,8 @@ export default function DesktopReleasesPage() {
             Desktop Releases
           </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Shettar Business installers registered from CI. Delete outdated builds to free S3 space.
+            Shettar Business installers registered from CI. The public site serves the APK.
+            Download the Play Store AAB here. Delete outdated builds to free S3 space.
             The latest active release per channel cannot be deleted.
           </p>
         </div>
@@ -164,6 +165,7 @@ export default function DesktopReleasesPage() {
                   <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Status</th>
                   <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Published</th>
                   <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Notes</th>
+                  <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Play bundle</th>
                   <th className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 text-right">Actions</th>
                 </tr>
               </thead>
@@ -186,6 +188,19 @@ export default function DesktopReleasesPage() {
                     <td className="px-5 py-3.5 whitespace-nowrap text-slate-600">{formatDate(release.published_at)}</td>
                     <td className="px-5 py-3.5 max-w-xs truncate text-slate-600" title={release.notes ?? undefined}>
                       {release.notes || "—"}
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      {release.android_aab_url ? (
+                        <a
+                          href={release.android_aab_url}
+                          className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                          download
+                        >
+                          Download AAB
+                        </a>
+                      ) : (
+                        <span className="text-sm text-slate-400">—</span>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-right space-x-2 whitespace-nowrap">
                       {can("desktop_releases", "edit") && (
