@@ -220,7 +220,7 @@ export default function ConfigurationPage() {
                 </div>
                 <div>
                   <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Withdrawal Commission Rate</h3>
-                  <p className="text-xs text-slate-500">Percentage deducted from each business withdrawal</p>
+                  <p className="text-xs text-slate-500">Charged on top of the amount the business receives</p>
                 </div>
               </div>
               <div className="relative">
@@ -238,7 +238,7 @@ export default function ConfigurationPage() {
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">%</span>
               </div>
               <p className="text-xs text-slate-500">
-                This percentage is automatically deducted when a business initiates a withdrawal.
+                Added on top of the requested amount. A ₦10,000 withdrawal credits the hotel ₦10,000 and debits the wallet ₦10,000 plus this percentage plus the Paystack transfer fee.
               </p>
             </div>
 
@@ -252,7 +252,7 @@ export default function ConfigurationPage() {
                 </div>
                 <div>
                   <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Withdrawal Flat Fee</h3>
-                  <p className="text-xs text-slate-500">Fixed naira amount added to the commission on every withdrawal</p>
+                  <p className="text-xs text-slate-500">Not applied — kept for historical config only</p>
                 </div>
               </div>
               <div className="relative">
@@ -269,7 +269,7 @@ export default function ConfigurationPage() {
                 />
               </div>
               <p className="text-xs text-slate-500">
-                Total commission = (rate% × amount) + flat fee. Default ₦100 covers Paystack&apos;s fixed transfer charge.
+                This field is unused. Paystack transfer fees are ₦10 (≤₦5,000), ₦25 (₦5,001–₦50,000), or ₦50 (above ₦50,000) — not the ₦100 card collection add-on.
               </p>
             </div>
 
@@ -654,7 +654,7 @@ export default function ConfigurationPage() {
             </h4>
             <div className="space-y-3">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
-                <p className="text-xs text-slate-500 mb-1">Est. Commission on ₦1M withdrawal</p>
+                <p className="text-xs text-slate-500 mb-1">Est. wallet debit on ₦1M withdrawal</p>
                 {(() => {
                   const sampleAmount = 1000000;
                   const uncappedPlatform = Math.round(sampleAmount * config.withdrawal_commission_rate / 100);
@@ -662,20 +662,23 @@ export default function ConfigurationPage() {
                   const platformFee =
                     maxCap != null ? Math.min(uncappedPlatform, maxCap) : uncappedPlatform;
                   const capped = maxCap != null && uncappedPlatform > maxCap;
-                  const total = platformFee + config.withdrawal_flat_fee;
-                  const net = sampleAmount - total;
+                  const paystackFee = 50; // transfers above ₦50,000
+                  const totalDebit = sampleAmount + platformFee + paystackFee;
                   return (
                     <>
                       <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums">
-                        ₦{total.toLocaleString()}
+                        ₦{totalDebit.toLocaleString()}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        {config.withdrawal_commission_rate}% (₦{platformFee.toLocaleString()}
+                        Wallet debit on a ₦1M withdrawal
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {config.withdrawal_commission_rate}% commission (₦{platformFee.toLocaleString()}
                         {capped ? ` capped from ₦${uncappedPlatform.toLocaleString()}` : ""}
-                        ) + ₦{config.withdrawal_flat_fee} flat fee
+                        ) + ₦{paystackFee} Paystack transfer fee
                       </p>
                       <p className="text-xs text-slate-500">
-                        Business receives ₦{net.toLocaleString()}
+                        Business is credited ₦{sampleAmount.toLocaleString()}
                       </p>
                       {maxCap != null && (
                         <p className="text-xs text-indigo-600 mt-1">
