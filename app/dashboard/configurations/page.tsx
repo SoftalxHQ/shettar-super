@@ -340,6 +340,9 @@ export default function ConfigurationPage() {
               <p className="text-xs text-slate-500">
                 Prevents unprofitable micro-withdrawals where Paystack&apos;s flat fees exceed your commission.
               </p>
+              <p className="text-xs text-slate-500">
+                Marketer withdrawals charge only the Paystack transfer fee on top of the requested amount (no hotel commission %), have no minimum, and are blocked when payouts are paused.
+              </p>
             </div>
 
             {/* Cancellation Fee */}
