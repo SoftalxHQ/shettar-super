@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useAppSelector } from "@/lib/store/hooks";
-import { selectToken } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
 import {
@@ -46,7 +44,6 @@ type PlatformConfig = {
 
 export default function ConfigurationPage() {
   const { admin } = useAuth();
-  const token = useAppSelector(selectToken);
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
@@ -128,7 +125,8 @@ export default function ConfigurationPage() {
     const fetchConfig = async () => {
       try {
         const res = await fetch(`${API_URL}/api/v1/configurations`, {
-          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+          credentials: "include",
+          headers: { "X-Client-Platform": "web-super" },
         });
         if (res.ok) {
           applyConfiguration(await res.json());
@@ -140,7 +138,7 @@ export default function ConfigurationPage() {
       }
     };
     fetchConfig();
-  }, [API_URL, token]);
+  }, [API_URL]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,8 +146,8 @@ export default function ConfigurationPage() {
     try {
       const res = await fetch(`${API_URL}/api/v1/configurations`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "X-Client-Platform": "web-super",
         },
@@ -157,7 +155,8 @@ export default function ConfigurationPage() {
       });
       if (res.ok) {
         const refresh = await fetch(`${API_URL}/api/v1/configurations`, {
-          headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+          credentials: "include",
+          headers: { "X-Client-Platform": "web-super" },
         });
         if (refresh.ok) {
           applyConfiguration(await refresh.json());

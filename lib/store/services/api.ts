@@ -1,8 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { RootState } from "../store";
 import { logout as logoutAction } from "../slices/authSlice";
 import type { Admin } from "../slices/authSlice";
 import type { AdminStaff } from "../../admin-staff-types";
+import { logout as storageLogout } from "../../storage";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -1084,20 +1084,15 @@ export interface PlatformWithdrawal {
   } | null;
 }
 
-// Custom base query with auth header injection and 401 handling
+// Custom base query with cookie auth and 401 handling
 const baseQueryWithAuth = fetchBaseQuery({
   baseUrl: API_BASE_URL,
-  prepareHeaders: (headers, { getState, endpoint }) => {
-    const token = (getState() as RootState).auth.token;
-
+  credentials: "include",
+  prepareHeaders: (headers, { endpoint }) => {
     headers.set("X-Client-Platform", "web-super");
 
     if (endpoint !== "uploadNewsletterAsset") {
       headers.set("Content-Type", "application/json");
-    }
-
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
     }
 
     return headers;
@@ -1122,6 +1117,7 @@ const baseQueryWith401Handler = async (
 
     if (!isAuthChallengeRequest) {
       api.dispatch(logoutAction());
+      storageLogout();
 
       if (typeof window !== "undefined") {
         window.location.href = "/";

@@ -60,7 +60,6 @@ export default function SupportTicketDetailPage({
   const [liveMessages, setLiveMessages] = useState<SupportMessage[]>([]);
   const [userTyping, setUserTyping] = useState<string | null>(null);
 
-  const token = useSelector((state: RootState) => state.auth.token);
   const channelRef = useRef<SupportTicketChannelHandle | null>(null);
   const typingClearTimer = useRef<number | null>(null);
   const lastTypingSentAt = useRef(0);
@@ -80,11 +79,11 @@ export default function SupportTicketDetailPage({
   // Live per-ticket room: new messages, status/assignment changes, typing.
   useEffect(() => {
     const cableTicketId = ticket?.ticket_id;
-    if (!token || !cableTicketId) return;
+    if (!cableTicketId) return;
 
     hydrateNotificationSoundEnabled();
 
-    const handle = subscribeSupportTicketChannel(token, cableTicketId, {
+    const handle = subscribeSupportTicketChannel(cableTicketId, {
       received: (event: SupportTicketCableEvent) => {
         if (event.type === "new_message" && event.message) {
           if (event.message.sender_type === "User") {
@@ -110,7 +109,7 @@ export default function SupportTicketDetailPage({
       channelRef.current = null;
       if (typingClearTimer.current) window.clearTimeout(typingClearTimer.current);
     };
-  }, [token, ticket?.ticket_id, refetch]);
+  }, [ticket?.ticket_id, refetch]);
 
   const isClosedOrResolved = ticket?.status === "resolved" || ticket?.status === "closed";
 

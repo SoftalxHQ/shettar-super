@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useAppSelector } from "@/lib/store/hooks";
-import { selectToken } from "@/lib/store/slices/authSlice";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui/pagination";
@@ -77,7 +75,6 @@ function statusStyle(status: string) {
 }
 
 export default function AdCampaignsAdminPage() {
-  const token = useAppSelector(selectToken);
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending_review");
@@ -91,7 +88,6 @@ export default function AdCampaignsAdminPage() {
   const [reviewingId, setReviewingId] = useState<number | null>(null);
 
   const loadCampaigns = useCallback(async (status: StatusFilter, pageNum: number, silent = false) => {
-    if (!token) return;
     if (silent) setRefreshing(true);
     else setLoading(true);
 
@@ -99,7 +95,8 @@ export default function AdCampaignsAdminPage() {
       const params = new URLSearchParams({ page: String(pageNum) });
       if (status !== "all") params.set("status", status);
       const res = await fetch(`${API_URL}/api/v1/admin/ad_campaigns?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}`, "X-Client-Platform": "web-super" },
+        credentials: "include",
+        headers: { "X-Client-Platform": "web-super" },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load campaigns");
@@ -113,7 +110,7 @@ export default function AdCampaignsAdminPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [API_URL, token]);
+  }, [API_URL]);
 
   useEffect(() => {
     loadCampaigns(statusFilter, page);
@@ -136,8 +133,8 @@ export default function AdCampaignsAdminPage() {
     try {
       const res = await fetch(`${API_URL}/api/v1/admin/ad_campaigns/${id}/review`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           "X-Client-Platform": "web-super",
         },

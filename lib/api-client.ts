@@ -1,4 +1,4 @@
-import { getAuthToken, logout as storageLogout } from "./storage"
+import { logout as storageLogout, setAdminData } from "./storage"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -19,20 +19,11 @@ class ApiClient {
     this.baseUrl = baseUrl
   }
 
-  private getHeaders(options: RequestOptions = {}): HeadersInit {
-    const headers: HeadersInit = {
+  private getHeaders(_options: RequestOptions = {}): HeadersInit {
+    return {
       "Content-Type": "application/json",
       "X-Client-Platform": "web-super",
     }
-
-    if (options.requiresAuth) {
-      const token = getAuthToken()
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`
-      }
-    }
-
-    return headers
   }
 
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -43,6 +34,7 @@ class ApiClient {
 
     const response = await fetch(url, {
       ...fetchOptions,
+      credentials: "include",
       headers: {
         ...headers,
         ...(fetchOptions.headers || {}),
@@ -52,7 +44,7 @@ class ApiClient {
     if (!response.ok) {
       const errorData: ErrorResponse = await response.json().catch(() => ({}))
 
-      // Auto-logout on 401 Unauthorized (Expired/Invalid Token)
+      // Auto-logout on 401 Unauthorized (Expired/Invalid session cookie)
       if (response.status === 401) {
         storageLogout()
         if (typeof window !== "undefined") {
@@ -73,6 +65,7 @@ class ApiClient {
   async login(email: string, password: string) {
     const response = await fetch(`${this.baseUrl}/admins/sign_in`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         "X-Client-Platform": "web-super",
@@ -92,21 +85,20 @@ class ApiClient {
     }
 
     const data: Record<string, unknown> = await response.json()
-    const authHeader = response.headers.get("Authorization")
-    const token = authHeader?.replace("Bearer ", "") || ""
+    if (data.data) {
+      setAdminData(data.data)
+    }
 
-    return { ...data, token }
+    return { ...data, token: "" }
   }
 
   async logout() {
-    const token = getAuthToken()
-
     return fetch(`${this.baseUrl}/admins/sign_out`, {
       method: "DELETE",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         "X-Client-Platform": "web-super",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
   }

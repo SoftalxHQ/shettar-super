@@ -6,13 +6,11 @@ const ADMIN_DATA_KEY = "shettar_super_admin_data"
 const isClient = typeof window !== "undefined"
 
 export function getAuthToken(): string | null {
-  if (!isClient) return null
-  return localStorage.getItem(AUTH_TOKEN_KEY)
+  return null
 }
 
-export function setAuthToken(token: string): void {
-  if (!isClient) return
-  localStorage.setItem(AUTH_TOKEN_KEY, token)
+export function setAuthToken(_token: string): void {
+  clearAuthToken()
 }
 
 export function clearAuthToken(): void {

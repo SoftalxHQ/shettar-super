@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useAppSelector } from "@/lib/store/hooks";
-import { selectToken } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import {
   useGetCompanyBankAccountsQuery,
@@ -55,8 +53,6 @@ function DeleteConfirmDialog({
 
 export default function CompanyAccountsPage() {
   const { admin } = useAuth();
-  const token = useAppSelector(selectToken);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;

@@ -8,8 +8,6 @@ import {
   useAnalyzeAdminActivitiesMutation,
 } from "@/lib/store/services/api";
 import type { AdminActivityItem, ActivityAiReport } from "@/lib/store/services/api";
-import { useAppSelector } from "@/lib/store/hooks";
-import { selectToken } from "@/lib/store/slices/authSlice";
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
@@ -118,7 +116,6 @@ export default function ActivityPage() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiReport, setAiReport] = useState<ActivityAiReport | null>(null);
   const [analyzedCount, setAnalyzedCount] = useState<number | undefined>();
-  const token = useAppSelector(selectToken);
   const { admin } = useAuth();
   const can = (section: keyof AdminPermissions, action: string): boolean => {
     if (admin?.admin_role === "super_admin") return true;
@@ -184,8 +181,8 @@ export default function ActivityPage() {
       const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/v1/admin/activities/export?${params.toString()}`;
 
       const response = await fetch(url, {
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "X-Client-Platform": "web-super",
         },
       });

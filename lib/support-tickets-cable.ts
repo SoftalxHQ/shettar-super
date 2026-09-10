@@ -21,9 +21,9 @@ export type SupportAdminCableEvent =
       support_ticket_id?: number;
     };
 
-export function supportCableUrl(token: string): string {
+export function supportCableUrl(): string {
   const wsBase = API_BASE_URL.replace(/^http/, "ws");
-  return `${wsBase}/cable?token=${encodeURIComponent(token)}`;
+  return `${wsBase}/cable`;
 }
 
 export type SupportTicketCableEvent =
@@ -48,14 +48,13 @@ export interface SupportTicketChannelHandle {
  * be the string ticket id (e.g. "SP..."), not the numeric database id.
  */
 export function subscribeSupportTicketChannel(
-  token: string,
   ticketId: string,
   handlers: {
     received: (data: SupportTicketCableEvent) => void;
     rejected?: () => void;
   }
 ): SupportTicketChannelHandle {
-  const consumer = createConsumer(supportCableUrl(token));
+  const consumer = createConsumer(supportCableUrl());
   const subscription = consumer.subscriptions.create(
     { channel: "SupportChannel", ticket_id: ticketId },
     {
@@ -88,7 +87,6 @@ export function subscribeSupportTicketChannel(
 }
 
 export function subscribeSupportAdminChannel(
-  token: string,
   handlers: {
     received: (data: SupportAdminCableEvent) => void;
     connected?: () => void;
@@ -96,7 +94,7 @@ export function subscribeSupportAdminChannel(
     rejected?: () => void;
   }
 ): { consumer: Consumer; subscription: Subscription } {
-  const consumer = createConsumer(supportCableUrl(token));
+  const consumer = createConsumer(supportCableUrl());
   const subscription = consumer.subscriptions.create(
     { channel: "SupportChannel" },
     {

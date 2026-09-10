@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { toast } from "sonner";
 import type { Consumer, Subscription } from "@rails/actioncable";
 import { useAuth } from "@/lib/auth-context";
@@ -10,7 +10,6 @@ import {
   apiService,
   type SupportTicket,
 } from "@/lib/store/services/api";
-import type { RootState } from "@/lib/store/store";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import {
   subscribeSupportAdminChannel,
@@ -48,7 +47,6 @@ export default function SupportTicketsCableListener() {
   const router = useRouter();
   const pathname = usePathname();
   const { admin } = useAuth();
-  const token = useSelector((state: RootState) => state.auth.token);
   const canView = canViewSupport(admin);
   const adminId = admin?.id;
   const pathnameRef = useRef(pathname);
@@ -63,7 +61,7 @@ export default function SupportTicketsCableListener() {
   }, [adminId]);
 
   useEffect(() => {
-    if (!token || !canView) return;
+    if (!canView) return;
 
     hydrateNotificationSoundEnabled();
 
@@ -160,7 +158,7 @@ export default function SupportTicketsCableListener() {
     };
 
     try {
-      const conn = subscribeSupportAdminChannel(token, {
+      const conn = subscribeSupportAdminChannel({
         received: handleEvent,
         rejected: () => {
           console.warn("[SupportCable] subscription rejected");
@@ -180,7 +178,7 @@ export default function SupportTicketsCableListener() {
         // ignore disconnect errors
       }
     };
-  }, [token, canView, dispatch, router]);
+  }, [canView, dispatch, router]);
 
   return null;
 }

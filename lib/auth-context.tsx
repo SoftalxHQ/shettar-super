@@ -20,6 +20,7 @@ import { useLoginMutation, useLogoutMutation } from "./store/services/api";
 import { persistor } from "./store/store";
 import { toast } from "sonner";
 import type { Admin } from "./store/slices/authSlice";
+import { setAdminData, logout as storageLogout } from "./storage";
 
 export interface LoginResult {
   requires_2fa?: boolean;
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // (e.g. old frontend against mandatory-2FA API).
     if (isAuthenticated && !admin) {
       dispatch(logoutAction());
+      storageLogout();
       void persistor.purge();
       router.replace("/");
       return;
@@ -99,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Fallback for the (currently unused) no-2FA path.
       if (result.token && result.data) {
+        setAdminData(result.data);
         dispatch(loginAction({ token: result.token, admin: result.data }));
         router.push("/dashboard");
       }
@@ -110,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const finalizeLogin = useCallback(
     (token: string, adminData: Admin) => {
+      setAdminData(adminData);
       dispatch(loginAction({ token, admin: adminData }));
       toast.success("Welcome back!", {
         description: "Authenticated with Shettar Cloud Protocol.",
@@ -121,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateAdmin = useCallback(
     (adminData: Admin) => {
+      setAdminData(adminData);
       dispatch(updateAdminAction(adminData));
     },
     [dispatch],
@@ -135,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Clear Redux state
       dispatch(logoutAction());
+      storageLogout();
 
       // Clear persisted state
       await persistor.purge();
