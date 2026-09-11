@@ -1118,6 +1118,9 @@ const baseQueryWith401Handler = async (
     if (!isAuthChallengeRequest) {
       api.dispatch(logoutAction());
       storageLogout();
+      void import("../store").then(({ persistor }) => {
+        void persistor.purge();
+      });
 
       if (typeof window !== "undefined") {
         window.location.href = "/";

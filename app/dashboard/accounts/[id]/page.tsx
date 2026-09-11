@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import {
   useGetAccountQuery,
   useGetAccountReservationsQuery,
@@ -247,7 +247,7 @@ export default function AccountDetailPage() {
           { label: "Wallet Balance", value: formatCurrency(account.wallet_balance), icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" },
           { label: "Total Bookings", value: account.total_bookings, icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
           { label: "Sign-in Count", value: account.sign_in_count, icon: "M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" },
-          { label: "Last Login", value: account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "Last Login", value: account.last_sign_in_at ? formatDateTime(account.last_sign_in_at) : "Never", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
         ].map((stat, i) => (
           <div key={i} className={`${panelClass} px-5 py-4`}>
             <div className="flex items-start justify-between gap-3">
@@ -361,7 +361,7 @@ export default function AccountDetailPage() {
               <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Account Activity</h3>
               <div className="space-y-1">
                 {[
-                  { label: "Last Login", value: account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never" },
+                  { label: "Last Login", value: account.last_sign_in_at ? formatDateTime(account.last_sign_in_at) : "Never" },
                   { label: "Total Logins", value: account.sign_in_count },
                   { label: "Email Verified", value: account.email_verified ? "Yes" : "No" },
                   { label: "Phone Verified", value: account.phone_verified ? "Yes" : "No" },

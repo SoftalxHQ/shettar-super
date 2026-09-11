@@ -1,4 +1,5 @@
 import { logout as storageLogout, setAdminData } from "./storage"
+import { logout as logoutAction } from "./store/slices/authSlice"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
@@ -47,6 +48,10 @@ class ApiClient {
       // Auto-logout on 401 Unauthorized (Expired/Invalid session cookie)
       if (response.status === 401) {
         storageLogout()
+        void import("./store/store").then(({ persistor, store }) => {
+          store.dispatch(logoutAction())
+          void persistor.purge()
+        })
         if (typeof window !== "undefined") {
           window.location.href = "/"
         }

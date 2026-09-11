@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useGetAccountsQuery } from "@/lib/store/services/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
@@ -180,7 +180,7 @@ export default function UserAccountsPage() {
                     <td className="px-5 py-3.5">
                       <div className="space-y-1 text-xs">
                         <p className="text-slate-700"><span className="font-medium text-slate-600">Joined:</span> {formatDate(account.created_at)}</p>
-                        <p className="text-slate-500">Last login: {account.last_sign_in_at ? formatDate(account.last_sign_in_at) : "Never"}</p>
+                        <p className="text-slate-500">Last login: {account.last_sign_in_at ? formatDateTime(account.last_sign_in_at) : "Never"}</p>
                         <p className="text-slate-500">{account.total_bookings} bookings</p>
                       </div>
                     </td>

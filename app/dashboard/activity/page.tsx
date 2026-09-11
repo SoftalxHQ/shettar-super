@@ -11,6 +11,9 @@ import type { AdminActivityItem, ActivityAiReport } from "@/lib/store/services/a
 import { toast } from "sonner";
 import { Pagination } from "@/components/ui/pagination";
 import { useAuth } from "@/lib/auth-context";
+import { logout as storageLogout } from "@/lib/storage";
+import { persistor, store } from "@/lib/store/store";
+import { logout as logoutAction } from "@/lib/store/slices/authSlice";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import { ActivityAiPanel } from "@/components/activity-ai-panel";
 
@@ -186,6 +189,14 @@ export default function ActivityPage() {
           "X-Client-Platform": "web-super",
         },
       });
+
+      if (response.status === 401) {
+        store.dispatch(logoutAction());
+        storageLogout();
+        void persistor.purge();
+        window.location.href = "/";
+        return;
+      }
 
       if (!response.ok) throw new Error("Export failed");
 
