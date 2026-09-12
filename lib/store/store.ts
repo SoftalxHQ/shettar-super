@@ -56,7 +56,12 @@ const rootReducer = combineReducers({
   [apiService.reducerPath]: apiService.reducer,
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+// Infer from the unpersisted reducer so slice keys are not Partial (persist wraps them).
+export type RootState = ReturnType<typeof rootReducer>;
+
+// redux-persist + JWT strip transform widens PreloadedState; cast keeps RootState clean.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const persistedReducer = persistReducer(persistConfig, rootReducer as any) as typeof rootReducer;
 
 export const store = configureStore({
   reducer: persistedReducer,
@@ -71,6 +76,4 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-// TypeScript types
-export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
