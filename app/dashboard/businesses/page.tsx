@@ -273,6 +273,15 @@ export default function BusinessesPage() {
                         >
                           {business.verification_status}
                         </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                            business.partner_agreement_signed
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-amber-50 text-amber-700"
+                          }`}
+                        >
+                          {business.partner_agreement_signed ? "Agreement signed" : "Agreement pending"}
+                        </span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-right">

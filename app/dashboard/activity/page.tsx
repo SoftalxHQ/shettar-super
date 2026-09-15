@@ -29,6 +29,8 @@ const ACTION_LABELS: Record<string, string> = {
   business_suspended: "Business Suspended",
   business_activated: "Business Activated",
   business_viewed: "Business Viewed",
+  partner_agreement_recorded_offline: "Partner Agreement Recorded (Offline)",
+  partner_agreement_signed_copy_purged: "Partner Agreement Signed Copy Removed",
   ticket_replied: "Ticket Replied",
   ticket_assigned: "Ticket Assigned",
   ticket_status_updated: "Ticket Status Updated",

@@ -388,6 +388,36 @@ export interface Business {
   can_process_sales?: boolean;
   sales_blocked_reason?: "suspended" | "unverified_grace_elapsed" | null;
   unverified_sales_block_at?: string | null;
+  partner_agreement_signed?: boolean;
+  partner_agreement_signed_at?: string | null;
+}
+
+export interface PartnerAgreementDocument {
+  key: string;
+  title: string;
+  url: string;
+}
+
+export interface PartnerAgreementAdmin {
+  version: string;
+  signed_at: string | null;
+  signed_by_name: string | null;
+  signed_by_role: string | null;
+  signed: boolean;
+  needs_signer_details?: boolean;
+  source?: "portal" | "offline" | null;
+  recorded_by_admin_id?: number | null;
+  recorded_by_admin_name?: string | null;
+  signed_copy_url?: string | null;
+  signed_copy_filename?: string | null;
+  documents?: PartnerAgreementDocument[];
+  commission_rate?: number;
+  commission_rate_custom?: boolean;
+  maximum_withdrawal_commission?: number;
+  primary_contact_name?: string | null;
+  primary_contact_title?: string | null;
+  primary_contact_email?: string | null;
+  primary_contact_phone?: string | null;
 }
 
 export interface BankAccount {
@@ -477,6 +507,7 @@ export interface BusinessDetail extends Business {
   commission_rate: number | null;
   cancellation_fee_percentage: number | null;
   is_featured: boolean;
+  partner_agreement?: PartnerAgreementAdmin;
 }
 
 export interface BusinessReservation {
@@ -1091,7 +1122,7 @@ const baseQueryWithAuth = fetchBaseQuery({
   prepareHeaders: (headers, { endpoint }) => {
     headers.set("X-Client-Platform", "web-super");
 
-    if (endpoint !== "uploadNewsletterAsset") {
+    if (endpoint !== "uploadNewsletterAsset" && endpoint !== "recordBusinessPartnerAgreement") {
       headers.set("Content-Type", "application/json");
     }
 
@@ -1369,6 +1400,34 @@ export const apiService = createApi({
         body: { cancellation_fee_percentage },
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
+    recordBusinessPartnerAgreement: builder.mutation<
+      { message: string; business: BusinessDetail; partner_agreement: PartnerAgreementAdmin },
+      { id: number | string; full_name: string; role: string; signed_at?: string; file?: File | null }
+    >({
+      query: ({ id, full_name, role, signed_at, file }) => {
+        const formData = new FormData();
+        formData.append("full_name", full_name);
+        formData.append("role", role);
+        if (signed_at) formData.append("signed_at", signed_at);
+        if (file) formData.append("file", file);
+        return {
+          url: `/api/v1/admin/businesses/${id}/partner_agreement`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
+    purgeBusinessPartnerAgreementSignedCopy: builder.mutation<
+      { message: string; business: BusinessDetail },
+      number | string
+    >({
+      query: (id) => ({
+        url: `/api/v1/admin/businesses/${id}/partner_agreement/signed_copy`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _err, id) => ["Business", { type: "Business", id }],
     }),
     verifyBankAccount: builder.mutation<VerifyBankAccountResponse, VerifyBankAccountParams>({
       query: ({ businessId, id }) => ({
@@ -2049,6 +2108,8 @@ export const {
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
+  useRecordBusinessPartnerAgreementMutation,
+  usePurgeBusinessPartnerAgreementSignedCopyMutation,
   useVerifyBankAccountMutation,
   useRejectBankAccountMutation,
   useBanBankAccountMutation,

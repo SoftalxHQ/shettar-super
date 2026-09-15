@@ -21,7 +21,7 @@ export const ADMIN_PERMISSION_PRESETS = {
     description: "Complete access to all sections and actions",
     permissions: {
       accounts: { view: true, suspend: true, activate: true, notify: true },
-      businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true, lock_members: true },
+      businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true, lock_members: true, compliance: true },
       support_tickets: { view: true, reply: true, assign: true, update_status: true },
       finance: { view: true, manage_payouts: true, manage_company_accounts: true, withdraw_revenue: true },
       configurations: { view: true, edit: true },
@@ -48,7 +48,7 @@ export const ADMIN_PERMISSION_PRESETS = {
     name: "Moderator",
     description: "Manage businesses and accounts",
     permissions: {
-      businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true, lock_members: true },
+      businesses: { view: true, verify: true, suspend: true, activate: true, set_commission: true, lock_members: true, compliance: true },
       accounts: { view: true, suspend: true, activate: true, notify: true },
     } as AdminPermissions,
   },
@@ -106,6 +106,7 @@ export const ADMIN_PERMISSION_LABELS = {
       activate: "Activate Businesses",
       set_commission: "Set Commission Rate",
       lock_members: "Lock / Unlock Portal Accounts",
+      compliance: "Manage Compliance",
     },
   },
   support_tickets: {

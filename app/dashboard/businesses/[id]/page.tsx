@@ -31,6 +31,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { AdminPermissions } from "@/lib/store/slices/authSlice";
 import ImageLightbox from "@/components/ImageLightbox";
 import { normalizeApiMediaUrl, normalizeApiMediaUrls } from "@/lib/media-url";
+import ComplianceTab from "./compliance-tab";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -57,6 +58,7 @@ const BUSINESS_TABS = new Set([
   "bookings",
   "reviews",
   "verification",
+  "compliance",
 ]);
 
 const panelClass =
@@ -603,7 +605,7 @@ export default function BusinessDetailPage() {
         role="tablist"
         aria-label="Business sections"
       >
-        {[
+        {([
           { id: "overview", label: "Overview", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
           { id: "team", label: "Team", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
           { id: "financials", label: "Financials", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" },
@@ -613,7 +615,11 @@ export default function BusinessDetailPage() {
           { id: "bookings", label: "Recent Bookings", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
           { id: "reviews", label: "Reviews", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
           { id: "verification", label: "Verification", icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-        ].map((tab) => (
+          { id: "compliance", label: "Compliance", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", permission: "compliance" },
+        ] as Array<{ id: string; label: string; icon: string; permission?: string }>
+        )
+          .filter((tab) => !tab.permission || can("businesses", tab.permission))
+          .map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -1903,6 +1909,15 @@ export default function BusinessDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Compliance Tab ── */}
+      {activeTab === "compliance" && can("businesses", "compliance") && (
+        <ComplianceTab
+          key={`${business.partner_agreement?.signed_at}-${business.partner_agreement?.signed_by_name}-${business.partner_agreement?.signed_copy_url}`}
+          business={business}
+          businessId={id}
+        />
       )}
 
       {/* ── Map Modal ── */}
