@@ -152,17 +152,17 @@ function OctopusSearchInner() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="relative mx-auto w-full max-w-3xl">
+      <form onSubmit={handleSubmit} className="relative mx-auto w-full max-w-xl">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Search email, name, phone, booking ID, transaction code…"
-          className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 pr-28 text-lg text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_12px_32px_-16px_rgba(15,23,42,0.18)] outline-none ring-slate-900/10 placeholder:text-slate-400 focus:ring-2"
+          placeholder="Email, name, phone, booking, reference"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-4 pr-20 text-sm text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/20"
           autoFocus
         />
         <button
           type="submit"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
         >
           Search
         </button>
