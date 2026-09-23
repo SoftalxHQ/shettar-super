@@ -51,6 +51,8 @@ const NAV_GROUPS: NavGroup[] = [
     title: "Finance",
     items: [
       { id: "payouts", label: "Payouts", icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z", href: "/dashboard/payouts", section: "finance" },
+      { id: "transactions", label: "Transactions", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4", href: "/dashboard/finance/transactions", section: "finance" },
+      { id: "paystack-fees", label: "Paystack Fees", icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z", href: "/dashboard/finance/paystack-fees", section: "finance" },
       { id: "company-accounts", label: "Company Accounts", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", href: "/dashboard/finance/company-accounts", section: "finance", permission: "manage_company_accounts" },
       { id: "withdraw-revenue", label: "Withdraw Revenue", icon: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8", href: "/dashboard/finance/withdraw-revenue", section: "finance", permission: "manage_company_accounts" },
     ],

@@ -336,6 +336,9 @@ export interface DashboardStats {
   open_tickets: number;
   total_revenue: number;
   pending_payouts: number;
+  paystack_deposit_fees: number;
+  paystack_payout_fees: number;
+  paystack_shettar_fees: number;
 }
 
 export interface DashboardSummary {
@@ -2075,6 +2078,70 @@ export const apiService = createApi({
     getAdminReservation: builder.query<{ reservation: AdminReservationDetail }, number | string>({
       query: (id) => `/api/v1/admin/reservations/${id}`,
     }),
+    getPaystackFees: builder.query<
+      {
+        stats: { deposit_fees: number; payout_transfer_fees: number; shettar_transfer_fees: number };
+        fees: {
+          id: number;
+          kind: string;
+          source: string;
+          amount: number;
+          gross_amount: number | null;
+          net_amount: number | null;
+          paystack_reference: string | null;
+          transaction_id: number | null;
+          company_wallet_debited: boolean;
+          account: { id: number; email: string } | null;
+          business: { id: number; name: string } | null;
+          created_at: string;
+        }[];
+        meta: AccountsMeta;
+      },
+      { page?: number; search?: string; kind?: string; source?: string }
+    >({
+      query: ({ page = 1, search, kind, source } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        if (kind) params.set("kind", kind);
+        if (source) params.set("source", source);
+        return `/api/v1/admin/paystack_fees?${params.toString()}`;
+      },
+    }),
+    getAdminTransactions: builder.query<
+      {
+        transactions: AdminTransactionDetail[];
+        stats: {
+          total_count: number;
+          completed_count: number;
+          pending_count: number;
+          failed_count: number;
+          completed_amount: number;
+          income_amount: number;
+          withdrawal_amount: number;
+        };
+        meta: AccountsMeta;
+      },
+      {
+        page?: number;
+        search?: string;
+        transaction_type?: string;
+        status?: string;
+        payment_method?: string;
+        from?: string;
+        to?: string;
+      }
+    >({
+      query: ({ page = 1, search, transaction_type, status, payment_method, from, to } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (search) params.set("search", search);
+        if (transaction_type) params.set("transaction_type", transaction_type);
+        if (status) params.set("status", status);
+        if (payment_method) params.set("payment_method", payment_method);
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+        return `/api/v1/admin/transactions?${params.toString()}`;
+      },
+    }),
     getAdminTransaction: builder.query<{ transaction: AdminTransactionDetail }, number | string>({
       query: (id) => `/api/v1/admin/transactions/${id}`,
     }),
@@ -2191,6 +2258,8 @@ export const {
   useOctopusSearchProfileQuery,
   useOctopusSearchAnalyzeMutation,
   useGetAdminReservationQuery,
+  useGetPaystackFeesQuery,
+  useGetAdminTransactionsQuery,
   useGetAdminTransactionQuery,
 } = apiService;
 

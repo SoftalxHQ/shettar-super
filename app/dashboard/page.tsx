@@ -11,6 +11,45 @@ function formatCurrency(amount: number) {
   return `₦${amount.toLocaleString()}`;
 }
 
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  iconWrap,
+  loading,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: string;
+  iconWrap: string;
+  loading: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">
+          {label}
+        </p>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconWrap}`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={icon} />
+          </svg>
+        </div>
+      </div>
+      <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
+        {loading ? (
+          <span className="inline-block h-7 w-20 rounded-md bg-slate-100 animate-pulse" />
+        ) : (
+          value
+        )}
+      </p>
+      {sub ? <p className="text-xs text-slate-500 mt-2.5 leading-snug">{sub}</p> : null}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { admin } = useAuth();
   const { data, isLoading } = useGetDashboardSummaryQuery();
@@ -19,16 +58,48 @@ export default function DashboardPage() {
   const recentBusinesses = data?.recent_businesses ?? [];
   const recentTickets = data?.recent_tickets ?? [];
 
-  const kpiCards = [
+  const moneyCards = [
     {
-      label: "Total Revenue",
+      label: "Shettar earnings",
       value: stats ? formatCurrency(stats.total_revenue) : "—",
-      sub: stats?.pending_payouts
-        ? `${formatCurrency(stats.pending_payouts)} pending payouts`
-        : "",
-      icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z",
+      sub: "Cash still in Shettar’s account. Paystack funding and transfer fees are excluded.",
+      icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
       iconWrap: "bg-slate-100 text-slate-500",
     },
+    {
+      label: "Owed to hotels",
+      value: stats ? formatCurrency(stats.pending_payouts) : "—",
+      sub: "Withdrawable balances. A liability, not Shettar income.",
+      icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+      iconWrap: "bg-slate-100 text-slate-500",
+    },
+  ];
+
+  const feeCards = [
+    {
+      label: "Deposit fees",
+      value: stats ? formatCurrency(stats.paystack_deposit_fees ?? 0) : "—",
+      sub: "Paystack kept these on card and bank funding.",
+      icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      iconWrap: "bg-slate-100 text-slate-500",
+    },
+    {
+      label: "Payout transfer fees",
+      value: stats ? formatCurrency(stats.paystack_payout_fees ?? 0) : "—",
+      sub: "Collected from hotels and marketers, paid to Paystack.",
+      icon: "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+      iconWrap: "bg-slate-100 text-slate-500",
+    },
+    {
+      label: "Shettar transfer fees",
+      value: stats ? formatCurrency(stats.paystack_shettar_fees ?? 0) : "—",
+      sub: "Deducted from Shettar earnings when you withdraw.",
+      icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+      iconWrap: "bg-slate-100 text-slate-500",
+    },
+  ];
+
+  const kpiCards = [
     {
       label: "Active Businesses",
       value: stats ? stats.active_businesses.toLocaleString() : "—",
@@ -68,33 +139,37 @@ export default function DashboardPage() {
         </p>
       </header>
 
-      <div className="dash-enter dash-enter-delay grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        {kpiCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_24px_-12px_rgba(15,23,42,0.12)]"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 pt-0.5">
-                {card.label}
-              </p>
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.iconWrap}`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={card.icon} />
-                </svg>
-              </div>
-            </div>
-            <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
-              {isLoading ? (
-                <span className="inline-block h-7 w-20 rounded-md bg-slate-100 animate-pulse" />
-              ) : (
-                card.value
-              )}
-            </p>
-            {card.sub ? (
-              <p className="text-xs text-slate-500 mt-2.5 leading-snug">{card.sub}</p>
-            ) : null}
+      <div className="dash-enter dash-enter-delay grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {moneyCards.map((card) => (
+          <StatCard key={card.label} {...card} loading={isLoading} />
+        ))}
+      </div>
+
+      <section className="dash-enter dash-enter-delay space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">
+              Paystack fees
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Recorded separately. Not included in Shettar earnings.</p>
           </div>
+          <Link
+            href="/dashboard/finance/paystack-fees"
+            className="text-[13px] font-semibold text-indigo-600 hover:text-indigo-700 transition-colors shrink-0"
+          >
+            View ledger
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {feeCards.map((card) => (
+            <StatCard key={card.label} {...card} loading={isLoading} />
+          ))}
+        </div>
+      </section>
+
+      <div className="dash-enter dash-enter-delay grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {kpiCards.map((card) => (
+          <StatCard key={card.label} {...card} loading={isLoading} />
         ))}
       </div>
 

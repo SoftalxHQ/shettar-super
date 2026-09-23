@@ -15,12 +15,13 @@ export default function OctopusTransactionDetailPage() {
     if (admin?.admin_role === "super_admin") return true;
     return (admin?.permissions?.[section] as Record<string, boolean> | undefined)?.[action] === true;
   };
+  const canView = can("octopus_search", "view") || can("finance", "view");
 
   const { data, isLoading, isError } = useGetAdminTransactionQuery(id, {
-    skip: !can("octopus_search", "view"),
+    skip: !canView,
   });
 
-  if (!can("octopus_search", "view")) {
+  if (!canView) {
     return <div className="dash-page"><p className="text-slate-500">Forbidden</p></div>;
   }
 

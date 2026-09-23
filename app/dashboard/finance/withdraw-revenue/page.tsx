@@ -33,13 +33,15 @@ function WithdrawModal({
 
   const accounts = accountsData?.company_bank_accounts ?? [];
   const parsedAmount = parseFloat(amount) || 0;
+  const transferFee = parsedAmount <= 0 ? 0 : parsedAmount <= 5000 ? 10 : parsedAmount <= 50000 ? 25 : 50;
+  const totalDebit = parsedAmount + transferFee;
   const selectedAccount = accounts.find((a) => String(a.id) === selectedAccountId) ?? null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAccountId) { toast.error("Please select a bank account."); return; }
     if (parsedAmount <= 0) { toast.error("Please enter a valid amount."); return; }
-    if (parsedAmount > walletBalance) { toast.error("Amount exceeds available balance."); return; }
+    if (totalDebit > walletBalance) { toast.error("Amount plus the Paystack fee exceeds available balance."); return; }
     if (!selectedAccount?.recipient_code) { toast.error("Selected account has no Paystack recipient code. Please re-add the account."); return; }
 
     try {
@@ -94,8 +96,8 @@ function WithdrawModal({
                 required
               />
             </div>
-            {parsedAmount > walletBalance && parsedAmount > 0 && (
-              <p className="text-xs text-red-500 mt-1">Amount exceeds available balance</p>
+            {totalDebit > walletBalance && parsedAmount > 0 && (
+              <p className="text-xs text-red-500 mt-1">Amount plus the Paystack fee exceeds available balance</p>
             )}
           </div>
 
@@ -148,10 +150,12 @@ function WithdrawModal({
                 <span className="font-semibold">{fmt(parsedAmount)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Paystack transfer fee ({parsedAmount <= 5000 ? "₦10" : parsedAmount <= 50000 ? "₦25" : "₦50"} flat)
-                </span>
-                <span className="text-xs text-muted-foreground italic">From Paystack balance</span>
+                <span className="text-muted-foreground">Paystack transfer fee</span>
+                <span className="font-semibold tabular-nums">{fmt(transferFee)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Deducted from Shettar earnings</span>
+                <span className="font-semibold tabular-nums">{fmt(totalDebit)}</span>
               </div>
               <div className="border-t border-slate-200 pt-2 flex justify-between">
                 <span className="font-semibold text-slate-900">Recipient receives</span>
@@ -166,7 +170,7 @@ function WithdrawModal({
             </button>
             <button
               type="submit"
-              disabled={withdrawing || accounts.length === 0 || parsedAmount > walletBalance}
+              disabled={withdrawing || accounts.length === 0 || parsedAmount <= 0 || totalDebit > walletBalance}
               className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {withdrawing ? (
@@ -256,7 +260,7 @@ export default function WithdrawRevenuePage() {
             <p className="text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums mt-2.5">{fmt(walletBalance)}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
-            From booking commissions, cancellation fees & ad impression/click charges — not ad wallet top-ups
+            Shettar earnings still held. Paystack funding and transfer fees are excluded.
           </p>
         </div>
 
@@ -329,7 +333,7 @@ export default function WithdrawRevenuePage() {
                   <td className="py-3.5 text-xs text-slate-400 font-mono">{w.metadata?.transfer_code ?? "—"}</td>
                   <td className="py-3.5 text-xs text-slate-500">
                     {w.metadata?.paystack_transfer_fee != null
-                      ? `₦${w.metadata.paystack_transfer_fee} (from Paystack balance)`
+                      ? `₦${w.metadata.paystack_transfer_fee} (deducted from earnings)`
                       : "—"}
                   </td>
                   <td className="py-3.5 text-sm text-slate-500">{new Date(w.created_at).toLocaleDateString()}</td>

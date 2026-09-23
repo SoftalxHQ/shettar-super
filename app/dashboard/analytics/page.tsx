@@ -270,7 +270,8 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           {
-            label: "Total Revenue",
+            label: "Platform profit",
+            subtitle: "Shettar’s cut in these dates. Paystack funding and transfer fees are excluded.",
             value: formatCurrency(kpis.total_revenue.value),
             change: kpis.total_revenue.change,
             icon: "M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3z M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z",
@@ -311,13 +312,16 @@ export default function AnalyticsPage() {
             <p className="mt-3 text-[1.625rem] font-semibold tracking-tight text-slate-900 tabular-nums leading-none">
               {card.value}
             </p>
+            {"subtitle" in card && card.subtitle ? (
+              <p className="mt-2 text-[11px] leading-snug text-slate-400">{card.subtitle}</p>
+            ) : null}
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className={`${panelClass} p-5`}>
-          <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Revenue Trend</h2>
+          <h2 className="font-display text-[15px] font-semibold tracking-tight text-slate-900 mb-4">Platform profit</h2>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenue_trend} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
               <defs>
