@@ -416,6 +416,7 @@ export interface PartnerAgreementAdmin {
   documents?: PartnerAgreementDocument[];
   commission_rate?: number;
   commission_rate_custom?: boolean;
+  commission_collection_mode?: "on_withdrawal" | "on_booking" | null;
   maximum_withdrawal_commission?: number;
   primary_contact_name?: string | null;
   primary_contact_title?: string | null;

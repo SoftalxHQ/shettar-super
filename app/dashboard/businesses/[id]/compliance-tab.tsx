@@ -134,6 +134,7 @@ export default function ComplianceTab({ business, businessId }: ComplianceTabPro
         signedByName: agreement?.signed_by_name,
         signedByRole: agreement?.signed_by_role,
         commissionRate: agreement?.commission_rate ?? business.commission_rate,
+        commissionCollectionMode: agreement?.commission_collection_mode,
         maximumWithdrawalCommission: agreement?.maximum_withdrawal_commission,
         primaryContactName: agreement?.primary_contact_name,
         primaryContactTitle: agreement?.primary_contact_title,
@@ -261,6 +262,12 @@ export default function ComplianceTab({ business, businessId }: ComplianceTabPro
           <div>
             <dt className="text-xs text-slate-500">Version</dt>
             <dd className="font-medium text-slate-900 mt-0.5">{agreement?.version || "1.0"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-slate-500">Commission method</dt>
+            <dd className="font-medium text-slate-900 mt-0.5">
+              {agreement?.commission_collection_mode === "on_booking" ? "On booking" : "On withdrawal"}
+            </dd>
           </div>
         </dl>
       </div>
