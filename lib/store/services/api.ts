@@ -1169,7 +1169,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "SupportTicketStats", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease"],
+  tagTypes: ["Account", "Business", "SupportTicket", "SupportTicketStats", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease", "CryptoFundingRate"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -2108,6 +2108,45 @@ export const apiService = createApi({
         return `/api/v1/admin/paystack_fees?${params.toString()}`;
       },
     }),
+    getCryptoFundingRates: builder.query<
+      {
+        rates: {
+          id: number;
+          blockchain: string;
+          asset: string;
+          label: string;
+          reference_rate: number | null;
+          executable_rate_override: number | null;
+          executable_rate: number | null;
+          provider_fee_ngn: number;
+          network_cost_ngn: number;
+          safety_buffer_ngn: number;
+          credit_rate: number | null;
+          rate_source: string | null;
+        }[];
+      },
+      void
+    >({
+      query: () => "/api/v1/admin/crypto_funding_rates",
+      providesTags: ["CryptoFundingRate"],
+    }),
+    updateCryptoFundingRate: builder.mutation<
+      { rate: { id: number; credit_rate: number | null; rate_source: string | null } },
+      {
+        id: number;
+        executable_rate_override: string | null;
+        provider_fee_ngn: string;
+        network_cost_ngn: string;
+        safety_buffer_ngn: string;
+      }
+    >({
+      query: ({ id, ...crypto_funding_rate }) => ({
+        url: `/api/v1/admin/crypto_funding_rates/${id}`,
+        method: "PATCH",
+        body: { crypto_funding_rate },
+      }),
+      invalidatesTags: ["CryptoFundingRate"],
+    }),
     getAdminTransactions: builder.query<
       {
         transactions: AdminTransactionDetail[];
@@ -2260,6 +2299,8 @@ export const {
   useOctopusSearchAnalyzeMutation,
   useGetAdminReservationQuery,
   useGetPaystackFeesQuery,
+  useGetCryptoFundingRatesQuery,
+  useUpdateCryptoFundingRateMutation,
   useGetAdminTransactionsQuery,
   useGetAdminTransactionQuery,
 } = apiService;
