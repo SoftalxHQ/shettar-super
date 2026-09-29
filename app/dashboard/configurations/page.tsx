@@ -38,6 +38,9 @@ type PlatformConfig = {
   ai_monthly_free_points: number;
   ai_point_price_naira: number;
   ai_points_per_request: number;
+  subscription_quarterly_price_naira: number;
+  subscription_biannual_price_naira: number;
+  subscription_annual_price_naira: number;
   unverified_sales_block_after_days: number;
   ad_settings: AdSettings;
 };
@@ -62,6 +65,9 @@ export default function ConfigurationPage() {
     ai_monthly_free_points: 5,
     ai_point_price_naira: 50,
     ai_points_per_request: 1,
+    subscription_quarterly_price_naira: 0,
+    subscription_biannual_price_naira: 0,
+    subscription_annual_price_naira: 0,
     unverified_sales_block_after_days: 7,
     ad_settings: DEFAULT_AD_SETTINGS,
   });
@@ -99,6 +105,9 @@ export default function ConfigurationPage() {
       ai_monthly_free_points: Number(data.ai_monthly_free_points ?? 5),
       ai_point_price_naira: Number(data.ai_point_price_naira ?? 50),
       ai_points_per_request: Number(data.ai_points_per_request ?? 1),
+      subscription_quarterly_price_naira: Number(data.subscription_quarterly_price_naira ?? 0),
+      subscription_biannual_price_naira: Number(data.subscription_biannual_price_naira ?? 0),
+      subscription_annual_price_naira: Number(data.subscription_annual_price_naira ?? 0),
       unverified_sales_block_after_days: Math.max(
         1,
         Number(data.unverified_sales_block_after_days ?? 7) || 7
@@ -523,6 +532,50 @@ export default function ConfigurationPage() {
                     className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
                     value={config.ai_points_per_request}
                     onChange={(e) => canEdit && setConfig({ ...config, ai_points_per_request: parseInt(e.target.value, 10) || 1 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className={`${panelClass} p-5 space-y-4`}>
+              <div>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business subscription</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Prices hotels pay to keep staff reservations and restaurant orders open. A price of 0 means that plan cannot be purchased.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Quarterly (₦)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.subscription_quarterly_price_naira}
+                    onChange={(e) => canEdit && setConfig({ ...config, subscription_quarterly_price_naira: parseInt(e.target.value, 10) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Bi-annual (₦)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.subscription_biannual_price_naira}
+                    onChange={(e) => canEdit && setConfig({ ...config, subscription_biannual_price_naira: parseInt(e.target.value, 10) || 0 })}
+                    readOnly={!canEdit}
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  <span className="text-slate-500">Annual (₦)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="input w-full rounded-xl border-slate-200 read-only:opacity-70"
+                    value={config.subscription_annual_price_naira}
+                    onChange={(e) => canEdit && setConfig({ ...config, subscription_annual_price_naira: parseInt(e.target.value, 10) || 0 })}
                     readOnly={!canEdit}
                   />
                 </label>

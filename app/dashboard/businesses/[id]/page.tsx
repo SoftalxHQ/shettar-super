@@ -20,6 +20,7 @@ import { useGetBusinessQuery,
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
+  useExtendBusinessTrialMutation,
   useCreateBusinessAdminMutation,
   useLockBusinessMemberMutation,
   useUnlockBusinessMemberMutation,
@@ -108,6 +109,9 @@ export default function BusinessDetailPage() {
   const [setBusinessCommission, { isLoading: isSettingCommission }] = useSetBusinessCommissionMutation();
   const [setBusinessFeatured, { isLoading: isSettingFeatured }] = useSetBusinessFeaturedMutation();
   const [setBusinessCancellationFee, { isLoading: isSettingCancellationFee }] = useSetBusinessCancellationFeeMutation();
+  const [extendBusinessTrial, { isLoading: isExtendingTrial }] = useExtendBusinessTrialMutation();
+  const [trialAmount, setTrialAmount] = useState("7");
+  const [trialUnit, setTrialUnit] = useState<"days" | "weeks">("days");
   const [createBusinessAdmin, { isLoading: isCreatingAdmin }] = useCreateBusinessAdminMutation();
   const [lockBusinessMember, { isLoading: isLockingMember }] = useLockBusinessMemberMutation();
   const [unlockBusinessMember, { isLoading: isUnlockingMember }] = useUnlockBusinessMemberMutation();
@@ -664,6 +668,91 @@ export default function BusinessDetailPage() {
                 </div>
               ))}
             </div>
+
+            {business.walk_in_subscription && (
+              <div className={`${panelClass} p-5 space-y-4`}>
+                <h3 className="font-display text-[15px] font-semibold tracking-tight text-slate-900">Business subscription</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Status</p>
+                    <p className="font-medium capitalize text-slate-900">{business.walk_in_subscription.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Plan</p>
+                    <p className="font-medium text-slate-900">{business.walk_in_subscription.plan || "Trial"}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Trial ends</p>
+                    <p className="font-medium text-slate-900">{formatDateTime(business.walk_in_subscription.trial_ends_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Paid through</p>
+                    <p className="font-medium text-slate-900">
+                      {business.walk_in_subscription.current_period_ends_at
+                        ? formatDateTime(business.walk_in_subscription.current_period_ends_at)
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+                {can("businesses", "verify") && (
+                  <form
+                    className="flex flex-wrap items-end gap-3"
+                    onSubmit={async (event) => {
+                      event.preventDefault();
+                      const amount = Number(trialAmount);
+                      if (!Number.isFinite(amount) || amount <= 0) {
+                        toast.error("Enter a number of days or weeks");
+                        return;
+                      }
+                      try {
+                        const result = await extendBusinessTrial({ id, amount, unit: trialUnit }).unwrap();
+                        toast.success(result.message);
+                      } catch (error) {
+                        const message =
+                          error && typeof error === "object" && "data" in error
+                            ? String((error as { data?: { error?: string } }).data?.error || "Could not extend the trial")
+                            : business.walk_in_subscription.status === "active"
+                              ? "Could not extend the subscription"
+                              : "Could not extend the trial";
+                        toast.error(message);
+                      }
+                    }}
+                  >
+                    <label className="space-y-1 text-sm">
+                      <span className="text-slate-500">
+                        {business.walk_in_subscription.status === "active" ? "Extend subscription" : "Extend trial"}
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={trialAmount}
+                        onChange={(event) => setTrialAmount(event.target.value)}
+                        className="input w-24 rounded-xl border-slate-200"
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm">
+                      <span className="text-slate-500">Unit</span>
+                      <select
+                        value={trialUnit}
+                        onChange={(event) => setTrialUnit(event.target.value as "days" | "weeks")}
+                        className="input rounded-xl border-slate-200"
+                      >
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                      </select>
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={isExtendingTrial}
+                      className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                    >
+                      {isExtendingTrial ? "Saving…" : "Extend"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
             {/* Business Information */}
             <div className={`${panelClass} p-5 space-y-4`}>

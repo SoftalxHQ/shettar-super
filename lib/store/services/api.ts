@@ -395,6 +395,16 @@ export interface Business {
   partner_agreement_signed_at?: string | null;
 }
 
+export interface WalkInSubscription {
+  status: "trialing" | "active" | "expired";
+  walk_in_open: boolean;
+  plan: "quarterly" | "biannual" | "annual" | null;
+  trial_ends_at: string;
+  current_period_ends_at: string | null;
+  access_until: string | null;
+  auto_renew: boolean;
+}
+
 export interface PartnerAgreementDocument {
   key: string;
   title: string;
@@ -512,6 +522,7 @@ export interface BusinessDetail extends Business {
   cancellation_fee_percentage: number | null;
   is_featured: boolean;
   partner_agreement?: PartnerAgreementAdmin;
+  walk_in_subscription?: WalkInSubscription | null;
 }
 
 export interface BusinessReservation {
@@ -1397,6 +1408,17 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
     }),
+    extendBusinessTrial: builder.mutation<
+      { message: string; business: BusinessDetail },
+      { id: number | string; amount: number; unit: "days" | "weeks" }
+    >({
+      query: ({ id, amount, unit }) => ({
+        url: `/api/v1/admin/businesses/${id}/extend_trial`,
+        method: "PATCH",
+        body: { amount, unit },
+      }),
+      invalidatesTags: (_result, _err, { id }) => ["Business", { type: "Business", id }],
+    }),
     setBusinessCancellationFee: builder.mutation<{ message: string; cancellation_fee_percentage: number | null }, { id: number | string; cancellation_fee_percentage: number | null }>({
       query: ({ id, cancellation_fee_percentage }) => ({
         url: `/api/v1/admin/businesses/${id}/set_cancellation_fee`,
@@ -2215,6 +2237,7 @@ export const {
   useSetBusinessCommissionMutation,
   useSetBusinessFeaturedMutation,
   useSetBusinessCancellationFeeMutation,
+  useExtendBusinessTrialMutation,
   useRecordBusinessPartnerAgreementMutation,
   usePurgeBusinessPartnerAgreementSignedCopyMutation,
   useVerifyBankAccountMutation,
