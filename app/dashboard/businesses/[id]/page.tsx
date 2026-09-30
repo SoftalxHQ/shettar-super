@@ -711,7 +711,7 @@ export default function BusinessDetailPage() {
                         const message =
                           error && typeof error === "object" && "data" in error
                             ? String((error as { data?: { error?: string } }).data?.error || "Could not extend the trial")
-                            : business.walk_in_subscription.status === "active"
+                            : business.walk_in_subscription?.status === "active"
                               ? "Could not extend the subscription"
                               : "Could not extend the trial";
                         toast.error(message);
