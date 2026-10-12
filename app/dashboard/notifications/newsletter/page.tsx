@@ -83,6 +83,9 @@ export default function NewsletterComposerPage() {
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [sendModalMode, setSendModalMode] = useState<"send" | "resend">("send");
   const [pendingEstimate, setPendingEstimate] = useState<number | null>(null);
+  const [testModalOpen, setTestModalOpen] = useState(false);
+  const [testMode, setTestMode] = useState<"self" | "custom">("self");
+  const [testEmail, setTestEmail] = useState("");
 
   const [createNewsletter, { isLoading: creating }] = useCreateNewsletterMutation();
   const [updateNewsletter, { isLoading: updating }] = useUpdateNewsletterMutation();
@@ -113,7 +116,7 @@ export default function NewsletterComposerPage() {
     setSubject(n.subject);
     setPreviewText(n.preview_text || "");
     setHtmlBody(n.html_body || "<p></p>");
-    setAudience(n.audience);
+    if (n.audience === "customers" || n.audience === "businesses") setAudience(n.audience);
     setTargetType(n.target_type === "segment" ? "segment" : "all");
     if (n.target_type === "segment" && n.target_value) setSegment(n.target_value);
     setCtaUrl((n.metadata?.cta_url as string) || n.cta_url || "");
@@ -179,16 +182,38 @@ export default function NewsletterComposerPage() {
     return newsletterId;
   };
 
+  const openTestModal = () => {
+    if (!canSend) {
+      toast.error("You do not have permission to send test emails");
+      return;
+    }
+    setTestMode("self");
+    setTestEmail("");
+    setTestModalOpen(true);
+  };
+
   const handleTestSend = async () => {
     if (!canSend) {
       toast.error("You do not have permission to send test emails");
       return;
     }
+    const recipient = testMode === "self" ? undefined : testEmail.trim();
+    if (testMode === "custom") {
+      if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+        toast.error("Enter a valid email address");
+        return;
+      }
+    }
+
     const id = await persistCurrentDraft();
     if (!id) return;
 
     try {
-      const result = await testNewsletter(id).unwrap();
+      const result = await testNewsletter({
+        id,
+        ...(recipient ? { email: recipient } : {}),
+      }).unwrap();
+      setTestModalOpen(false);
       toast.success(result.message);
     } catch (err) {
       toast.error(mutationErrorMessage(err, "Failed to send test email"));
@@ -481,11 +506,11 @@ export default function NewsletterComposerPage() {
             {canSend && isEditable && (
               <button
                 type="button"
-                onClick={() => void handleTestSend()}
+                onClick={openTestModal}
                 disabled={testing || saving}
                 className="px-5 py-2.5 rounded-xl font-semibold border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
               >
-                {testing ? "Sending…" : "Send test to me"}
+                {testing ? "Sending…" : "Send test"}
               </button>
             )}
             {canSend && isDraft && isEditable && (
@@ -527,6 +552,94 @@ export default function NewsletterComposerPage() {
           )}
         </div>
       </div>
+
+      {testModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+            <div className="p-6 space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-display text-base font-semibold text-slate-900">Send test</h2>
+                  <p className="text-sm text-slate-500 mt-1">Choose where to send a one-off preview.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTestModalOpen(false)}
+                  disabled={testing}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 disabled:opacity-50"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTestMode("self")}
+                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    testMode === "self"
+                      ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Self
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTestMode("custom")}
+                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                    testMode === "custom"
+                      ? "border-indigo-300 bg-indigo-50 text-indigo-700"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Custom
+                </button>
+              </div>
+              {testMode === "self" ? (
+                <p className="text-sm text-slate-600">
+                  Send to your signed-in address
+                  {admin?.email ? (
+                    <>
+                      : <span className="font-semibold text-slate-900">{admin.email}</span>
+                    </>
+                  ) : (
+                    "."
+                  )}
+                </p>
+              ) : (
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(event) => setTestEmail(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-colors text-sm"
+                  placeholder="name@example.com"
+                  autoFocus
+                />
+              )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setTestModalOpen(false)}
+                  disabled={testing}
+                  className="flex-1 px-4 py-2.5 rounded-xl font-semibold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleTestSend()}
+                  disabled={testing || saving}
+                  className="flex-1 px-4 py-2.5 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                >
+                  {testing ? "Sending…" : "Send test"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sendModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">

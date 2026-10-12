@@ -51,6 +51,18 @@ function isRetryable(newsletter: Newsletter) {
   return false;
 }
 
+function composerHref(newsletter: Newsletter) {
+  const base = newsletter.audience === "promotional"
+    ? "/dashboard/notifications/campaigns"
+    : "/dashboard/notifications/newsletter";
+  return `${base}?id=${newsletter.id}`;
+}
+
+function audienceLabel(newsletter: Newsletter) {
+  if (newsletter.audience === "promotional") return "Saved list";
+  return newsletter.audience;
+}
+
 function isDeletable(newsletter: Newsletter) {
   if (newsletter.deletable != null) return newsletter.deletable;
   if (newsletter.status === "queued") return false;
@@ -168,11 +180,7 @@ export default function NewsletterHistoryPage() {
                 <tr key={newsletter.id} className="hover:bg-slate-50/90 transition-colors">
                   <td className="px-5 py-3.5">
                     <Link
-                      href={
-                        isEditable(newsletter)
-                          ? `/dashboard/notifications/newsletter?id=${newsletter.id}`
-                          : "#"
-                      }
+                      href={isEditable(newsletter) ? composerHref(newsletter) : "#"}
                       className={`font-semibold text-slate-900 ${isEditable(newsletter) ? "hover:text-indigo-600" : "cursor-default"}`}
                     >
                       {newsletter.subject}
@@ -182,7 +190,7 @@ export default function NewsletterHistoryPage() {
                     </p>
                   </td>
                   <td className="px-5 py-3.5 capitalize text-slate-700">
-                    {newsletter.audience}
+                    {audienceLabel(newsletter)}
                     {newsletter.target_type === "segment" && newsletter.target_value && (
                       <span className="text-slate-400"> · {newsletter.target_value}</span>
                     )}
@@ -205,7 +213,7 @@ export default function NewsletterHistoryPage() {
                     <div className="flex flex-wrap gap-1.5">
                       {canCreate && isEditable(newsletter) && (
                         <Link
-                          href={`/dashboard/notifications/newsletter?id=${newsletter.id}`}
+                          href={composerHref(newsletter)}
                           className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                         >
                           Edit

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorContent, EditorContext, useEditor, type Editor } from "@tiptap/react";
+import { mergeAttributes } from "@tiptap/core";
 import { StarterKit } from "@tiptap/starter-kit";
 import { Image } from "@tiptap/extension-image";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
@@ -114,9 +115,22 @@ const NewsletterImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
+      href: {
+        default: null,
+        parseHTML: (element) => {
+          if (!(element instanceof HTMLElement)) return null;
+          const parent = element.parentElement;
+          if (parent?.tagName === "A") return parent.getAttribute("href");
+          return element.getAttribute("href");
+        },
+        renderHTML: () => ({}),
+      },
       assetId: {
         default: null,
-        parseHTML: (element) => element.getAttribute("data-asset-id"),
+        parseHTML: (element) => {
+          if (!(element instanceof HTMLElement)) return null;
+          return element.getAttribute("data-asset-id");
+        },
         renderHTML: (attributes) => {
           if (attributes.assetId == null || String(attributes.assetId).trim() === "") {
             return {};
@@ -125,6 +139,14 @@ const NewsletterImage = Image.extend({
         },
       },
     };
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    const href = typeof node.attrs.href === "string" ? node.attrs.href.trim() : "";
+    const attrs = { ...HTMLAttributes } as Record<string, unknown>;
+    delete attrs.href;
+    const imgAttrs = mergeAttributes(this.options.HTMLAttributes, attrs);
+    if (!href) return ["img", imgAttrs] as const;
+    return ["a", { href, target: "_blank", rel: "noopener noreferrer nofollow" }, ["img", imgAttrs]] as const;
   },
   addNodeView() {
     const parent = this.parent?.();

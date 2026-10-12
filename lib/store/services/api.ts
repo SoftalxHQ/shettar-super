@@ -164,7 +164,7 @@ export interface Newsletter {
   subject: string;
   preview_text: string | null;
   html_body?: string;
-  audience: "customers" | "businesses";
+  audience: "customers" | "businesses" | "promotional";
   target_type: "all" | "segment" | "single";
   target_value: string | null;
   status: "draft" | "queued" | "sending" | "sent" | "failed";
@@ -184,11 +184,44 @@ export interface Newsletter {
   updated_at: string;
 }
 
+export interface PromotionalContact {
+  id: number;
+  email: string;
+  name: string | null;
+  source: "manual" | "csv" | "scraper";
+  achieved_at: string | null;
+  achieved: boolean;
+  created_at: string;
+}
+
+export interface PromotionalScrapeResult {
+  id: number;
+  email: string;
+  source_url: string | null;
+  valid: boolean;
+  validation_detail: string | null;
+}
+
+export interface PromotionalScrape {
+  id: number;
+  line_of_business: string;
+  country: string;
+  state: string | null;
+  city: string | null;
+  status: "queued" | "running" | "completed" | "failed" | "stopped";
+  time_limit_seconds: number | null;
+  started_at: string | null;
+  stop_requested_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  results?: PromotionalScrapeResult[];
+}
+
 export interface NewsletterPayload {
   subject: string;
   preview_text?: string;
   html_body: string;
-  audience: "customers" | "businesses";
+  audience: "customers" | "businesses" | "promotional";
   target_type: "all" | "segment" | "single";
   target_value?: string;
   include_header?: boolean;
@@ -1180,7 +1213,7 @@ const baseQueryWith401Handler = async (
 export const apiService = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWith401Handler,
-  tagTypes: ["Account", "Business", "SupportTicket", "SupportTicketStats", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PushDevice", "DesktopRelease", "CryptoFundingRate"],
+  tagTypes: ["Account", "Business", "SupportTicket", "SupportTicketStats", "AdminStaff", "AdminActivity", "SystemJob", "Payout", "CompanyBankAccount", "Marketer", "PromoCode", "Newsletter", "PromotionalContact", "PromotionalScrape", "PushDevice", "DesktopRelease", "CryptoFundingRate"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
@@ -1939,8 +1972,12 @@ export const apiService = createApi({
     }),
 
     // ── Newsletter endpoints ────────────────────────────────────────────────
-    getNewsletters: builder.query<{ newsletters: Newsletter[]; meta: AccountsMeta }, { page?: number }>({
-      query: ({ page = 1 } = {}) => `/api/v1/admin/newsletters?page=${page}`,
+    getNewsletters: builder.query<{ newsletters: Newsletter[]; meta: AccountsMeta }, { page?: number; audience?: Newsletter["audience"] }>({
+      query: ({ page = 1, audience } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (audience) params.set("audience", audience);
+        return `/api/v1/admin/newsletters?${params.toString()}`;
+      },
       providesTags: ["Newsletter"],
     }),
     getNewsletter: builder.query<{ newsletter: Newsletter }, number | string>({
@@ -1970,10 +2007,14 @@ export const apiService = createApi({
       }),
       invalidatesTags: (_result, _err, id) => ["Newsletter", { type: "Newsletter", id }],
     }),
-    testNewsletter: builder.mutation<{ message: string }, number | string>({
-      query: (id) => ({
+    testNewsletter: builder.mutation<
+      { message: string },
+      { id: number | string; email?: string }
+    >({
+      query: ({ id, email }) => ({
         url: `/api/v1/admin/newsletters/${id}/test`,
         method: "POST",
+        body: email ? { email } : {},
       }),
     }),
     deleteNewsletter: builder.mutation<{ message: string }, number | string>({
@@ -2013,6 +2054,89 @@ export const apiService = createApi({
         url: `/api/v1/admin/newsletter_assets/${id}`,
         method: "DELETE",
       }),
+    }),
+
+    getPromotionalContacts: builder.query<
+      { contacts: PromotionalContact[]; total_count: number; active_count: number; meta: AccountsMeta },
+      { page?: number; q?: string; status?: "active" | "achieved" }
+    >({
+      query: ({ page = 1, q, status } = {}) => {
+        const params = new URLSearchParams({ page: String(page) });
+        if (q) params.set("q", q);
+        if (status) params.set("status", status);
+        return `/api/v1/admin/promotional_contacts?${params.toString()}`;
+      },
+      providesTags: ["PromotionalContact"],
+    }),
+    createPromotionalContact: builder.mutation<
+      { contact: PromotionalContact; total_count: number },
+      { email: string; name?: string }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/promotional_contacts",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["PromotionalContact"],
+    }),
+    importPromotionalContacts: builder.mutation<
+      { imported: number; duplicates: number; invalid: number; total_count: number },
+      File
+    >({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: "/api/v1/admin/promotional_contacts/import",
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["PromotionalContact"],
+    }),
+    deletePromotionalContact: builder.mutation<{ message: string; total_count: number; active_count: number }, number>({
+      query: (id) => ({
+        url: `/api/v1/admin/promotional_contacts/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["PromotionalContact"],
+    }),
+    achievePromotionalContact: builder.mutation<{ contact: PromotionalContact; active_count: number }, number>({
+      query: (id) => ({
+        url: `/api/v1/admin/promotional_contacts/${id}/achieve`,
+        method: "POST",
+      }),
+      invalidatesTags: ["PromotionalContact"],
+    }),
+    createPromotionalScrape: builder.mutation<
+      { scrape: PromotionalScrape },
+      { line_of_business: string; country: string; state?: string; city?: string; time_limit_seconds: number }
+    >({
+      query: (body) => ({
+        url: "/api/v1/admin/promotional_scrapes",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["PromotionalScrape"],
+    }),
+    getPromotionalScrape: builder.query<{ scrape: PromotionalScrape }, number>({
+      query: (id) => `/api/v1/admin/promotional_scrapes/${id}`,
+      providesTags: (_result, _err, id) => [{ type: "PromotionalScrape", id }],
+    }),
+    stopPromotionalScrape: builder.mutation<{ scrape: PromotionalScrape }, number>({
+      query: (id) => ({
+        url: `/api/v1/admin/promotional_scrapes/${id}/stop`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _err, id) => [{ type: "PromotionalScrape", id }],
+    }),
+    savePromotionalScrape: builder.mutation<{ saved: number; skipped: number; active_count: number }, { id: number; emails: string[] }>({
+      query: ({ id, emails }) => ({
+        url: `/api/v1/admin/promotional_scrapes/${id}/save_contacts`,
+        method: "POST",
+        body: { emails },
+      }),
+      invalidatesTags: ["PromotionalContact", "PromotionalScrape"],
     }),
 
     // ── Marketers endpoints ───────────────────────────────────────────────
@@ -2316,6 +2440,15 @@ export const {
   useRetryNewsletterDeliveryMutation,
   useUploadNewsletterAssetMutation,
   useDeleteNewsletterAssetMutation,
+  useGetPromotionalContactsQuery,
+  useCreatePromotionalContactMutation,
+  useImportPromotionalContactsMutation,
+  useDeletePromotionalContactMutation,
+  useAchievePromotionalContactMutation,
+  useCreatePromotionalScrapeMutation,
+  useGetPromotionalScrapeQuery,
+  useStopPromotionalScrapeMutation,
+  useSavePromotionalScrapeMutation,
   useOctopusSearchQuery,
   useLazyOctopusSearchQuery,
   useOctopusSearchProfileQuery,

@@ -49,15 +49,19 @@ export interface LinkHandlerProps {
   onSetLink?: () => void
 }
 
+function selectedImageHref(editor: Editor | null): string | null {
+  if (!editor || !isNodeTypeSelected(editor, ["image"], true)) return null
+  const href = editor.getAttributes("image").href
+  return typeof href === "string" && href.trim() ? href : null
+}
+
 /**
  * Checks if a link can be set in the current editor state
  */
 export function canSetLink(editor: Editor | null): boolean {
   if (!editor || !editor.isEditable) return false
 
-  // The third argument 'true' checks whether the current selection is inside an image caption, and prevents setting a link there
-  // If the selection is inside an image caption, we can't set a link
-  if (isNodeTypeSelected(editor, ["image"], true)) return false
+  if (isNodeTypeSelected(editor, ["image"], true)) return true
   try {
     return editor.can().setMark("link")
   } catch {
@@ -70,6 +74,7 @@ export function canSetLink(editor: Editor | null): boolean {
  */
 export function isLinkActive(editor: Editor | null): boolean {
   if (!editor || !editor.isEditable) return false
+  if (selectedImageHref(editor) != null) return true
   return editor.isActive("link")
 }
 
@@ -114,11 +119,11 @@ export function useLinkHandler(props: LinkHandlerProps) {
   useEffect(() => {
     if (!editor) return
 
-    // Get URL immediately on mount
+    const imageHref = selectedImageHref(editor)
     const { href } = editor.getAttributes("link")
 
     if (isLinkActive(editor) && url === null) {
-      setUrl(href || "")
+      setUrl(imageHref || href || "")
     }
   }, [editor, url])
 
@@ -126,6 +131,11 @@ export function useLinkHandler(props: LinkHandlerProps) {
     if (!editor) return
 
     const updateLinkState = () => {
+      const imageHref = selectedImageHref(editor)
+      if (imageHref != null || isNodeTypeSelected(editor, ["image"], true)) {
+        setUrl(imageHref || "")
+        return
+      }
       const { href } = editor.getAttributes("link")
       setUrl(href || "")
     }
@@ -138,6 +148,13 @@ export function useLinkHandler(props: LinkHandlerProps) {
 
   const setLink = useCallback(() => {
     if (!url || !editor) return
+
+    if (isNodeTypeSelected(editor, ["image"], true)) {
+      editor.chain().focus().updateAttributes("image", { href: url }).run()
+      setUrl(url)
+      onSetLink?.()
+      return
+    }
 
     const { selection } = editor.state
     const isEmpty = selection.empty
@@ -159,6 +176,11 @@ export function useLinkHandler(props: LinkHandlerProps) {
 
   const removeLink = useCallback(() => {
     if (!editor) return
+    if (isNodeTypeSelected(editor, ["image"], true)) {
+      editor.chain().focus().updateAttributes("image", { href: null }).run()
+      setUrl("")
+      return
+    }
     editor
       .chain()
       .focus()
